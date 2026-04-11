@@ -36,7 +36,7 @@ export default function LandingPage() {
         <button className="btn-primary" onClick={() => router.push('/signup')}>
           Registrati
         </button>
-        <button className="btn-secondary" onClick={() => router.push('/login')}>
+        <button className="btn-secondary" onClick={() => router.push('/login/email')}>
           Accedi
         </button>
       </div>
