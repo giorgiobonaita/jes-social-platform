@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — JES</title>
+  <meta name="description" content="Informativa sulla privacy di JES — Il Social delle Emozioni." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #F07B1D;
+      --orange-light: #FEF0E9;
+      --black: #111111;
+      --gray: #666666;
+      --gray-light: #AAAAAA;
+      --bg: #FFFFFF;
+      --bg-off: #FAFAFA;
+      --border: #EEEEEE;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--black);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: 'Poppins', sans-serif;
+      font-size: 28px;
+      color: var(--orange);
+      letter-spacing: -1px;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--gray);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--orange); }
+    .nav-cta {
+      background: var(--orange);
+      color: #fff !important;
+      padding: 10px 22px;
+      border-radius: 12px;
+    }
+    .nav-cta:hover { opacity: 0.85 !important; }
+
+    /* HERO */
+    .page-hero {
+      padding: 120px 24px 60px;
+      text-align: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, #FEF0E9 0%, #fff 70%);
+    }
+    .page-tag {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--orange);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .page-hero h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: clamp(36px, 6vw, 60px);
+      color: var(--black);
+      letter-spacing: -2px;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .page-hero p {
+      font-size: 16px;
+      color: var(--gray);
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+    .update-badge {
+      display: inline-block;
+      background: var(--bg-off);
+      border: 1px solid var(--border);
+      color: var(--gray-light);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 100px;
+      margin-top: 20px;
+    }
+
+    /* CONTENT */
+    .doc-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 60px 24px 100px;
+    }
+
+    .doc-section {
+      margin-bottom: 52px;
+    }
+
+    .doc-section h2 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 22px;
+      color: var(--black);
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .doc-section h2 .num {
+      width: 32px;
+      height: 32px;
+      background: var(--orange-light);
+      color: var(--orange);
+      border-radius: 8px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .doc-section p {
+      font-size: 15px;
+      color: var(--gray);
+      line-height: 1.8;
+      margin-bottom: 12px;
+    }
+    .doc-section p:last-child { margin-bottom: 0; }
+
+    .doc-section ul {
+      list-style: none;
+      margin: 8px 0 12px 0;
+    }
+    .doc-section ul li {
+      font-size: 15px;
+      color: var(--gray);
+      line-height: 1.7;
+      padding: 6px 0 6px 20px;
+      position: relative;
+    }
+    .doc-section ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 14px;
+      width: 6px;
+      height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+    }
+
+    .doc-section strong { color: var(--black); font-weight: 600; }
+
+    .info-box {
+      background: var(--orange-light);
+      border: 1px solid #F5C99A;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .info-box p {
+      color: #8B4500;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .divider-line {
+      height: 1px;
+      background: var(--border);
+      margin: 52px 0;
+    }
+
+    /* FOOTER */
+    footer {
+      background: var(--black);
+      color: rgba(255,255,255,0.5);
+      padding: 48px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .footer-logo {
+      font-family: 'Poppins', sans-serif;
+      font-size: 22px;
+      color: var(--orange);
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+    .footer-links a {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: rgba(255,255,255,0.8); }
+    .footer-copy { font-size: 13px; }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+      footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">JES</a>
+    <ul class="nav-links">
+      <li><a href="index.html#features">Funzionalità</a></li>
+      <li><a href="index.html#come-funziona">Come funziona</a></li>
+      <li><a href="index.html#join" class="nav-cta">Unisciti</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <div class="page-hero">
+    <div class="page-tag">Documenti legali</div>
+    <h1>Privacy Policy</h1>
+    <p>Come raccogliamo, utilizziamo e proteggiamo i tuoi dati personali su JES.</p>
+    <span class="update-badge">Aggiornata: aprile 2025</span>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="doc-wrap">
+
+    <div class="doc-section">
+      <p>JES ("noi", "la Piattaforma") è un social network dedicato agli artisti. La presente Informativa descrive quali dati personali raccogliamo, perché li raccogliamo, come li utilizziamo e quali sono i tuoi diritti. L'utilizzo di JES implica l'accettazione di questa Policy.</p>
+      <div class="info-box">
+        <p><strong>Titolare del trattamento:</strong> JES — Il Social delle Emozioni. Per qualsiasi richiesta relativa alla privacy scrivi a <strong>privacy@jesocial.com</strong>.</p>
+      </div>
+    </div>
+
+    <div class="doc-section">
+      <h2><span class="num">1</span> Dati che raccogliamo</h2>
+      <p><strong>Dati di registrazione e profilo</strong></p>
+      <ul>
+        <li>Indirizzo email (usato per autenticazione e comunicazioni di servizio)</li>
+        <li>Password (conservata esclusivamente in forma cifrata — non accessibile a noi)</li>
+        <li>Username, nome visualizzato, biografia, disciplina artistica</li>
+        <li>Foto profilo caricata volontariamente</li>
+      </ul>
+
+      <p><strong>Contenuti che pubblichi</strong></p>
+      <ul>
+        <li>Post: immagini, didascalie, livello di privacy scelto, gruppi associati</li>
+        <li>Storie: immagini effimere (si eliminano automaticamente dopo 24 ore), link e menzioni inclusi</li>
+        <li>Commenti e testi nelle risposte ai sondaggi</li>
+        <li>Messaggi diretti tra utenti (peer-to-peer, non analizzati automaticamente)</li>
+      </ul>
+
+      <p><strong>Interazioni sociali</strong></p>
+      <ul>
+        <li>Mi piace e salvataggi su post altrui</li>
+        <li>Relazioni di follow (chi segui, chi ti segue)</li>
+        <li>Iscrizioni a gruppi e community</li>
+        <li>Voti nei sondaggi</li>
+      </ul>
+
+      <p><strong>Dati tecnici</strong></p>
+      <ul>
+        <li>Token di sessione conservati localmente sul tuo dispositivo tramite AsyncStorage</li>
+        <li>Timestamp di creazione e modifica dei contenuti</li>
+        <li>Stato di lettura dei messaggi (letto/non letto)</li>
+      </ul>
+
+      <p><strong>Cosa NON raccogliamo</strong></p>
+      <ul>
+        <li>Posizione geografica o GPS</li>
+        <li>Identificatori pubblicitari del dispositivo</li>
+        <li>Dati di navigazione su altri siti o app</li>
+        <li>Informazioni di pagamento (JES è gratuito)</li>
+      </ul>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">2</span> Come utilizziamo i tuoi dati</h2>
+      <ul>
+        <li><strong>Fornire il servizio:</strong> gestire il tuo account, mostrare il feed, abilitare messaggi e gruppi</li>
+        <li><strong>Notifiche:</strong> avvisarti di like, commenti, nuovi follower e menzioni</li>
+        <li><strong>Sicurezza:</strong> rilevare abusi, gestire segnalazioni, applicare provvedimenti (inclusi ban) in caso di violazioni</li>
+        <li><strong>Miglioramento della piattaforma:</strong> analisi aggregate e anonimizzate sull'utilizzo delle funzionalità</li>
+        <li><strong>Comunicazioni di servizio:</strong> email transazionali (reset password, conferma account) — niente newsletter commerciali senza consenso esplicito</li>
+      </ul>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">3</span> Condivisione con terze parti</h2>
+      <p>Non vendiamo i tuoi dati. Li condividiamo solo nei seguenti casi limitati:</p>
+      <ul>
+        <li><strong>Supabase (infrastruttura):</strong> database, autenticazione e storage delle immagini. Supabase agisce come responsabile del trattamento secondo le nostre istruzioni. I dati possono essere ospitati su server AWS in Europa o negli Stati Uniti — consulta la <a href="https://supabase.com/privacy" target="_blank" rel="noopener" style="color:var(--orange)">Privacy Policy di Supabase</a>.</li>
+        <li><strong>Google Fonts:</strong> il sito web carica font da Google, il che implica che Google riceve l'indirizzo IP del visitatore al momento del caricamento della pagina.</li>
+        <li><strong>Sponsor nel feed:</strong> i post sponsorizzati (GBS Immobiliare, GES Company, Mercury Auctions, GNG Agency) sono immagini statiche con link esterni. Cliccandoli, il tuo browser si connette al sito dello sponsor. JES non trasmette alcun dato personale agli sponsor.</li>
+        <li><strong>Autorità:</strong> in caso di obbligo legale o ordine dell'autorità competente.</li>
+      </ul>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">4</span> Conservazione dei dati</h2>
+      <ul>
+        <li><strong>Storie:</strong> eliminate automaticamente dopo 24 ore dalla pubblicazione</li>
+        <li><strong>Account e contenuti:</strong> conservati finché l'account è attivo</li>
+        <li><strong>Account eliminati:</strong> i dati vengono rimossi entro 30 giorni dalla richiesta di cancellazione, salvo obblighi legali di conservazione</li>
+        <li><strong>Messaggi diretti:</strong> conservati finché almeno uno dei due partecipanti mantiene l'account attivo</li>
+      </ul>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">5</span> I tuoi diritti (GDPR)</h2>
+      <p>Se sei residente nell'Unione Europea, hai i seguenti diritti:</p>
+      <ul>
+        <li><strong>Accesso:</strong> richiedere una copia dei tuoi dati personali</li>
+        <li><strong>Rettifica:</strong> correggere dati inesatti</li>
+        <li><strong>Cancellazione ("diritto all'oblio"):</strong> chiedere l'eliminazione del tuo account e di tutti i dati associati</li>
+        <li><strong>Portabilità:</strong> ricevere i tuoi dati in formato leggibile da una macchina</li>
+        <li><strong>Opposizione:</strong> opporti a specifici trattamenti</li>
+        <li><strong>Limitazione:</strong> richiedere che il trattamento venga sospeso in determinati casi</li>
+      </ul>
+      <p>Per esercitare questi diritti scrivi a <strong>privacy@jesocial.com</strong>. Risponderemo entro 30 giorni.</p>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">6</span> Cookie e tracciamento</h2>
+      <p>Il <strong>sito web</strong> jesocial.com non utilizza cookie di profilazione o tracker pubblicitari di terze parti. L'unico cookie tecnico presente è quello di sessione necessario al funzionamento del form di iscrizione.</p>
+      <p>L'<strong>app mobile</strong> JES utilizza AsyncStorage per conservare localmente il token di sessione sul dispositivo — non vengono salvati cookie nel browser dell'utente.</p>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">7</span> Sicurezza</h2>
+      <p>Utilizziamo misure tecniche e organizzative adeguate per proteggere i tuoi dati: crittografia in transito (HTTPS/TLS), password cifrate, accesso limitato ai dati da parte del personale, policy di Row-Level Security sul database.</p>
+      <p>Nessun sistema è infallibile. In caso di violazione che comporti un rischio per i tuoi diritti, ti notificheremo entro 72 ore come previsto dal GDPR.</p>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">8</span> Minori</h2>
+      <p>JES è riservato a persone di età pari o superiore a <strong>13 anni</strong>. Non raccogliamo consapevolmente dati di minori di 13 anni. Se vieni a conoscenza di un account di un minore, segnalacelo a privacy@jesocial.com e lo elimineremo prontamente.</p>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">9</span> Modifiche a questa Policy</h2>
+      <p>Possiamo aggiornare questa Informativa. In caso di modifiche sostanziali, avviseremo gli utenti registrati via email o tramite notifica in-app almeno 14 giorni prima dell'entrata in vigore. La data di "ultimo aggiornamento" in cima alla pagina indica sempre la versione corrente.</p>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="doc-section">
+      <h2><span class="num">10</span> Contatti</h2>
+      <p>Per qualsiasi domanda relativa a questa Informativa o al trattamento dei tuoi dati personali:</p>
+      <ul>
+        <li>Email: <strong>privacy@jesocial.com</strong></li>
+        <li>Sito: <strong>jesocial.com</strong></li>
+      </ul>
+      <p>Hai anche il diritto di proporre reclamo all'Autorità Garante per la Protezione dei Dati Personali (Garante Privacy Italia — <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" style="color:var(--orange)">garanteprivacy.it</a>).</p>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">JES</div>
+    <ul class="footer-links">
+      <li><a href="privacy.html">Privacy</a></li>
+      <li><a href="termini.html">Termini</a></li>
+      <li><a href="mailto:privacy@jesocial.com">Contatti</a></li>
+    </ul>
+    <span class="footer-copy">© 2025 JES — Il Social delle Emozioni</span>
+  </footer>
+
+  <script>
+    window.addEventListener('scroll', () => {
+      document.querySelector('nav').style.boxShadow =
+        window.scrollY > 20 ? '0 4px 24px rgba(0,0,0,0.07)' : 'none';
+    });
+  </script>
+</body>
+</html>
