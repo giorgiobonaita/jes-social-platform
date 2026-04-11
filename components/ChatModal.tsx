@@ -1,153 +1,297 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import AvatarImg from './AvatarImg';
 
-interface Message {
-  id: string; text: string; sender_id: string; created_at: string;
+const ORANGE = '#F07B1D';
+
+interface Conversation {
+  otherId:     string;
+  name:        string;
+  avatarUrl:   string | null;
+  lastMessage: string;
+  time:        string;
+  unread:      number;
 }
 
-function formatAgo(d: string): string {
-  const m = Math.floor((Date.now() - new Date(d).getTime()) / 60000);
-  if (m < 1) return 'ora'; if (m < 60) return `${m} min`; const h = Math.floor(m / 60);
-  if (h < 24) return `${h} h`; return `${Math.floor(h / 24)} g`;
+interface Message {
+  id:         string;
+  text:       string;
+  mine:       boolean;
+  time:       string;
+  created_at: string;
+}
+
+function fmtTime(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  if (diff < 86400000) return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  if (diff < 172800000) return 'Ieri';
+  return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
 }
 
 interface Props {
-  visible: boolean; onClose: () => void;
-  openWithUserId?: string; openWithName?: string; openWithAvatar?: string | null;
+  visible: boolean;
+  onClose: () => void;
+  openWithUserId?: string | null;
+  openWithName?: string;
+  openWithAvatar?: string | null;
 }
 
 export default function ChatModal({ visible, onClose, openWithUserId, openWithName, openWithAvatar }: Props) {
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [activeConvId, setActiveConvId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputText, setInputText] = useState('');
-  const [currentDbUserId, setCurrentDbUserId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<'list' | 'chat'>('list');
-  const [chatWith, setChatWith] = useState<{ id: string; name: string; avatar: string | null } | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [myId, setMyId]                     = useState<string | null>(null);
+  const [conversations, setConversations]   = useState<Conversation[]>([]);
+  const [activeId, setActiveId]             = useState<string | null>(null);
+  const [activeName, setActiveName]         = useState('');
+  const [activeAvatar, setActiveAvatar]     = useState<string | null>(null);
+  const [messages, setMessages]             = useState<Message[]>([]);
+  const [inputText, setInputText]           = useState('');
+  const [loadingConvs, setLoadingConvs]     = useState(false);
+  const [loadingMsgs, setLoadingMsgs]       = useState(false);
+  const [isSending, setIsSending]           = useState(false);
+  const listRef  = useRef<HTMLDivElement>(null);
 
+  const scrollToBottom = (animated = false) => {
+    setTimeout(() => {
+      if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+    }, 80);
+  };
+
+  // Carica utente corrente
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-      if (data) setCurrentDbUserId(data.id);
+      if (data) setMyId(data.id);
     })();
   }, []);
 
-  useEffect(() => {
-    if (!visible || !currentDbUserId) return;
-    (async () => {
-      setLoading(true);
-      const { data } = await supabase.from('conversations')
-        .select('*, participants:conversation_participants(user_id, users(id,name,username,avatar_url))')
-        .contains('participant_ids', [currentDbUserId])
-        .order('updated_at', { ascending: false }).limit(30);
-      setConversations(data || []);
-      setLoading(false);
+  const loadConversations = useCallback(async () => {
+    if (!myId) return;
+    setLoadingConvs(true);
+    const { data: msgs } = await supabase
+      .from('messages')
+      .select('id, sender_id, receiver_id, content, read, created_at')
+      .or(`sender_id.eq.${myId},receiver_id.eq.${myId}`)
+      .order('created_at', { ascending: false });
+    if (!msgs || msgs.length === 0) { setLoadingConvs(false); return; }
 
-      if (openWithUserId && openWithName) {
-        openConversationWith(openWithUserId, openWithName, openWithAvatar || null);
+    const convMap: Record<string, { msg: any; unread: number }> = {};
+    for (const m of msgs) {
+      const otherId = m.sender_id === myId ? m.receiver_id : m.sender_id;
+      if (!convMap[otherId]) {
+        convMap[otherId] = { msg: m, unread: (!m.read && m.receiver_id === myId) ? 1 : 0 };
+      } else if (!m.read && m.receiver_id === myId) {
+        convMap[otherId].unread++;
       }
-    })();
-  }, [visible, currentDbUserId, openWithUserId]);
+    }
+    const otherIds = Object.keys(convMap);
+    const { data: users } = await supabase.from('users').select('id, name, username, avatar_url').in('id', otherIds);
+    const userMap: Record<string, any> = {};
+    (users || []).forEach((u: any) => { userMap[u.id] = u; });
 
-  const openConversationWith = async (userId: string, name: string, avatar: string | null) => {
-    setChatWith({ id: userId, name, avatar });
-    setView('chat');
-    if (!currentDbUserId) return;
-    const { data } = await supabase.from('messages')
-      .select('*').or(`and(sender_id.eq.${currentDbUserId},recipient_id.eq.${userId}),and(sender_id.eq.${userId},recipient_id.eq.${currentDbUserId})`)
-      .order('created_at', { ascending: true }).limit(100);
-    setMessages(data || []);
-    setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, 100);
+    setConversations(otherIds.map(otherId => {
+      const u = userMap[otherId] || {};
+      return {
+        otherId, name: u.name || u.username || 'Utente', avatarUrl: u.avatar_url || null,
+        lastMessage: convMap[otherId].msg.content || '', time: fmtTime(convMap[otherId].msg.created_at),
+        unread: convMap[otherId].unread,
+      };
+    }));
+    setLoadingConvs(false);
+  }, [myId]);
+
+  useEffect(() => { if (visible && myId) loadConversations(); }, [visible, myId, loadConversations]);
+
+  // Auto-apri conversazione se passato utente
+  useEffect(() => {
+    if (!visible || !myId || !openWithUserId) return;
+    openConversation(openWithUserId, openWithName || 'Utente', openWithAvatar || null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, myId, openWithUserId]);
+
+  // Realtime: aggiorna lista quando arriva messaggio
+  useEffect(() => {
+    if (!myId || !visible) return;
+    const ch = supabase.channel(`convs_${myId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const m = payload.new as any;
+        if (m.receiver_id !== myId) return;
+        if (!activeId) loadConversations();
+      }).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [myId, visible, activeId, loadConversations]);
+
+  const openConversation = async (otherId: string, name: string, avatarUrl: string | null) => {
+    setActiveId(otherId);
+    setActiveName(name);
+    setActiveAvatar(avatarUrl);
+    setLoadingMsgs(true);
+    if (!myId) return;
+    const { data: msgs } = await supabase
+      .from('messages')
+      .select('id, sender_id, content, created_at, read')
+      .or(`and(sender_id.eq.${myId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${myId})`)
+      .order('created_at', { ascending: true });
+    setMessages((msgs || []).map((m: any) => ({
+      id: m.id, text: m.content, mine: m.sender_id === myId, time: fmtTime(m.created_at), created_at: m.created_at,
+    })));
+    await supabase.from('messages').update({ read: true }).eq('sender_id', otherId).eq('receiver_id', myId).eq('read', false);
+    setConversations(prev => prev.map(c => c.otherId === otherId ? { ...c, unread: 0 } : c));
+    setLoadingMsgs(false);
+    scrollToBottom();
   };
 
+  // Realtime: messaggi nella conversazione attiva
+  useEffect(() => {
+    if (!activeId || !myId) return;
+    const ch = supabase.channel(`msgs_${myId}_${activeId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+        const m = payload.new as any;
+        if (m.receiver_id !== myId || m.sender_id !== activeId) return;
+        setMessages(prev => [...prev, { id: m.id, text: m.content, mine: false, time: fmtTime(m.created_at), created_at: m.created_at }]);
+        supabase.from('messages').update({ read: true }).eq('id', m.id).then(() => {});
+        scrollToBottom(true);
+      }).subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [activeId, myId]);
+
   const sendMessage = async () => {
-    const t = inputText.trim();
-    if (!t || !currentDbUserId || !chatWith) return;
+    if (!inputText.trim() || !myId || !activeId || isSending) return;
+    setIsSending(true);
+    const text = inputText.trim();
     setInputText('');
-    const msg: Message = { id: `temp_${Date.now()}`, text: t, sender_id: currentDbUserId, created_at: new Date().toISOString() };
-    setMessages(prev => [...prev, msg]);
-    await supabase.from('messages').insert({ sender_id: currentDbUserId, recipient_id: chatWith.id, text: t });
-    setTimeout(() => { if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; }, 50);
+    try {
+      const { data: newMsg } = await supabase.from('messages').insert({
+        sender_id: myId, receiver_id: activeId, content: text,
+      }).select('id, sender_id, content, created_at').single();
+      if (newMsg) {
+        const msg: Message = { id: newMsg.id, text: newMsg.content, mine: true, time: fmtTime(newMsg.created_at), created_at: newMsg.created_at };
+        setMessages(prev => [...prev, msg]);
+        setConversations(prev => prev.map(c => c.otherId === activeId ? { ...c, lastMessage: text, time: fmtTime(newMsg.created_at) } : c));
+        scrollToBottom(true);
+      }
+    } finally { setIsSending(false); }
+  };
+
+  const handleBack = () => {
+    if (activeId) { setActiveId(null); setMessages([]); }
+    else onClose();
   };
 
   if (!visible) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" style={{ maxHeight: '90dvh', display: 'flex', flexDirection: 'column', paddingBottom: 0, padding: 0, borderRadius: '24px 24px 0 0' }} onClick={e => e.stopPropagation()}>
-        {view === 'list' ? (
-          <>
-            <div className="modal-handle" style={{ margin: '14px auto 0' }} />
-            <div className="modal-header" style={{ padding: '8px 20px 12px' }}>
-              <span className="modal-title">Messaggi</span>
-              <button className="modal-close" onClick={onClose}>
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '8px 20px 32px' }}>
-              {loading ? (
-                <div className="spinner"><div className="spin" /></div>
-              ) : conversations.length === 0 ? (
-                <p className="empty-text">Nessun messaggio</p>
-              ) : (
-                conversations.map(conv => (
-                  <div key={conv.id} className="user-row" onClick={() => openConversationWith('', '', null)}>
-                    <div className="avatar" style={{ width: 44, height: 44 }}>
-                      <svg width="22" height="22" fill="#CCC" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-                    </div>
-                    <div style={{ flex: 1, fontFamily: 'var(--font-body)', fontSize: 14, color: '#111' }}>Conversazione</div>
-                  </div>
-                ))
-              )}
-            </div>
-          </>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0' }}>
+        <button onClick={handleBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
+          <svg width="24" height="24" fill="none" stroke="#111" strokeWidth="2.2" viewBox="0 0 24 24">
+            {activeId ? <polyline points="15 18 9 12 15 6"/> : <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}
+          </svg>
+        </button>
+        {activeId ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <AvatarImg uri={activeAvatar} size={32} seed={activeName} />
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>{activeName}</span>
+          </div>
         ) : (
-          <>
-            {/* Chat view */}
-            <div className="chat-header">
-              <button onClick={() => setView('list')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#EEE', overflow: 'hidden' }}>
-                {chatWith?.avatar && <img src={chatWith.avatar} alt="" width={36} height={36} style={{ objectFit: 'cover', borderRadius: '50%' }} />}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#111' }}>{chatWith?.name}</div>
-              </div>
-              <button className="modal-close" onClick={onClose}>
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
-
-            <div ref={scrollRef} className="chat-messages">
-              {messages.map(m => (
-                <div key={m.id} className={`msg-bubble${m.sender_id === currentDbUserId ? ' mine' : ' theirs'}`}>
-                  {m.text}
-                </div>
-              ))}
-            </div>
-
-            <div className="chat-input-row">
-              <input
-                className="comment-input"
-                placeholder="Scrivi un messaggio..."
-                value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && sendMessage()}
-                style={{ flex: 1 }}
-              />
-              <button className="comment-send-btn" onClick={sendMessage} disabled={!inputText.trim()} style={{ opacity: inputText.trim() ? 1 : 0.4 }}>
-                <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              </button>
-            </div>
-          </>
+          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>Messaggi</span>
         )}
+        <div style={{ width: 24 }} />
       </div>
+
+      {/* Body */}
+      {activeId ? (
+        /* Chat thread */
+        <>
+          <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 8px' }}>
+            {loadingMsgs ? (
+              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}><div className="spin" /></div>
+            ) : messages.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>Inizia la conversazione</span>
+              </div>
+            ) : (
+              messages.map((item, index) => {
+                const next = messages[index + 1];
+                const isLastInGroup = !next || next.mine !== item.mine;
+                return (
+                  <div key={item.id} style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: isLastInGroup ? 12 : 3, justifyContent: item.mine ? 'flex-end' : 'flex-start' }}>
+                    {!item.mine && (
+                      isLastInGroup
+                        ? <AvatarImg uri={activeAvatar} size={28} seed={activeName} />
+                        : <div style={{ width: 28, flexShrink: 0 }} />
+                    )}
+                    <div>
+                      <div style={{ maxWidth: '72vw', borderRadius: 18, borderBottomRightRadius: item.mine ? 4 : 18, borderBottomLeftRadius: item.mine ? 18 : 4, padding: '10px 14px', backgroundColor: item.mine ? ORANGE : '#F2F2F2' }}>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: item.mine ? '#fff' : '#111', lineHeight: '20px' }}>{item.text}</span>
+                      </div>
+                      {isLastInGroup && (
+                        <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: '#AAAAAA', marginTop: 3, paddingLeft: item.mine ? 0 : 4, paddingRight: item.mine ? 4 : 0, textAlign: item.mine ? 'right' : 'left' }}>{item.time}</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          {/* Input bar */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, padding: '8px 16px 16px', borderTop: '1px solid #F0F0F0' }}>
+            <textarea
+              style={{ flex: 1, backgroundColor: '#F5F5F5', borderRadius: 22, padding: '10px 16px', fontFamily: 'var(--font-body)', fontSize: 14, color: '#111', border: 'none', outline: 'none', resize: 'none', maxHeight: 100, lineHeight: '20px' }}
+              placeholder="Scrivi un messaggio…"
+              value={inputText}
+              onChange={e => setInputText(e.target.value)}
+              rows={1}
+              maxLength={500}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!inputText.trim() || isSending}
+              style={{ width: 40, height: 40, borderRadius: '50%', backgroundColor: inputText.trim() && !isSending ? ORANGE : '#D0D0D0', border: 'none', cursor: inputText.trim() && !isSending ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background .15s' }}>
+              <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+          </div>
+        </>
+      ) : (
+        /* Conversation list */
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {loadingConvs ? (
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}><div className="spin" /></div>
+          ) : conversations.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 60, gap: 10 }}>
+              <svg width="48" height="48" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>Nessun messaggio ancora</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAAAAA', marginTop: 4 }}>Cerca un utente e inizia a chattare</span>
+            </div>
+          ) : (
+            conversations.map(item => (
+              <div key={item.otherId} onClick={() => openConversation(item.otherId, item.name, item.avatarUrl)}
+                style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }}>
+                <div style={{ position: 'relative', marginRight: 14 }}>
+                  <AvatarImg uri={item.avatarUrl} size={52} seed={item.name} />
+                  {item.unread > 0 && (
+                    <div style={{ position: 'absolute', top: -2, right: -2, backgroundColor: ORANGE, borderRadius: 9, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 10, color: '#fff' }}>{item.unread}</span>
+                    </div>
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: item.unread > 0 ? 700 : 600, fontSize: 15, color: '#111' }}>{item.name}</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAAAAA' }}>{item.time}</span>
+                  </div>
+                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: item.unread > 0 ? 600 : 400, fontSize: 13, color: item.unread > 0 ? '#111' : '#888', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>{item.lastMessage}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

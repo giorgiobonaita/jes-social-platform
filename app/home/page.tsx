@@ -15,13 +15,19 @@ import NotificationsModal from '@/components/NotificationsModal';
 import ProfileModal from '@/components/ProfileModal';
 import ChatModal from '@/components/ChatModal';
 import GroupsModal from '@/components/GroupsModal';
+import AvatarImg from '@/components/AvatarImg';
 
 const ORANGE = '#F07B1D';
 
+const GNG_MAIL = 'mailto:mogildeag74@gmail.com';
+
 const ADV_SPONSORS = [
-  { imageUrl: 'https://cunftokrdqvprepcnlum.supabase.co/storage/v1/object/public/media/adv/adv1.png', url: 'https://www.gbsrl-studioimmobiliare.it/' },
-  { imageUrl: 'https://cunftokrdqvprepcnlum.supabase.co/storage/v1/object/public/media/adv/adv2.png', url: 'https://gescompany.it/' },
-  { imageUrl: 'https://cunftokrdqvprepcnlum.supabase.co/storage/v1/object/public/media/adv/adv3.png', url: 'https://www.mercury-auctions.com/' },
+  { imageUrl: '/adv1.png', url: 'https://www.gbsrl-studioimmobiliare.it/' },
+  { imageUrl: '/adv2.png', url: 'https://gescompany.it/' },
+  { imageUrl: '/adv3.png', url: 'https://www.mercury-auctions.com/it_it/index/' },
+  { imageUrl: '/adv-gng1.png', url: GNG_MAIL },
+  { imageUrl: '/adv-gng2.png', url: GNG_MAIL },
+  { imageUrl: '/adv-gng3.png', url: GNG_MAIL },
 ];
 
 function formatTimeAgo(isoDate: string): string {
@@ -63,10 +69,7 @@ function StoryRing({ id, username, avatarUrl, isCustom, hasUnwatched, onPress }:
       <div style={{ position: 'relative' }}>
         <div className={`story-ring-border${(!hasUnwatched && !isCustom) ? ' no-story' : ''}`}>
           <div className="story-ring-inner">
-            {avatarUrl
-              ? <img src={avatarUrl} alt={username} style={{ objectFit: 'cover', width: '100%', height: '100%', borderRadius: '50%' }} />
-              : <svg width="28" height="28" fill="#CCC" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-            }
+            <AvatarImg uri={avatarUrl} size={56} seed={username} style={{ borderRadius: '50%', width: '100%', height: '100%' }} />
           </div>
         </div>
         {isCustom && (
@@ -188,10 +191,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
         {/* Header */}
         <div className="pc-header">
           <div className="pc-avatar-ring" onClick={() => onUserPress(post.userId)} style={{ cursor: 'pointer' }}>
-            {post.author?.avatarUrl
-              ? <img src={post.author.avatarUrl} alt={post.author.username} className="pc-avatar-img" />
-              : <svg width="20" height="20" fill="#CCC" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-            }
+            <AvatarImg uri={post.author?.avatarUrl} size={40} seed={post.author?.username} className="pc-avatar-img" style={{ borderRadius: '50%' }} />
           </div>
           <div className="pc-meta" onClick={() => onUserPress(post.userId)} style={{ cursor: 'pointer' }}>
             <div className="pc-username">
@@ -291,10 +291,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
         {/* Quick comment bar */}
         <div className="pc-quick-comment" onClick={onComment}>
           <div className="pc-quick-avatar">
-            {currentUserAvatar
-              ? <img src={currentUserAvatar} alt="tu" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              : <svg width="14" height="14" fill="#CCC" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-            }
+            <AvatarImg uri={currentUserAvatar} size={28} seed="tu" style={{ borderRadius: '50%' }} />
           </div>
           <div className="pc-quick-input">
             <span className="pc-quick-placeholder">Aggiungi un commento...</span>
@@ -361,8 +358,11 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
 
 // ── ADV Card ──────────────────────────────────────────────────────────────────
 function AdvCard({ imageUrl, url }: { imageUrl: string; url: string }) {
+  const handleClick = () => {
+    if (url.startsWith('mailto:')) { window.location.href = url; } else { window.open(url, '_blank'); }
+  };
   return (
-    <div className="adv-card" style={{ cursor: 'pointer' }} onClick={() => window.open(url, '_blank')}>
+    <div className="adv-card" style={{ cursor: 'pointer' }} onClick={handleClick}>
       <div style={{ display: 'flex' }}>
         <div className="adv-badge">
           <svg width="11" height="11" fill="none" stroke="#888" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>

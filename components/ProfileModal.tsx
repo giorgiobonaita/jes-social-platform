@@ -1,9 +1,39 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import AvatarImg from './AvatarImg';
+import AdminPanelModal from './AdminPanelModal';
+
+const ORANGE = '#F07B1D';
+const JES_OFFICIAL_USERNAME = 'jes_official';
+
+const LINK_RE = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.(?:com|it|net|org|io|co|uk|de|fr|es|eu|app|dev|me|info|biz|edu)(?:\/[^\s]*)?)/g;
+
+function parseLinks(text: string): { text: string; isUrl: boolean }[] {
+  const result: { text: string; isUrl: boolean }[] = [];
+  let lastIndex = 0; let match;
+  const re = new RegExp(LINK_RE.source, 'g');
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > lastIndex) result.push({ text: text.slice(lastIndex, match.index), isUrl: false });
+    result.push({ text: match[0], isUrl: true });
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) result.push({ text: text.slice(lastIndex), isUrl: false });
+  return result;
+}
+
+function formatNum(n: number) { return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n); }
+
+const SETTINGS = [
+  { id: 's1', icon: '👤', label: 'Modifica profilo' },
+  { id: 's2', icon: '🔔', label: 'Notifiche' },
+  { id: 's5', icon: '❓', label: 'Assistenza' },
+];
 
 interface Props {
-  visible: boolean; onClose: () => void;
+  visible: boolean;
+  onClose: () => void;
   targetUserId?: string;
   onMessagePress: (userId: string, name: string, avatar: string | null) => void;
   onRequestViewUser: (userId: string) => void;
@@ -11,151 +41,436 @@ interface Props {
 }
 
 export default function ProfileModal({ visible, onClose, targetUserId, onMessagePress, onRequestViewUser, onPostAsJes }: Props) {
-  const [profile, setProfile] = useState<any>(null);
-  const [posts, setPosts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentDbUserId, setCurrentDbUserId] = useState<string | null>(null);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followsCount, setFollowsCount] = useState(0);
-  const [followersCount, setFollowersCount] = useState(0);
+  const router = useRouter();
+  const isOwnProfile = !targetUserId;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    (async () => {
+  const [activeTab, setActiveTab]           = useState<'posts' | 'saved'>('posts');
+  const [showSettings, setShowSettings]     = useState(false);
+  const [settingsScreen, setSettingsScreen] = useState<null | 'notifiche'>( null);
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [gridViewerUrl, setGridViewerUrl]   = useState<string | null>(null);
+
+  const [profile, setProfile]               = useState<any>(null);
+  const [gridPosts, setGridPosts]           = useState<{ id: string; url: string }[]>([]);
+  const [savedPosts, setSavedPosts]         = useState<{ id: string; url: string }[]>([]);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [isFollowing, setIsFollowing]       = useState(false);
+  const [myDbId, setMyDbId]                 = useState<string | null>(null);
+  const [myRole, setMyRole]                 = useState<string | null>(null);
+  const [loading, setLoading]               = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Edit profile
+  const [editName, setEditName]         = useState('');
+  const [editUsername, setEditUsername] = useState('');
+  const [editBio, setEditBio]           = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Notifications settings (UI only)
+  const [notifLike, setNotifLike]           = useState(true);
+  const [notifFollower, setNotifFollower]   = useState(true);
+  const [notifMessaggi, setNotifMessaggi]   = useState(true);
+  const [notifStorie, setNotifStorie]       = useState(true);
+  const [notifMenzioni, setNotifMenzioni]   = useState(true);
+
+  const loadProfile = useCallback(async () => {
+    setLoading(true);
+    try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-      if (data) setCurrentDbUserId(data.id);
-    })();
-  }, []);
+      let dbMyId: string | null = myDbId;
+      if (!dbMyId) {
+        const { data: me } = await supabase.from('users').select('id, role').eq('auth_id', user.id).single();
+        dbMyId = me?.id ?? null;
+        setMyDbId(dbMyId);
+        setMyRole(me?.role ?? null);
+      }
+      const userId = targetUserId ?? dbMyId;
+      if (!userId) return;
 
-  useEffect(() => {
-    if (!visible) return;
-    setLoading(true);
-    (async () => {
-      const uid = targetUserId || currentDbUserId;
-      if (!uid) { setLoading(false); return; }
+      const { data } = await supabase.from('users').select('id, name, username, bio, avatar_url, discipline, role').eq('id', userId).single();
+      if (!data) return;
+      setProfile(data);
+      if (isOwnProfile) { setEditName(data.name || ''); setEditUsername(data.username || ''); setEditBio(data.bio || ''); }
 
-      const [{ data: u }, { data: p }, { count: fc }, { count: flc }, { data: followData }] = await Promise.all([
-        supabase.from('users').select('*').eq('id', uid).single(),
-        supabase.from('posts').select('id, image_urls, image_url').eq('user_id', uid).order('created_at', { ascending: false }).limit(30),
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('follower_id', uid),
-        supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', uid),
-        currentDbUserId ? supabase.from('follows').select('id').eq('follower_id', currentDbUserId).eq('following_id', uid).maybeSingle() : Promise.resolve({ data: null }),
+      const { data: posts } = await supabase.from('posts').select('id, image_url, image_urls').eq('user_id', data.id).order('created_at', { ascending: false }).limit(30);
+      if (posts) setGridPosts(posts.map((p: any) => ({ id: p.id, url: (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url || '' })).filter((p: any) => p.url));
+
+      if (isOwnProfile) {
+        const { data: saves } = await supabase.from('saves').select('post_id').eq('user_id', data.id).order('created_at', { ascending: false }).limit(30);
+        if (saves && saves.length > 0) {
+          const pids = saves.map((s: any) => s.post_id).filter(Boolean);
+          const { data: postsData } = await supabase.from('posts').select('id, image_url, image_urls').in('id', pids);
+          const pm: Record<string, any> = {};
+          (postsData || []).forEach((p: any) => { pm[p.id] = p; });
+          setSavedPosts(saves.map((s: any) => { const p = pm[s.post_id]; if (!p) return null; return { id: p.id, url: (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url || '' }; }).filter((p: any) => p && p.url));
+        }
+      }
+
+      const [{ count: frs }, { count: fng }] = await Promise.all([
+        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', data.id),
+        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', data.id),
       ]);
+      setFollowersCount(frs ?? 0);
+      setFollowingCount(fng ?? 0);
 
-      setProfile(u);
-      setPosts(p || []);
-      setFollowsCount(fc || 0);
-      setFollowersCount(flc || 0);
-      setIsFollowing(!!followData);
-      setLoading(false);
-    })();
-  }, [visible, targetUserId, currentDbUserId]);
+      if (!isOwnProfile && dbMyId) {
+        const { data: fr } = await supabase.from('follows').select('id').eq('follower_id', dbMyId).eq('following_id', data.id).maybeSingle();
+        setIsFollowing(!!fr);
+      }
+    } finally { setLoading(false); }
+  }, [targetUserId, isOwnProfile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (visible) loadProfile(); }, [visible, targetUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFollow = async () => {
-    if (!currentDbUserId || !profile) return;
+    if (!myDbId || !profile) return;
     if (isFollowing) {
-      await supabase.from('follows').delete().eq('follower_id', currentDbUserId).eq('following_id', profile.id);
-      setIsFollowing(false); setFollowersCount(p => p - 1);
+      setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1));
+      await supabase.from('follows').delete().eq('follower_id', myDbId).eq('following_id', profile.id);
     } else {
-      await supabase.from('follows').insert({ follower_id: currentDbUserId, following_id: profile.id });
-      setIsFollowing(true); setFollowersCount(p => p + 1);
+      setIsFollowing(true); setFollowersCount(c => c + 1);
+      await supabase.from('follows').insert({ follower_id: myDbId, following_id: profile.id });
+      await supabase.from('notifications').insert({ user_id: profile.id, sender_id: myDbId, type: 'follow' });
     }
   };
 
-  const isSelf = !targetUserId || targetUserId === currentDbUserId;
-  const isOfficial = profile?.role === 'official' || profile?.role === 'admin';
+  const handlePickAvatar = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profile) return;
+    setUploadingAvatar(true);
+    (async () => {
+      try {
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+        const filePath = `avatars/${profile.id}_${Date.now()}.${ext}`;
+        const { error } = await supabase.storage.from('media').upload(filePath, file, { contentType: file.type, upsert: true });
+        if (error) throw error;
+        const { data } = supabase.storage.from('media').getPublicUrl(filePath);
+        const avatarUrl = data.publicUrl + `?t=${Date.now()}`;
+        await supabase.from('users').update({ avatar_url: avatarUrl }).eq('id', profile.id);
+        await loadProfile();
+      } catch (e) { alert('Errore caricamento foto'); }
+      finally { setUploadingAvatar(false); }
+    })();
+  };
+
+  const saveProfile = async () => {
+    if (!profile || savingProfile) return;
+    setSavingProfile(true);
+    const { error } = await supabase.from('users').update({ name: editName.trim(), username: editUsername.trim().replace('@', ''), bio: editBio.trim() }).eq('id', profile.id);
+    setSavingProfile(false);
+    if (error) { alert(error.message); return; }
+    await loadProfile();
+    setShowEditProfile(false);
+  };
+
+  const handleSignOut = async () => {
+    if (!confirm('Sei sicuro di voler uscire?')) return;
+    await supabase.auth.signOut();
+    onClose();
+    setTimeout(() => router.replace('/'), 300);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm('Sei ASSOLUTAMENTE sicuro di voler cancellare il tuo account? Azione irreversibile.')) return;
+    if (!profile?.id) return;
+    await supabase.from('users').delete().eq('id', profile.id);
+    await supabase.auth.signOut();
+    onClose();
+    setTimeout(() => router.replace('/'), 300);
+  };
 
   if (!visible) return null;
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-sheet" style={{ maxHeight: '92dvh', display: 'flex', flexDirection: 'column', paddingBottom: 0, padding: 0, borderRadius: '24px 24px 0 0' }} onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 0' }}>
-          <button className="modal-close" onClick={onClose}>
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-          </button>
-          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: '#111' }}>
-            {profile ? `@${profile.username}` : 'Profilo'}
-          </span>
-          <div style={{ width: 36 }} />
-        </div>
+  const isJes = profile?.username === JES_OFFICIAL_USERNAME;
+  const displayFollowers = isJes ? Math.max(followersCount, 1300) : followersCount;
 
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 32 }}>
-          {loading ? (
-            <div className="spinner" style={{ marginTop: 60 }}><div className="spin" /></div>
-          ) : !profile ? (
-            <p className="empty-text">Profilo non trovato</p>
+  // ── Edit Profile Screen ───────────────────────────────────────────────────────
+  if (showEditProfile) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column', maxWidth: 430, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0' }}>
+          <button onClick={() => setShowEditProfile(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, color: '#888' }}>Annulla</button>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: '#111' }}>Modifica profilo</span>
+          <button onClick={saveProfile} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: ORANGE }}>
+            {savingProfile ? <div className="spin" style={{ width: 18, height: 18 }} /> : 'Salva'}
+          </button>
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 60px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', position: 'relative' }}>
+            <div style={{ position: 'relative' }}>
+              <AvatarImg uri={profile?.avatar_url} size={90} seed={profile?.username} style={{ border: `3px solid ${ORANGE}` }} />
+              <button onClick={() => fileInputRef.current?.click()} style={{ position: 'absolute', bottom: 0, right: 0, width: 30, height: 30, borderRadius: '50%', background: ORANGE, border: '2px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {uploadingAvatar ? <div className="spin" style={{ width: 14, height: 14, borderWidth: 2 }} /> : <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5zM20 4h-3.17L15 2H9L7.17 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg>}
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePickAvatar} />
+            </div>
+          </div>
+          {[
+            { label: 'Nome completo', value: editName, setter: setEditName, placeholder: 'Il tuo nome' },
+            { label: 'Username', value: editUsername, setter: setEditUsername, placeholder: '@username' },
+          ].map(f => (
+            <div key={f.label} style={{ marginBottom: 20 }}>
+              <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>{f.label}</label>
+              <input value={f.value} onChange={e => f.setter(e.target.value)} placeholder={f.placeholder} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', borderBottom: '1.5px solid #EEE', paddingBottom: 10, paddingTop: 10, border: 'none', borderBottom: '1.5px solid #EEE', outline: 'none', background: 'transparent', boxSizing: 'border-box' } as any} />
+            </div>
+          ))}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>Bio</label>
+            <textarea value={editBio} onChange={e => setEditBio(e.target.value)} placeholder="Raccontati in poche parole..." rows={3} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', borderBottom: '1.5px solid #EEE', outline: 'none', background: 'transparent', resize: 'none', boxSizing: 'border-box', paddingTop: 10, paddingBottom: 10 } as any} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Settings Screen ───────────────────────────────────────────────────────────
+  if (showSettings) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column', maxWidth: 430, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0' }}>
+          <button onClick={() => { setSettingsScreen(null); setShowSettings(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
+            <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>{settingsScreen === 'notifiche' ? 'Notifiche' : 'Impostazioni'}</span>
+          <div style={{ width: 26 }} />
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 40 }}>
+          {settingsScreen === 'notifiche' ? (
+            <>
+              <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>PUSH NOTIFICATION</p>
+              {[
+                { label: 'Like e commenti', value: notifLike, setter: setNotifLike },
+                { label: 'Nuovi follower', value: notifFollower, setter: setNotifFollower },
+                { label: 'Messaggi diretti', value: notifMessaggi, setter: setNotifMessaggi },
+                { label: 'Storie', value: notifStorie, setter: setNotifStorie },
+                { label: 'Menzioni', value: notifMenzioni, setter: setNotifMenzioni },
+              ].map(row => (
+                <div key={row.label} style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #F8F8F8' }}>
+                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>{row.label}</span>
+                  <div onClick={() => row.setter(v => !v)} style={{ width: 50, height: 28, borderRadius: 14, background: row.value ? ORANGE : '#E0E0E0', cursor: 'pointer', position: 'relative', transition: 'background .2s', flexShrink: 0 }}>
+                    <div style={{ position: 'absolute', top: 3, left: row.value ? 24 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', transition: 'left .2s', boxShadow: '0 1px 4px rgba(0,0,0,.2)' }} />
+                  </div>
+                </div>
+              ))}
+            </>
           ) : (
             <>
-              {/* Avatar + info */}
-              <div style={{ padding: '20px 20px 0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-                  <div style={{ width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', background: '#EEE', flexShrink: 0 }}>
-                    {profile.avatar_url
-                      ? <img src={profile.avatar_url} alt={profile.name} width={72} height={72} style={{ objectFit: 'cover', borderRadius: '50%' }} />
-                      : <svg width="36" height="36" fill="#CCC" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-                    }
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: '#111', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {profile.name || profile.username}
-                      {isOfficial && <span style={{ color: '#007AFF' }}>✓</span>}
+              {SETTINGS.map(item => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }}
+                  onClick={() => {
+                    if (item.id === 's1') { setShowSettings(false); setTimeout(() => setShowEditProfile(true), 200); }
+                    else if (item.id === 's2') { setSettingsScreen('notifiche'); }
+                    else if (item.id === 's5') { window.location.href = 'mailto:giorgio.bonaita.gb@gmail.com'; }
+                  }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14, fontSize: 18 }}>{item.icon}</div>
+                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>{item.label}</span>
+                  <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+              ))}
+              {myRole === 'admin' && (
+                <>
+                  <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>SEZIONE ADMIN</p>
+                  {[
+                    { icon: '🛡️', label: 'Pannello Admin', action: () => { setShowAdminPanel(true); } },
+                    { icon: '⭐', label: 'Profilo ufficiale JES', action: async () => {
+                      const { data } = await supabase.from('users').select('id').eq('username', JES_OFFICIAL_USERNAME).maybeSingle();
+                      if (data) { setShowSettings(false); onRequestViewUser(data.id); } else alert(`Crea prima l'utente "${JES_OFFICIAL_USERNAME}" in Supabase.`);
+                    }},
+                  ].map(item => (
+                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={item.action}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14, fontSize: 18 }}>{item.icon}</div>
+                      <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>{item.label}</span>
+                      <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#888' }}>
-                      {profile.discipline || 'Artista'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stats */}
-                <div className="profile-stats" style={{ marginBottom: 16 }}>
-                  <div className="stat-item"><div className="stat-num">{posts.length}</div><div className="stat-label">Post</div></div>
-                  <div className="stat-item"><div className="stat-num">{followersCount}</div><div className="stat-label">Follower</div></div>
-                  <div className="stat-item"><div className="stat-num">{followsCount}</div><div className="stat-label">Seguiti</div></div>
-                </div>
-
-                {profile.bio && (
-                  <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#444', lineHeight: '20px', marginBottom: 16 }}>{profile.bio}</p>
-                )}
-
-                {/* Buttons */}
-                {!isSelf && (
-                  <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-                    <button className={`btn-primary${isFollowing ? '' : ''}`}
-                      onClick={toggleFollow}
-                      style={{ background: isFollowing ? '#F0F0F0' : '#F07B1D', color: isFollowing ? '#888' : '#FFF', height: 40, fontSize: 14, borderRadius: 10 }}>
-                      {isFollowing ? 'Che segui' : 'Segui'}
-                    </button>
-                    <button className="btn-secondary"
-                      style={{ height: 40, fontSize: 14, borderRadius: 10 }}
-                      onClick={() => { onMessagePress(profile.id, profile.name || profile.username, profile.avatar_url); onClose(); }}>
-                      Messaggio
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Grid posts */}
-              {posts.length > 0 && (
-                <div className="profile-grid">
-                  {posts.map(p => {
-                    const img = (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url;
-                    return img ? (
-                      <img key={p.id} className="profile-grid-img" src={img} alt="" loading="lazy" />
-                    ) : (
-                      <div key={p.id} style={{ background: '#F0F0F0', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg width="24" height="24" fill="#CCC" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
-                      </div>
-                    );
-                  })}
-                </div>
+                  ))}
+                </>
               )}
+              <div style={{ marginTop: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={handleSignOut}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14, fontSize: 18 }}>🚪</div>
+                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#FF3B30' }}>Esci</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={handleDeleteAccount}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14, fontSize: 18 }}>🗑️</div>
+                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#FF3B30' }}>Elimina Account</span>
+                </div>
+              </div>
             </>
           )}
         </div>
+        <AdminPanelModal visible={showAdminPanel} onClose={() => setShowAdminPanel(false)} />
       </div>
+    );
+  }
+
+  // ── Main Profile Screen ───────────────────────────────────────────────────────
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column', maxWidth: 430, margin: '0 auto', overflowY: 'auto' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
+          <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>
+          {isOwnProfile ? 'Profilo' : profile?.username ? `@${profile.username}` : 'Profilo'}
+        </span>
+        {isOwnProfile ? (
+          <button onClick={() => { setSettingsScreen(null); setShowSettings(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+        ) : profile?.username !== JES_OFFICIAL_USERNAME ? (
+          <button onClick={toggleFollow} style={{ borderWidth: 1.5, borderStyle: 'solid', borderColor: isFollowing ? '#E0E0E0' : ORANGE, borderRadius: 20, padding: '6px 16px', background: isFollowing ? ORANGE : 'transparent', cursor: 'pointer' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: isFollowing ? '#fff' : ORANGE }}>{isFollowing ? 'Seguito' : 'Segui'}</span>
+          </button>
+        ) : <div style={{ width: 26 }} />}
+      </div>
+
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 60 }}><div className="spin" /></div>
+      ) : !profile ? (
+        <p style={{ textAlign: 'center', padding: 40, color: '#AAA', fontFamily: 'var(--font-body)' }}>Profilo non trovato</p>
+      ) : (
+        <>
+          {/* Avatar + stats */}
+          <div style={{ display: 'flex', alignItems: 'center', padding: '24px 20px 16px', gap: 20 }}>
+            <div style={{ position: 'relative' }}>
+              {isJes ? (
+                <div onClick={() => myRole === 'admin' && fileInputRef.current?.click()} style={{ cursor: myRole === 'admin' ? 'pointer' : 'default', position: 'relative' }}>
+                  <AvatarImg uri={profile.avatar_url || '/icon.png'} size={88} seed={profile.username} style={{ border: `3px solid ${ORANGE}` }} />
+                  {myRole === 'admin' && <div style={{ position: 'absolute', bottom: 2, right: 2, background: ORANGE, borderRadius: 12, padding: 5, display: 'flex' }}><svg width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 018.5 12 3.5 3.5 0 0112 8.5a3.5 3.5 0 013.5 3.5 3.5 3.5 0 01-3.5 3.5zM20 4h-3.17L15 2H9L7.17 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2z"/></svg></div>}
+                  <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePickAvatar} />
+                </div>
+              ) : (
+                <AvatarImg uri={profile.avatar_url} size={88} seed={profile.username} style={{ border: `3px solid ${ORANGE}` }} />
+              )}
+            </div>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'space-around', alignItems: 'center' }}>
+              {[
+                { num: gridPosts.length, label: 'Post' },
+                { num: formatNum(displayFollowers), label: 'Follower' },
+                { num: followingCount, label: 'Seguiti' },
+              ].map((s, i) => (
+                <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                  {i > 0 && <div style={{ width: 1, height: 32, background: '#EEE', marginRight: 0 }} />}
+                  <div style={{ textAlign: 'center', paddingLeft: i > 0 ? 16 : 0 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, color: '#111' }}>{s.num}</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888', marginTop: 1 }}>{s.label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Name + bio */}
+          <div style={{ paddingLeft: 20, paddingRight: 20, paddingBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>{profile.name || 'Utente'}</span>
+              {profile.username === JES_OFFICIAL_USERNAME && <svg width="20" height="20" fill={ORANGE} viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>}
+            </div>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888', marginTop: 1 }}>@{profile.username || ''}</p>
+            {profile.bio ? (
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#444', lineHeight: '19px', marginTop: 8 }}>
+                {parseLinks(profile.bio).map((part, i) =>
+                  part.isUrl ? <a key={i} href={part.text.startsWith('http') ? part.text : `https://${part.text}`} target="_blank" rel="noreferrer" style={{ color: ORANGE, textDecoration: 'underline' }}>{part.text}</a> : <span key={i}>{part.text}</span>
+                )}
+              </p>
+            ) : null}
+            {profile.discipline ? (
+              <div style={{ marginTop: 10 }}>
+                <span style={{ background: '#FFF0E6', borderRadius: 20, padding: '5px 12px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: ORANGE }}>{profile.discipline}</span>
+              </div>
+            ) : null}
+          </div>
+
+          {/* Action buttons */}
+          {isOwnProfile && (
+            <div style={{ display: 'flex', gap: 8, padding: '0 20px 16px' }}>
+              <button onClick={() => setShowEditProfile(true)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, border: '1.5px solid #E0E0E0', padding: '10px 0', background: 'none', cursor: 'pointer' }}>
+                <svg width="16" height="16" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>Modifica profilo</span>
+              </button>
+              <button onClick={() => alert(`jes.app/@${profile.username || ''}`)} style={{ width: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, border: '1.5px solid #E0E0E0', background: 'none', cursor: 'pointer' }}>
+                <svg width="18" height="18" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </button>
+            </div>
+          )}
+          {!isOwnProfile && profile.username !== JES_OFFICIAL_USERNAME && (
+            <div style={{ padding: '0 20px 16px' }}>
+              <button onClick={() => { onMessagePress(profile.id, profile.name || profile.username, profile.avatar_url); onClose(); }} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, border: '1.5px solid #E0E0E0', padding: '10px 0', background: 'none', cursor: 'pointer' }}>
+                <svg width="16" height="16" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>Scrivi messaggio</span>
+              </button>
+            </div>
+          )}
+          {!isOwnProfile && isJes && myRole === 'admin' && (
+            <div style={{ padding: '0 20px 16px' }}>
+              <button onClick={() => {
+                const type = confirm('Pubblica come JES\n\nOK = Post\nAnnulla = Storia') ? 'post' : 'story';
+                onPostAsJes(profile.id, type);
+              }} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, border: `1.5px solid ${ORANGE}`, padding: '10px 0', background: 'none', cursor: 'pointer' }}>
+                <svg width="16" height="16" fill="none" stroke={ORANGE} strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: ORANGE }}>Pubblica come JES</span>
+              </button>
+            </div>
+          )}
+
+          {/* Tab bar */}
+          <div style={{ display: 'flex', borderTop: '1px solid #F0F0F0', borderBottom: '1px solid #F0F0F0' }}>
+            {(['posts', ...(isOwnProfile ? ['saved'] : [])] as string[]).map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab as any)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 0', background: 'none', border: 'none', cursor: 'pointer', borderBottom: activeTab === tab ? `2px solid ${ORANGE}` : '2px solid transparent' }}>
+                {tab === 'posts'
+                  ? <svg width="22" height="22" fill="none" stroke={activeTab === tab ? ORANGE : '#AAA'} strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  : <svg width="22" height="22" fill="none" stroke={activeTab === tab ? ORANGE : '#AAA'} strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                }
+              </button>
+            ))}
+          </div>
+
+          {/* Grid */}
+          {activeTab === 'posts' ? (
+            gridPosts.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 60, gap: 12 }}>
+                <svg width="48" height="48" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAA' }}>Nessun post ancora</span>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+                {gridPosts.map(post => (
+                  <img key={post.id} src={post.url} alt="" loading="lazy" onClick={() => setGridViewerUrl(post.url)} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', cursor: 'pointer', display: 'block' }} />
+                ))}
+              </div>
+            )
+          ) : (
+            savedPosts.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 60, gap: 12 }}>
+                <svg width="48" height="48" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAA' }}>Nessun contenuto salvato</span>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+                {savedPosts.map(post => (
+                  <img key={post.id} src={post.url} alt="" loading="lazy" onClick={() => setGridViewerUrl(post.url)} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', cursor: 'pointer', display: 'block' }} />
+                ))}
+              </div>
+            )
+          )}
+          <div style={{ height: 40 }} />
+        </>
+      )}
+
+      {/* Image viewer overlay */}
+      {gridViewerUrl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setGridViewerUrl(null)}>
+          <button onClick={() => setGridViewerUrl(null)} style={{ position: 'absolute', top: 52, right: 20, background: 'none', border: 'none', cursor: 'pointer', color: '#fff', display: 'flex' }}>
+            <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <img src={gridViewerUrl} alt="" style={{ maxWidth: '100vw', maxHeight: '90vh', objectFit: 'contain' }} />
+        </div>
+      )}
     </div>
   );
 }
