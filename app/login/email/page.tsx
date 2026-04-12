@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 
 export default function EmailLoginPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,18 +23,18 @@ export default function EmailLoginPage() {
         email: email.trim(),
         password,
       });
-      if (authError) { setError('Email o password errati.'); return; }
+      if (authError) { setError(t('wrong_credentials')); return; }
 
       const { data: userData } = await supabase
         .from('users').select('is_banned').eq('auth_id', data.user.id).maybeSingle();
       if (userData?.is_banned) {
         await supabase.auth.signOut();
-        setError('Account sospeso. Contatta il supporto.');
+        setError(t('account_suspended'));
         return;
       }
       router.replace('/home');
     } catch {
-      setError('Qualcosa è andato storto. Riprova.');
+      setError(t('error_generic'));
     } finally {
       setLoading(false);
     }
@@ -47,23 +49,23 @@ export default function EmailLoginPage() {
       </div>
 
       <div className="form-scroll">
-        <h1 className="form-title">Log in</h1>
+        <h1 className="form-title">{t('login_title')}</h1>
 
         <div className="input-group">
-          <label className="input-label">Email address</label>
+          <label className="input-label">{t('email_label')}</label>
           <input
             className="input-field"
-            type="email" placeholder="La tua email"
+            type="email" placeholder={t('email_placeholder')}
             value={email} onChange={e => setEmail(e.target.value)}
             autoComplete="email"
           />
         </div>
 
         <div className="input-group">
-          <label className="input-label">Password</label>
+          <label className="input-label">{t('password_label')}</label>
           <input
             className="input-field"
-            type="password" placeholder="La tua password"
+            type="password" placeholder={t('password_placeholder')}
             value={password} onChange={e => setPassword(e.target.value)}
             autoComplete="current-password"
             onKeyDown={e => e.key === 'Enter' && handleLogin()}
@@ -71,13 +73,13 @@ export default function EmailLoginPage() {
         </div>
 
         <button className="forgot-link" onClick={() => router.push('/forgot-password')}>
-          Forgot password?
+          {t('forgot_password')}
         </button>
 
         {error && <p className="error-text" style={{ marginBottom: 16 }}>{error}</p>}
 
         <button className="btn-primary" onClick={handleLogin} disabled={!isReady || loading}>
-          {loading ? <span className="spin" /> : 'Log in'}
+          {loading ? <span className="spin" /> : t('login_title')}
         </button>
       </div>
     </div>

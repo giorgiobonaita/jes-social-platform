@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import AvatarImg from './AvatarImg';
 import AdminPanelModal from './AdminPanelModal';
+import { useLang, LANGUAGES } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 const JES_OFFICIAL_USERNAME = 'jes_official';
@@ -42,12 +43,13 @@ interface Props {
 
 export default function ProfileModal({ visible, onClose, targetUserId, onMessagePress, onRequestViewUser, onPostAsJes }: Props) {
   const router = useRouter();
+  const { t, lang, setLang } = useLang();
   const isOwnProfile = !targetUserId;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab]           = useState<'posts' | 'saved'>('posts');
   const [showSettings, setShowSettings]     = useState(false);
-  const [settingsScreen, setSettingsScreen] = useState<null | 'notifiche'>( null);
+  const [settingsScreen, setSettingsScreen] = useState<null | 'notifiche' | 'lingua'>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [gridViewerUrl, setGridViewerUrl]   = useState<string | null>(null);
@@ -232,14 +234,28 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column', maxWidth: 430, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0' }}>
-          <button onClick={() => { setSettingsScreen(null); setShowSettings(false); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
+          <button onClick={() => { if (settingsScreen) { setSettingsScreen(null); } else { setShowSettings(false); } }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
             <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>{settingsScreen === 'notifiche' ? 'Notifiche' : 'Impostazioni'}</span>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>
+            {settingsScreen === 'notifiche' ? t('notifications') : settingsScreen === 'lingua' ? t('language') : t('settings')}
+          </span>
           <div style={{ width: 26 }} />
         </div>
         <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 40 }}>
-          {settingsScreen === 'notifiche' ? (
+          {settingsScreen === 'lingua' ? (
+            <>
+              {LANGUAGES.map(l => (
+                <div key={l.code} onClick={() => setLang(l.code)} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer', background: lang === l.code ? '#FFF8F2' : '#fff' }}>
+                  <span style={{ fontSize: 28, marginRight: 14 }}>{l.flag}</span>
+                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: lang === l.code ? ORANGE : '#111' }}>{l.name}</span>
+                  {lang === l.code && (
+                    <svg width="20" height="20" fill="none" stroke={ORANGE} strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L19 7"/></svg>
+                  )}
+                </div>
+              ))}
+            </>
+          ) : settingsScreen === 'notifiche' ? (
             <>
               <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>PUSH NOTIFICATION</p>
               {[
@@ -267,16 +283,29 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                     else if (item.id === 's5') { window.location.href = 'mailto:giorgio.bonaita.gb@gmail.com'; }
                   }}>
                   <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>{item.icon}</div>
-                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>{item.label}</span>
+                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>
+                    {item.id === 's1' ? t('edit_profile') : item.id === 's2' ? t('notifications') : item.id === 's5' ? t('support') : item.label}
+                  </span>
                   <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
               ))}
+              {/* Language row */}
+              <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={() => setSettingsScreen('lingua')}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+                  <svg width="20" height="20" fill="none" stroke={ORANGE} strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                </div>
+                <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>{t('language')}</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAA', marginRight: 6 }}>
+                  {LANGUAGES.find(l => l.code === lang)?.flag}
+                </span>
+                <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
               {myRole === 'admin' && (
                 <>
                   <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>SEZIONE ADMIN</p>
                   {[
-                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: 'Pannello Admin', action: () => { setShowAdminPanel(true); } },
-                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5 6.5-7"/></svg>, label: 'Profilo ufficiale JES', action: async () => {
+                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: t('admin_panel'), action: () => { setShowAdminPanel(true); } },
+                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5 6.5-7"/></svg>, label: t('official_profile'), action: async () => {
                       const { data } = await supabase.from('users').select('id').eq('username', JES_OFFICIAL_USERNAME).maybeSingle();
                       if (data) { setShowSettings(false); onRequestViewUser(data.id); } else alert(`Crea prima l'utente "${JES_OFFICIAL_USERNAME}" in Supabase.`);
                     }},
@@ -294,13 +323,13 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                   <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
                     <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                   </div>
-                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#FF3B30' }}>Esci</span>
+                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#FF3B30' }}>{t('logout')}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={handleDeleteAccount}>
                   <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
                     <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                   </div>
-                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#FF3B30' }}>Elimina Account</span>
+                  <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#FF3B30' }}>{t('delete_account')}</span>
                 </div>
               </div>
             </>

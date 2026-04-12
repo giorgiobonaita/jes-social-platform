@@ -3,9 +3,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { useLang } from '@/lib/i18n';
 
 export default function SignupPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -24,7 +26,7 @@ export default function SignupPage() {
     try {
       const { data, error: authError } = await supabase.auth.signUp({ email: email.trim(), password });
       if (authError) { setError(authError.message); return; }
-      if (!data.user) { setError('Impossibile creare l\'account. Riprova.'); return; }
+      if (!data.user) { setError(t('error_generic')); return; }
 
       const baseName = `${firstName.trim().toLowerCase()}${lastName.trim().toLowerCase()}`;
       const username = `${baseName}${Math.floor(Math.random() * 900) + 100}`;
@@ -37,7 +39,7 @@ export default function SignupPage() {
       const params = new URLSearchParams({ firstName: firstName.trim(), lastName: lastName.trim() });
       router.push(`/onboarding/username?${params.toString()}`);
     } catch {
-      setError('Qualcosa è andato storto. Riprova.');
+      setError(t('error_generic'));
     } finally {
       setLoading(false);
     }
@@ -52,28 +54,28 @@ export default function SignupPage() {
       </div>
 
       <div className="form-scroll">
-        <h1 className="form-title">Sign up</h1>
-        <p className="form-subtitle">Crea un account per unirti a JES</p>
+        <h1 className="form-title">{t('signup_title')}</h1>
+        <p className="form-subtitle">{t('signup_subtitle')}</p>
 
         <div className="row-group">
           <div className="input-group half-group">
-            <label className="input-label">Nome</label>
+            <label className="input-label">{t('first_name')}</label>
             <input className="input-field" type="text" placeholder="Mario" value={firstName} onChange={e => setFirstName(e.target.value)} autoCapitalize="words" />
           </div>
           <div className="input-group half-group">
-            <label className="input-label">Cognome</label>
+            <label className="input-label">{t('last_name')}</label>
             <input className="input-field" type="text" placeholder="Rossi" value={lastName} onChange={e => setLastName(e.target.value)} autoCapitalize="words" />
           </div>
         </div>
 
         <div className="input-group">
-          <label className="input-label">Email</label>
+          <label className="input-label">{t('email_label')}</label>
           <input className="input-field" type="email" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" />
         </div>
 
         <div className="input-group">
-          <label className="input-label">Password</label>
-          <input className="input-field" type="password" placeholder="Crea una password" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
+          <label className="input-label">{t('password_label')}</label>
+          <input className="input-field" type="password" placeholder={t('password_placeholder')} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
         </div>
 
         <label className="checkbox-row" onClick={() => setTermsAccepted(p => !p)}>
@@ -81,17 +83,17 @@ export default function SignupPage() {
             {termsAccepted && <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 7l4 4 6-6"/></svg>}
           </div>
           <span className="checkbox-label">
-            Accetto i{' '}
-            <Link href="/legal/termini" target="_blank" onClick={e => e.stopPropagation()}>Termini e Condizioni</Link>
-            {' '}e la{' '}
-            <Link href="/legal/privacy" target="_blank" onClick={e => e.stopPropagation()}>Privacy Policy</Link>
+            {t('accept_terms')}{' '}
+            <Link href="/legal/termini" target="_blank" onClick={e => e.stopPropagation()}>{t('terms_service')}</Link>
+            {' '}{t('and_the')}{' '}
+            <Link href="/legal/privacy" target="_blank" onClick={e => e.stopPropagation()}>{t('terms_privacy')}</Link>
           </span>
         </label>
 
         {error && <p className="error-text" style={{ marginBottom: 16 }}>{error}</p>}
 
         <button className="btn-primary" onClick={handleSignUp} disabled={!isReady || loading} style={{ marginTop: 8 }}>
-          {loading ? <span className="spin" /> : 'Registrati'}
+          {loading ? <span className="spin" /> : t('signup_title')}
         </button>
       </div>
     </div>

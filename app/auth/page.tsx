@@ -1,9 +1,11 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useLang } from '@/lib/i18n';
 
 export default function AuthPage() {
   const router = useRouter();
+  const { t } = useLang();
 
   return (
     <div className="shell auth-page">
@@ -21,7 +23,7 @@ export default function AuthPage() {
             <Image src="/logo.png" alt="JES" width={52} height={52} style={{ objectFit: 'contain' }} />
             <span className="logo-text">JES</span>
           </div>
-          <span className="subtitle-text">IL SOCIAL DELLE EMOZIONI</span>
+          <span className="subtitle-text">{t('tagline')}</span>
         </div>
 
         <div className="auth-buttons">
@@ -30,23 +32,20 @@ export default function AuthPage() {
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
             </svg>
-            Registrati con email
+            {t('sign_up_email')}
           </button>
         </div>
 
         <div className="auth-hint" style={{ marginTop: 16 }}>
-          <span className="auth-hint-text">Hai già un account?</span>
+          <span className="auth-hint-text">{t('already_account')}</span>
           <button className="ghost-btn" style={{ paddingLeft: 6 }} onClick={() => router.push('/login')}>
-            Accedi
+            {t('login')}
           </button>
         </div>
       </div>
 
       <p className="terms-text">
-        Continuando, accetti i{' '}
-        <a href="/termini.html" target="_blank">Termini di Servizio</a> di JES.
-        Gestiamo le tue informazioni come descritto nella nostra{' '}
-        <a href="/privacy.html" target="_blank">Privacy Policy</a>.
+        {t('terms_text')}
       </p>
     </div>
   );
