@@ -198,7 +198,12 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
           <div className="pc-meta" onClick={() => onUserPress(post.userId)} style={{ cursor: 'pointer' }}>
             <div className="pc-username">
               {post.author?.username}{post.groupName ? ` — ${post.groupName}` : ''}
-              {isOfficial && <span style={{ color: ORANGE, fontSize: 13 }}> ✓</span>}
+              {isOfficial && (
+                <svg style={{ marginLeft: 3, verticalAlign: 'middle', flexShrink: 0 }} width="15" height="15" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="12" fill="#F07B1D"/>
+                  <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+              )}
             </div>
             <div className="pc-discipline">{post.author?.discipline}</div>
           </div>

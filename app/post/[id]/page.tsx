@@ -134,7 +134,13 @@ export default async function PostPage(
             color: '#666',
             fontSize: 15,
           }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'center' }}>
+              <svg width="52" height="52" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+            </div>
             <p style={{ fontWeight: 600, color: '#111', marginBottom: 8 }}>Post non disponibile</p>
             <p>Il post potrebbe essere stato eliminato o essere privato.</p>
             <Link href="/" style={{

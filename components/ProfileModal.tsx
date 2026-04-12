@@ -369,7 +369,12 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
           <div style={{ paddingLeft: 20, paddingRight: 20, paddingBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>{profile.name || 'Utente'}</span>
-              {profile.username === JES_OFFICIAL_USERNAME && <svg width="20" height="20" fill={ORANGE} viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>}
+              {profile.username === JES_OFFICIAL_USERNAME && (
+                <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                  <circle cx="12" cy="12" r="12" fill="#F07B1D"/>
+                  <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+              )}
             </div>
             <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888', marginTop: 1 }}>@{profile.username || ''}</p>
             {profile.bio ? (

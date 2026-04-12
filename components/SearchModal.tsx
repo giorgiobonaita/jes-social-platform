@@ -180,7 +180,10 @@ export default function SearchModal({ visible, onClose, onUserPress, onGroupPres
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
                             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>{item.name}</span>
                             {item.username === JES_OFFICIAL_USERNAME && (
-                              <svg width="14" height="14" fill={ORANGE} viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                              <svg width="15" height="15" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="12" fill="#F07B1D"/>
+                                <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                              </svg>
                             )}
                           </div>
                           <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>@{item.username}{item.discipline ? ` · ${item.discipline}` : ''}</span>
@@ -188,7 +191,7 @@ export default function SearchModal({ visible, onClose, onUserPress, onGroupPres
                         {!isMe && (
                           <button onClick={e => { e.stopPropagation(); toggleFollow(item.id); }}
                             style={{ border: `1.5px solid ${ORANGE}`, borderRadius: 20, padding: '6px 14px', backgroundColor: following ? ORANGE : 'transparent', cursor: 'pointer' }}>
-                            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: following ? '#fff' : ORANGE }}>{following ? '✓ Seguito' : 'Segui'}</span>
+                            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: following ? '#fff' : ORANGE }}>{following ? 'Seguito' : 'Segui'}</span>
                           </button>
                         )}
                       </div>

@@ -5,9 +5,38 @@ interface Props {
 }
 
 const OPTIONS = [
-  { key: 'post', label: 'Post', sub: 'Condividi una foto o più', emoji: '🖼️', color: '#5B6AF5', bg: '#5B6AF518' },
-  { key: 'story', label: 'Storia', sub: 'Scompare dopo 24 ore', emoji: '▶️', color: '#F07B1D', bg: '#F07B1D18' },
-  { key: 'poll', label: 'Sondaggio', sub: "Chiedi l'opinione dei tuoi follower", emoji: '📊', color: '#34C759', bg: '#34C75918' },
+  {
+    key: 'post', label: 'Post', sub: 'Condividi una foto o più',
+    color: '#5B6AF5', bg: '#5B6AF518',
+    icon: (
+      <svg width="28" height="28" fill="none" stroke="#5B6AF5" strokeWidth="1.8" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="3"/>
+        <circle cx="8.5" cy="8.5" r="1.5"/>
+        <path d="M21 15l-5-5L5 21"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'story', label: 'Storia', sub: 'Scompare dopo 24 ore',
+    color: '#F07B1D', bg: '#F07B1D18',
+    icon: (
+      <svg width="28" height="28" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" strokeDasharray="3 2"/>
+        <polygon points="10,8 16,12 10,16" fill="#F07B1D" stroke="none"/>
+      </svg>
+    ),
+  },
+  {
+    key: 'poll', label: 'Sondaggio', sub: "Chiedi l'opinione dei tuoi follower",
+    color: '#34C759', bg: '#34C75918',
+    icon: (
+      <svg width="28" height="28" fill="none" stroke="#34C759" strokeWidth="1.8" viewBox="0 0 24 24">
+        <rect x="3" y="13" width="4" height="8" rx="1"/>
+        <rect x="10" y="8" width="4" height="13" rx="1"/>
+        <rect x="17" y="3" width="4" height="18" rx="1"/>
+      </svg>
+    ),
+  },
 ];
 
 export default function CreateMenuModal({ visible, onClose, onPost, onStory, onPoll }: Props) {
@@ -28,12 +57,14 @@ export default function CreateMenuModal({ visible, onClose, onPost, onStory, onP
               style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 10px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 18, width: '100%', textAlign: 'left', transition: 'background .1s' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#F5F5F5')}
               onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-              <div style={{ width: 56, height: 56, borderRadius: 18, background: opt.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, flexShrink: 0 }}>{opt.emoji}</div>
+              <div style={{ width: 56, height: 56, borderRadius: 18, background: opt.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {opt.icon}
+              </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 17, color: '#111' }}>{opt.label}</div>
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#AAA', marginTop: 2 }}>{opt.sub}</div>
               </div>
-              <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
             </button>
           ))}
         </div>
