@@ -215,7 +215,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
           ].map(f => (
             <div key={f.label} style={{ marginBottom: 20 }}>
               <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>{f.label}</label>
-              <input value={f.value} onChange={e => f.setter(e.target.value)} placeholder={f.placeholder} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', borderBottom: '1.5px solid #EEE', paddingBottom: 10, paddingTop: 10, border: 'none', borderBottom: '1.5px solid #EEE', outline: 'none', background: 'transparent', boxSizing: 'border-box' } as any} />
+              <input value={f.value} onChange={e => f.setter(e.target.value)} placeholder={f.placeholder} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', borderBottom: '1.5px solid #EEE', paddingBottom: 10, paddingTop: 10, outline: 'none', background: 'transparent', boxSizing: 'border-box' } as any} />
             </div>
           ))}
           <div style={{ marginBottom: 20 }}>
