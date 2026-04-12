@@ -257,8 +257,9 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 .home-page { display: flex; flex-direction: column; height: 100dvh; background: #FFFFFF; overflow: hidden; }
 .home-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-bottom: 1px solid #EEEEEE; background: #FFFFFF; position: sticky; top: 0; z-index: 10; }
 .header-side { display: flex; align-items: center; gap: 4px; }
-.icon-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; border-radius: 50%; position: relative; transition: background .15s; }
+.icon-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; border-radius: 50%; position: relative; transition: background .15s; color: #111111; }
 .icon-btn:hover { background: #F5F5F5; }
+.icon-btn svg { color: #111111; }
 .notif-badge { position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: #FF3B30; }
 
 /* ── Feed ── */
@@ -270,12 +271,12 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Story Ring ── */
 .story-ring { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 8px; cursor: pointer; flex-shrink: 0; }
-.story-ring-border { width: 66px; height: 66px; border-radius: 50%; padding: 2px; background: linear-gradient(135deg, var(--orange), #FFB347); }
+.story-ring-border { width: 66px; height: 66px; border-radius: 16px; padding: 2px; background: linear-gradient(135deg, var(--orange), #FFB347); }
 .story-ring-border.no-story { background: #EEEEEE; }
-.story-ring-inner { width: 100%; height: 100%; border-radius: 50%; border: 2px solid #FFFFFF; overflow: hidden; background: #EEEEEE; display: flex; align-items: center; justify-content: center; }
+.story-ring-inner { width: 100%; height: 100%; border-radius: 14px; border: 2px solid #FFFFFF; overflow: hidden; background: #EEEEEE; display: flex; align-items: center; justify-content: center; }
 .story-ring-inner img { width: 100%; height: 100%; object-fit: cover; }
 .story-ring-label { font-family: var(--font-body); font-size: 11px; color: #111111; text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.story-add-btn { position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--orange); border: 2px solid #FFF; display: flex; align-items: center; justify-content: center; }
+.story-add-btn { position: absolute; bottom: 0; right: 0; width: 22px; height: 22px; border-radius: 6px; background: var(--orange); border: 2px solid #FFF; display: flex; align-items: center; justify-content: center; }
 
 /* ── Post Card ── */
 .post-card { padding: 16px 16px 0; margin-bottom: 16px; }

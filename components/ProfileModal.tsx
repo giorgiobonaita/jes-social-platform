@@ -393,7 +393,16 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                 <svg width="16" height="16" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>Modifica profilo</span>
               </button>
-              <button onClick={() => alert(`jes.app/@${profile.username || ''}`)} style={{ width: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, border: '1.5px solid #E0E0E0', background: 'none', cursor: 'pointer' }}>
+              <button onClick={async () => {
+                const shareUrl = `${window.location.origin}/profile/${profile.username}`;
+                const shareData = { title: `Profilo di @${profile.username} su JES`, url: shareUrl };
+                if (navigator.share) {
+                  try { await navigator.share(shareData); } catch {}
+                } else {
+                  await navigator.clipboard.writeText(shareUrl);
+                  alert('Link profilo copiato!');
+                }
+              }} style={{ width: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, border: '1.5px solid #E0E0E0', background: 'none', cursor: 'pointer' }}>
                 <svg width="18" height="18" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
               </button>
             </div>

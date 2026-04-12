@@ -240,7 +240,16 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
             <button className="pc-action-btn" onClick={onComment}>
               <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             </button>
-            <button className="pc-action-btn" onClick={() => navigator.share?.({ url: window.location.href })}>
+            <button className="pc-action-btn" onClick={async () => {
+              const shareUrl = `${window.location.origin}/post/${post.id}`;
+              const shareData = { title: `Post di @${post.author?.username} su JES`, url: shareUrl };
+              if (navigator.share) {
+                try { await navigator.share(shareData); } catch {}
+              } else {
+                await navigator.clipboard.writeText(shareUrl);
+                alert('Link copiato!');
+              }
+            }}>
               <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           </div>
