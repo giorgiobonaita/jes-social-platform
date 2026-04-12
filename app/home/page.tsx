@@ -92,6 +92,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
   onDelete: () => void; isAdmin: boolean;
   onImagePress: (url: string) => void;
 }) {
+  const { t } = useLang();
   const [liked, setLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likesCount);
   const [saved, setSaved] = useState(false);
