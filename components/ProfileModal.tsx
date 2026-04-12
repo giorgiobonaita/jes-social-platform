@@ -106,7 +106,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
           const { data: postsData } = await supabase.from('posts').select('id, image_url, image_urls').in('id', pids);
           const pm: Record<string, any> = {};
           (postsData || []).forEach((p: any) => { pm[p.id] = p; });
-          setSavedPosts(saves.map((s: any) => { const p = pm[s.post_id]; if (!p) return null; return { id: p.id, url: (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url || '' }; }).filter((p: any) => p && p.url));
+          setSavedPosts(saves.map((s: any) => { const p = pm[s.post_id]; if (!p) return null; return { id: p.id, url: (Array.isArray(p.image_urls) && p.image_urls[0]) || p.image_url || '' }; }).filter((p): p is { id: string; url: string } => !!p && !!p.url));
         }
       }
 
