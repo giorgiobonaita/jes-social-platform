@@ -332,15 +332,70 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 .empty-text { font-family: var(--font-body); font-size: 14px; color: #AAAAAA; text-align: center; padding: 40px 20px; }
 
 /* ── Story Viewer ── */
-.story-viewer { position: fixed; inset: 0; background: #000; z-index: 200; display: flex; flex-direction: column; }
-.story-bars { display: flex; gap: 4px; padding: 12px 12px 0; }
-.story-bar { flex: 1; height: 2px; background: rgba(255,255,255,.4); border-radius: 1px; }
-.story-bar.done { background: #FFFFFF; }
-.story-viewer-header { display: flex; align-items: center; gap: 10px; padding: 12px; }
-.story-viewer-name { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: #FFF; }
-.story-viewer-time { font-family: var(--font-body); font-size: 12px; color: rgba(255,255,255,.7); }
-.story-viewer-img { flex: 1; object-fit: cover; width: 100%; }
-.story-close { background: none; border: none; cursor: pointer; color: #FFFFFF; margin-left: auto; }
+.sv-overlay {
+  position: fixed; inset: 0; background: #000; z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  max-width: 430px; margin: 0 auto;
+}
+.sv-img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; user-select: none; -webkit-user-drag: none;
+}
+.sv-grad-top {
+  position: absolute; top: 0; left: 0; right: 0; height: 120px;
+  background: linear-gradient(to bottom, rgba(0,0,0,.55), transparent);
+  pointer-events: none; z-index: 1;
+}
+.sv-grad-bottom {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 140px;
+  background: linear-gradient(to top, rgba(0,0,0,.6), transparent);
+  pointer-events: none; z-index: 1;
+}
+.sv-bars {
+  position: absolute; top: 14px; left: 10px; right: 10px;
+  display: flex; gap: 4px; z-index: 10;
+}
+.sv-bar-track {
+  flex: 1; height: 2.5px; background: rgba(255,255,255,.35); border-radius: 2px; overflow: hidden;
+}
+.sv-bar-fill {
+  height: 100%; background: #fff; border-radius: 2px;
+  transition: width 0.05s linear;
+}
+.sv-header {
+  position: absolute; top: 28px; left: 12px; right: 12px;
+  display: flex; align-items: center; gap: 10px; z-index: 10;
+}
+.sv-avatar {
+  width: 38px; height: 38px; border-radius: 50%; overflow: hidden;
+  border: 2px solid #fff; background: #333; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.sv-avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.sv-info { flex: 1; min-width: 0; }
+.sv-name { font-family: var(--font-body); font-weight: 700; font-size: 14px; color: #fff; }
+.sv-time { font-family: var(--font-body); font-size: 11px; color: rgba(255,255,255,.7); }
+.sv-close {
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 4px;
+}
+.sv-tap-left {
+  position: absolute; left: 0; top: 0; width: 40%; height: 100%;
+  z-index: 5; cursor: pointer;
+}
+.sv-tap-right {
+  position: absolute; right: 0; top: 0; width: 60%; height: 100%;
+  z-index: 5; cursor: pointer;
+}
+.sv-footer {
+  position: absolute; bottom: 24px; left: 0; right: 0;
+  display: flex; align-items: center; justify-content: center; z-index: 10;
+}
+.sv-like-btn {
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 8px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.4));
+}
 
 /* ── Comments ── */
 .comment-item { display: flex; gap: 10px; margin-bottom: 16px; }

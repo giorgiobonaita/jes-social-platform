@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://jesocial.com'),
   title: "JES — Il Social delle Emozioni",
   description: "JES è il social network dedicato agli artisti e ai creativi di tutto il mondo.",
-  icons: { icon: "/logo.png" },
+  icons: { icon: "/icon.png", apple: "/icon.png" },
 };
 
 export default function RootLayout({
