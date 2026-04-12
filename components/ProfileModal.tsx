@@ -26,9 +26,9 @@ function parseLinks(text: string): { text: string; isUrl: boolean }[] {
 function formatNum(n: number) { return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n); }
 
 const SETTINGS = [
-  { id: 's1', icon: '👤', label: 'Modifica profilo' },
-  { id: 's2', icon: '🔔', label: 'Notifiche' },
-  { id: 's5', icon: '❓', label: 'Assistenza' },
+  { id: 's1', icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, label: 'Modifica profilo' },
+  { id: 's2', icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>, label: 'Notifiche' },
+  { id: 's5', icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label: 'Assistenza' },
 ];
 
 interface Props {
@@ -266,7 +266,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                     else if (item.id === 's2') { setSettingsScreen('notifiche'); }
                     else if (item.id === 's5') { window.location.href = 'mailto:giorgio.bonaita.gb@gmail.com'; }
                   }}>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14, fontSize: 18 }}>{item.icon}</div>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>{item.icon}</div>
                   <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>{item.label}</span>
                   <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
@@ -275,14 +275,14 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                 <>
                   <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>SEZIONE ADMIN</p>
                   {[
-                    { icon: '🛡️', label: 'Pannello Admin', action: () => { setShowAdminPanel(true); } },
-                    { icon: '⭐', label: 'Profilo ufficiale JES', action: async () => {
+                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: 'Pannello Admin', action: () => { setShowAdminPanel(true); } },
+                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5 6.5-7"/></svg>, label: 'Profilo ufficiale JES', action: async () => {
                       const { data } = await supabase.from('users').select('id').eq('username', JES_OFFICIAL_USERNAME).maybeSingle();
                       if (data) { setShowSettings(false); onRequestViewUser(data.id); } else alert(`Crea prima l'utente "${JES_OFFICIAL_USERNAME}" in Supabase.`);
                     }},
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={item.action}>
-                      <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14, fontSize: 18 }}>{item.icon}</div>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>{item.icon}</div>
                       <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>{item.label}</span>
                       <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
@@ -291,11 +291,15 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               )}
               <div style={{ marginTop: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={handleSignOut}>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14, fontSize: 18 }}>🚪</div>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+                    <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  </div>
                   <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#FF3B30' }}>Esci</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={handleDeleteAccount}>
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14, fontSize: 18 }}>🗑️</div>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+                    <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                  </div>
                   <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#FF3B30' }}>Elimina Account</span>
                 </div>
               </div>
