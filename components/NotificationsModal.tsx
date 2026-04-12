@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 import AvatarImg from './AvatarImg';
 
 type NotifType = 'like' | 'comment' | 'follow' | 'mention';
@@ -63,6 +64,7 @@ const NOTIF_ICON_FALLBACK: { icon: React.ReactElement; color: string; bg: string
 interface Props { visible: boolean; onClose: () => void; }
 
 export default function NotificationsModal({ visible, onClose }: Props) {
+  const { t } = useLang();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading]             = useState(false);
   const [myDbId, setMyDbId]               = useState<string | null>(null);
@@ -155,7 +157,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
         padding: '16px 20px', borderBottom: '1px solid #F0F0F0',
       }}>
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, color: '#111' }}>
-          Notifiche
+          {t('notifications')}
         </span>
         <button onClick={onClose} style={{
           background: 'none', border: 'none', cursor: 'pointer',
@@ -179,7 +181,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
             <svg width="48" height="48" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
             </svg>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>Nessuna notifica</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>{t('no_notifications')}</span>
           </div>
         ) : (
           notifications.map(item => {

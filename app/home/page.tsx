@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 import FeedPoll from '@/components/FeedPoll';
 import CommentsModal from '@/components/CommentsModal';
 import CreateMenuModal from '@/components/CreateMenuModal';
@@ -16,6 +17,7 @@ import ProfileModal from '@/components/ProfileModal';
 import ChatModal from '@/components/ChatModal';
 import GroupsModal from '@/components/GroupsModal';
 import AvatarImg from '@/components/AvatarImg';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const ORANGE = '#F07B1D';
 
@@ -303,7 +305,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
             <AvatarImg uri={currentUserAvatar} size={28} seed="tu" style={{ borderRadius: '50%' }} />
           </div>
           <div className="pc-quick-input">
-            <span className="pc-quick-placeholder">Aggiungi un commento...</span>
+            <span className="pc-quick-placeholder">{t('add_comment')}</span>
           </div>
         </div>
       </div>
@@ -392,6 +394,7 @@ function AdvCard({ imageUrl, url }: { imageUrl: string; url: string }) {
 // ── Home Screen ───────────────────────────────────────────────────────────────
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useLang();
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
@@ -534,9 +537,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="home-header">
         <div className="header-side">
-          <button className="icon-btn" onClick={() => setChatVisible(true)}>
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
+          <LanguageSwitcher />
           <button className="icon-btn" onClick={() => setSearchVisible(true)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
@@ -545,6 +546,9 @@ export default function HomePage() {
         <span style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, color: ORANGE, letterSpacing: -1 }}>JES</span>
 
         <div className="header-side">
+          <button className="icon-btn" onClick={() => setChatVisible(true)}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
           <button className="icon-btn" onClick={() => setGroupsVisible(true)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           </button>
@@ -559,9 +563,9 @@ export default function HomePage() {
       <div className="feed-scroll">
         {/* Stories */}
         <div className="stories-section">
-          <p className="stories-label">Seguiti</p>
+          <p className="stories-label">{t('following')}</p>
           <div className="stories-row">
-            <StoryRing id="create" username="La tua storia" avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />
+            <StoryRing id="create" username={t('story_your')} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />
             {stories.map((g, idx) => (
               <StoryRing key={g.userId} id={g.userId} username={g.username} avatarUrl={g.avatarUrl} hasUnwatched
                 onPress={() => { setActiveStoryIndex(idx); setStoryVisible(true); }} />

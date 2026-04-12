@@ -49,7 +49,7 @@ export default function CreatePollModal({ visible, onClose }: Props) {
       const { error: err } = await supabase.from('posts').insert({
         user_id: dbUser.id, type: 'poll',
         poll_question: question.trim(), poll_options: pollOptions,
-        aspect_ratio: 1, privacy: 'all', expires_at: expires.toISOString(),
+        aspect_ratio: 1, privacy: 'all',
       });
       if (err) throw new Error(err.message);
       close();
