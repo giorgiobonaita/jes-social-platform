@@ -1,0 +1,426 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Modal, View, Text, TextInput, FlatList,
+  TouchableOpacity, StyleSheet, Platform, SafeAreaView,
+  Alert, ActivityIndicator, KeyboardAvoidingView, Keyboard,
+} from 'react-native';
+import AvatarImg from './AvatarImg';
+import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { supabase } from '../lib/supabase';
+import { containsBlacklistedWord } from '../lib/blacklist';
+
+const ORANGE = '#F07B1D';
+
+interface Comment {
+  id: string;
+  username: string;
+  avatarUrl: string | null;
+  text: string;
+  timeAgo: string;
+  userId: string;
+}
+
+function formatTimeAgo(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'ora';
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} h`;
+  const d = Math.floor(h / 24);
+  return `${d} g`;
+}
+
+interface CommentsModalProps {
+  visible: boolean;
+  onClose: () => void;
+  postId: string | null;
+  postAuthorId?: string | null;
+}
+
+export default function CommentsModal({ visible, onClose, postId, postAuthorId }: CommentsModalProps) {
+  const [localComments, setLocalComments] = useState<Comment[]>([]);
+  const [inputText, setInputText]         = useState('');
+  const [loading, setLoading]             = useState(false);
+  const [currentAvatar, setCurrentAvatar] = useState<string | null>(null);
+  const [currentDbUserId, setCurrentDbUserId] = useState<string | null>(null);
+  const [currentUsername, setCurrentUsername] = useState<string>('tu');
+  const inputRef = useRef<TextInput>(null);
+  const listRef  = useRef<FlatList>(null);
+
+  // Carica utente corrente una volta sola
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('users')
+        .select('id, avatar_url, username')
+        .eq('auth_id', user.id)
+        .single();
+      if (data) {
+        setCurrentDbUserId(data.id);
+        setCurrentAvatar(data.avatar_url ?? null);
+        setCurrentUsername(data.username || 'tu');
+      }
+    })();
+  }, []);
+
+  // Carica commenti reali quando cambia postId
+  useEffect(() => {
+    if (!postId || !visible) return;
+    setLoading(true);
+    (async () => {
+      try {
+        const { data: rows, error } = await supabase
+          .from('comments')
+          .select('id, text, created_at, user_id')
+          .eq('post_id', postId)
+          .order('created_at', { ascending: true })
+          .limit(80);
+
+        if (error || !rows) return;
+
+        const userIds = [...new Set(rows.map((c: any) => c.user_id).filter(Boolean))];
+        const userMap: Record<string, any> = {};
+        if (userIds.length > 0) {
+          const { data: users } = await supabase
+            .from('users').select('id, username, avatar_url').in('id', userIds);
+          (users || []).forEach((u: any) => { userMap[u.id] = u; });
+        }
+
+        setLocalComments(rows.map((c: any) => ({
+          id:        c.id,
+          username:  userMap[c.user_id]?.username  || 'utente',
+          avatarUrl: userMap[c.user_id]?.avatar_url ?? null,
+          text:      c.text || '',
+          timeAgo:   formatTimeAgo(c.created_at),
+          userId:    c.user_id,
+        })));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [postId, visible]);
+
+  // Scroll to bottom when comments load
+  useEffect(() => {
+    if (!loading && localComments.length > 0) {
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 80);
+    }
+  }, [loading]);
+
+  // Realtime
+  useEffect(() => {
+    if (!postId || !visible) return;
+    const channel = supabase
+      .channel(`comments_post_${postId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${postId}`,
+      }, async (payload) => {
+        const c = payload.new as any;
+        if (c.user_id === currentDbUserId) return;
+        const { data: u } = await supabase
+          .from('users').select('username, avatar_url').eq('id', c.user_id).single();
+        setLocalComments(prev => [...prev, {
+          id:        c.id,
+          username:  u?.username  || 'utente',
+          avatarUrl: u?.avatar_url ?? null,
+          text:      c.text || '',
+          timeAgo:   'ora',
+          userId:    c.user_id,
+        }]);
+        setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [postId, visible, currentDbUserId]);
+
+  const sendComment = async () => {
+    const text = inputText.trim();
+    if (!text || !postId || !currentDbUserId) return;
+    const blocked = await containsBlacklistedWord(text);
+    if (blocked) {
+      Alert.alert('Commento non consentito', `Il testo contiene una parola non ammessa: "${blocked}".`);
+      return;
+    }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setInputText('');
+
+    const tempId = `temp_${Date.now()}`;
+    setLocalComments(prev => [...prev, {
+      id: tempId,
+      username: currentUsername,
+      avatarUrl: currentAvatar,
+      text,
+      timeAgo: 'ora',
+      userId: currentDbUserId,
+    }]);
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
+
+    const { error } = await supabase.from('comments').insert({
+      post_id: postId,
+      user_id: currentDbUserId,
+      text,
+    });
+
+    if (error) {
+      setLocalComments(prev => prev.filter(c => c.id !== tempId));
+      Alert.alert('Errore', 'Impossibile inviare il commento. Riprova.');
+      return;
+    }
+
+    if (postAuthorId && postAuthorId !== currentDbUserId) {
+      supabase.from('notifications').insert({
+        user_id:  postAuthorId,
+        actor_id: currentDbUserId,
+        type:     'comment',
+        post_id:  postId,
+      }).then(() => {});
+    }
+  };
+
+  const isMine = (item: Comment) => item.userId === currentDbUserId;
+
+  const renderComment = ({ item, index }: { item: Comment; index: number }) => {
+    const mine = isMine(item);
+    const prev = localComments[index - 1];
+    const showAvatar = !mine && (!prev || prev.userId !== item.userId);
+    const showName   = !mine && (!prev || prev.userId !== item.userId);
+
+    return (
+      <View style={[s.msgRow, mine ? s.msgRowMine : s.msgRowOther]}>
+        {/* Avatar only for first bubble of a group (others only) */}
+        {!mine && (
+          <View style={s.avatarCol}>
+            {showAvatar
+              ? <AvatarImg uri={item.avatarUrl} size={32} seed={item.username} />
+              : <View style={{ width: 32 }} />
+            }
+          </View>
+        )}
+
+        <View style={[s.bubbleWrap, mine ? s.bubbleWrapMine : s.bubbleWrapOther]}>
+          {showName && (
+            <Text style={s.bubbleName}>{item.username}</Text>
+          )}
+          <View style={[s.bubble, mine ? s.bubbleMine : s.bubbleOther]}>
+            <Text style={[s.bubbleText, mine && s.bubbleTextMine]}>{item.text}</Text>
+          </View>
+          <Text style={[s.bubbleTime, mine && s.bubbleTimeMine]}>{item.timeAgo}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <SafeAreaView style={s.container}>
+        {/* Header */}
+        <View style={s.header}>
+          <View style={s.dragHandle} />
+          <Text style={s.headerTitle}>Commenti</Text>
+          <TouchableOpacity onPress={onClose} style={s.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Ionicons name="close" size={22} color="#111" />
+          </TouchableOpacity>
+        </View>
+
+        <KeyboardAvoidingView
+          style={s.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 52 : 24}
+        >
+          {loading ? (
+            <ActivityIndicator color={ORANGE} style={{ marginTop: 40, flex: 1 }} />
+          ) : (
+            <FlatList
+              ref={listRef}
+              data={localComments}
+              keyExtractor={item => item.id}
+              renderItem={renderComment}
+              contentContainerStyle={s.list}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="always"
+              ListEmptyComponent={
+                <View style={s.emptyWrap}>
+                  <Ionicons name="chatbubble-outline" size={36} color="#DDD" />
+                  <Text style={s.emptyTitle}>Nessun commento</Text>
+                  <Text style={s.emptyText}>Sii il primo a condividere il tuo pensiero.</Text>
+                </View>
+              }
+            />
+          )}
+
+          {/* Input bar */}
+          <View style={s.inputBar}>
+            <AvatarImg uri={currentAvatar} size={34} seed={currentUsername} />
+            <TextInput
+              ref={inputRef}
+              style={s.input}
+              placeholder="Scrivi un commento…"
+              placeholderTextColor="#AAAAAA"
+              value={inputText}
+              onChangeText={setInputText}
+              multiline
+              maxLength={500}
+              autoCorrect={false}
+              autoCapitalize="none"
+              blurOnSubmit={false}
+            />
+            <TouchableOpacity
+              onPress={sendComment}
+              style={[s.sendBtn, !inputText.trim() && s.sendBtnOff]}
+              disabled={!inputText.trim()}
+            >
+              <Ionicons name="send" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F7F7F7' },
+  flex:      { flex: 1 },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EFEFEF',
+    backgroundColor: '#fff',
+    position: 'relative',
+  },
+  dragHandle: {
+    position: 'absolute',
+    top: 8,
+    alignSelf: 'center',
+    width: 36, height: 4,
+    borderRadius: 2,
+    backgroundColor: '#D8D8D8',
+  },
+  headerTitle: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize: 15,
+    color: '#111',
+    marginTop: 14,
+  },
+  closeBtn: {
+    position: 'absolute',
+    right: 16,
+    bottom: 12,
+  },
+
+  list: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8 },
+
+  // ── Messaggio ──
+  msgRow: {
+    flexDirection: 'row',
+    marginBottom: 4,
+    alignItems: 'flex-end',
+  },
+  msgRowOther: { justifyContent: 'flex-start' },
+  msgRowMine:  { justifyContent: 'flex-end' },
+
+  avatarCol: { marginRight: 6, alignSelf: 'flex-end', marginBottom: 2 },
+
+  bubbleWrap:      { maxWidth: '72%' },
+  bubbleWrapOther: { alignItems: 'flex-start' },
+  bubbleWrapMine:  { alignItems: 'flex-end' },
+
+  bubbleName: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize: 11,
+    color: '#888',
+    marginBottom: 3,
+    marginLeft: 4,
+  },
+
+  bubble: {
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  bubbleOther: {
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  bubbleMine: {
+    backgroundColor: ORANGE,
+    borderBottomRightRadius: 4,
+  },
+
+  bubbleText: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 14,
+    color: '#111',
+    lineHeight: 20,
+  },
+  bubbleTextMine: { color: '#fff' },
+
+  bubbleTime: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 10,
+    color: '#AAAAAA',
+    marginTop: 3,
+    marginLeft: 4,
+    marginRight: 4,
+  },
+  bubbleTimeMine: { textAlign: 'right' },
+
+  emptyWrap:  { alignItems: 'center', paddingVertical: 60, gap: 10 },
+  emptyTitle: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 15, color: '#111' },
+  emptyText:  { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 13, color: '#AAAAAA' },
+
+  inputBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 14 : 16,
+    gap: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#EFEFEF',
+    backgroundColor: '#fff',
+  },
+  input: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 14,
+    color: '#111',
+    maxHeight: 100,
+  },
+  sendBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: ORANGE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendBtnOff: { backgroundColor: '#D0D0D0' },
+});
