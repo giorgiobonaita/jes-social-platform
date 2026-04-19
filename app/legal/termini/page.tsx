@@ -16,7 +16,7 @@ export default function TerminiPage() {
         <div className={s.pageTag}>Documenti legali</div>
         <h1>Termini di Servizio</h1>
         <p>Le condizioni che regolano l&apos;utilizzo di JES. Ti preghiamo di leggerle attentamente.</p>
-        <span className={s.updateBadge}>Aggiornati: aprile 2025</span>
+        <span className={s.updateBadge}>Aggiornati: aprile 2026</span>
       </div>
 
       {/* CONTENUTO */}
@@ -66,11 +66,14 @@ export default function TerminiPage() {
             <li>Le informazioni del profilo devono essere veritiere, accurate e non fuorvianti</li>
             <li>È vietato impersonare altre persone, brand, personaggi pubblici o account ufficiali, incluso l&apos;account <strong>@jes_official</strong></li>
             <li>Sei responsabile di tutte le attività compiute tramite il tuo account</li>
+            <li>Il numero di telefono e la nazionalità, se forniti, devono essere veritieri</li>
           </ul>
           <p>
             In caso di accesso non autorizzato o compromissione dell&apos;account, notificaci
-            immediatamente a <strong>privacy@jesocial.com</strong>. JES non è responsabile dei
-            danni derivanti dalla mancata notifica tempestiva.
+            immediatamente a{' '}
+            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+              jes.socialdelleemozioni@gmail.com
+            </a>. JES non è responsabile dei danni derivanti dalla mancata notifica tempestiva.
           </p>
         </div>
 
@@ -145,9 +148,11 @@ export default function TerminiPage() {
             comportare segnalazione all&apos;autorità.
           </p>
           <p>
-            Per contestare un provvedimento di sospensione, invia una comunicazione motivata a
-            <strong> support@jesocial.com</strong> entro <strong>30 giorni</strong> dalla notifica.
-            JES risponderà entro 30 giorni lavorativi.
+            Per contestare un provvedimento di sospensione, invia una comunicazione motivata a{' '}
+            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+              jes.socialdelleemozioni@gmail.com
+            </a>{' '}
+            entro <strong>30 giorni</strong> dalla notifica. JES risponderà entro 30 giorni lavorativi.
           </p>
         </div>
 
@@ -190,9 +195,30 @@ export default function TerminiPage() {
 
         <div className={s.dividerLine} />
 
-        {/* 8 - Disponibilità */}
+        {/* 8 - Comunicazioni promozionali */}
         <div className={s.docSection}>
-          <h2><span className={s.num}>8</span> Disponibilità del servizio</h2>
+          <h2><span className={s.num}>8</span> Comunicazioni promozionali</h2>
+          <p>
+            JES può inviare comunicazioni promozionali, newsletter e aggiornamenti sulle novità della
+            Piattaforma esclusivamente agli utenti che hanno espresso il consenso esplicito durante la
+            registrazione selezionando l&apos;apposita opzione (<em>&ldquo;Accetto di ricevere promozioni e
+            novità da JES&rdquo;</em>).
+          </p>
+          <p>
+            Il consenso è del tutto opzionale e non condiziona l&apos;accesso o il funzionamento del servizio.
+            Puoi revocarlo in qualsiasi momento inviando una richiesta a{' '}
+            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+              jes.socialdelleemozioni@gmail.com
+            </a>.
+            La revoca non pregiudica la liceità del trattamento effettuato fino a quel momento.
+          </p>
+        </div>
+
+        <div className={s.dividerLine} />
+
+        {/* 9 - Disponibilità */}
+        <div className={s.docSection}>
+          <h2><span className={s.num}>9</span> Disponibilità del servizio</h2>
           <p>
             JES è erogato &ldquo;così come disponibile&rdquo; (<em>as is / as available</em>).
             Non garantiamo l&apos;assenza di interruzioni, errori o discontinuità nel servizio.
@@ -204,9 +230,9 @@ export default function TerminiPage() {
 
         <div className={s.dividerLine} />
 
-        {/* 9 - Limitazione responsabilità */}
+        {/* 10 - Limitazione responsabilità */}
         <div className={s.docSection}>
-          <h2><span className={s.num}>9</span> Esclusione e limitazione di responsabilità</h2>
+          <h2><span className={s.num}>10</span> Esclusione e limitazione di responsabilità</h2>
           <p>
             Nella misura massima consentita dalla legge applicabile, JES non è responsabile per:
           </p>
@@ -229,9 +255,9 @@ export default function TerminiPage() {
 
         <div className={s.dividerLine} />
 
-        {/* 10 - Legge applicabile */}
+        {/* 11 - Legge applicabile */}
         <div className={s.docSection}>
-          <h2><span className={s.num}>10</span> Legge applicabile e foro competente</h2>
+          <h2><span className={s.num}>11</span> Legge applicabile e foro competente</h2>
           <p>
             I presenti Termini sono regolati dalla legge italiana e interpretati in conformità ad essa.
             Per qualsiasi controversia derivante dai presenti Termini o dall&apos;utilizzo di JES,
@@ -243,12 +269,15 @@ export default function TerminiPage() {
 
         <div className={s.dividerLine} />
 
-        {/* 11 - Eliminazione account */}
+        {/* 12 - Eliminazione account */}
         <div className={s.docSection}>
-          <h2><span className={s.num}>11</span> Eliminazione dell&apos;account</h2>
+          <h2><span className={s.num}>12</span> Eliminazione dell&apos;account</h2>
           <p>
             Puoi richiedere l&apos;eliminazione del tuo account in qualsiasi momento dalle impostazioni
-            della Piattaforma oppure inviando richiesta scritta a <strong>support@jesocial.com</strong>.
+            della Piattaforma oppure inviando richiesta scritta a{' '}
+            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+              jes.socialdelleemozioni@gmail.com
+            </a>.
             L&apos;eliminazione è irreversibile: post, commenti, messaggi e dati di profilo saranno rimossi
             entro 30 giorni dalla richiesta, fatti salvi i dati da conservare per obbligo legale.
           </p>
@@ -260,9 +289,9 @@ export default function TerminiPage() {
 
         <div className={s.dividerLine} />
 
-        {/* 12 - Modifiche */}
+        {/* 13 - Modifiche */}
         <div className={s.docSection}>
-          <h2><span className={s.num}>12</span> Modifiche ai Termini</h2>
+          <h2><span className={s.num}>13</span> Modifiche ai Termini</h2>
           <p>
             JES si riserva il diritto di modificare i presenti Termini in qualsiasi momento.
             In caso di modifiche sostanziali, gli utenti registrati saranno avvisati via email o
@@ -275,13 +304,17 @@ export default function TerminiPage() {
 
         <div className={s.dividerLine} />
 
-        {/* 13 - Contatti */}
+        {/* 14 - Contatti */}
         <div className={s.docSection}>
-          <h2><span className={s.num}>13</span> Contatti</h2>
-          <p>Per qualsiasi richiesta relativa ai presenti Termini:</p>
+          <h2><span className={s.num}>14</span> Contatti</h2>
+          <p>Per qualsiasi richiesta relativa ai presenti Termini, alla Privacy o al supporto:</p>
           <ul>
-            <li>Supporto generale: <strong>support@jesocial.com</strong></li>
-            <li>Privacy e dati personali: <strong>privacy@jesocial.com</strong></li>
+            <li>
+              Email:{' '}
+              <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+                jes.socialdelleemozioni@gmail.com
+              </a>
+            </li>
             <li>Sito web: <strong>jesocial.com</strong></li>
           </ul>
         </div>
@@ -294,9 +327,9 @@ export default function TerminiPage() {
         <ul className={s.footerLinks}>
           <li><Link href="/legal/privacy">Privacy</Link></li>
           <li><Link href="/legal/termini">Termini</Link></li>
-          <li><a href="mailto:support@jesocial.com">Contatti</a></li>
+          <li><a href="mailto:jes.socialdelleemozioni@gmail.com">Contatti</a></li>
         </ul>
-        <span className={s.footerCopy}>© 2025 JES — Il Social delle Emozioni</span>
+        <span className={s.footerCopy}>© 2026 JES — Il Social delle Emozioni</span>
       </footer>
 
     </div>

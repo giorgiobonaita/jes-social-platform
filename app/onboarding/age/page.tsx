@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 
 export default function OnboardingAgePage() {
   const router = useRouter();
+  const { t } = useLang();
   const [age, setAge] = useState('');
   const [focused, setFocused] = useState(false);
 
@@ -33,7 +35,7 @@ export default function OnboardingAgePage() {
       </div>
       <div className="onb-body">
         <div className="onb-top">
-          <h1 className="onb-title">Quanti anni hai?</h1>
+          <h1 className="onb-title">{t('onb_age_title')}</h1>
           <div className={`age-input-box${focused && !tooYoung ? ' focused' : ''}${tooYoung ? ' error' : ''}`}>
             <input
               className="age-input-field"
@@ -46,13 +48,13 @@ export default function OnboardingAgePage() {
             />
           </div>
           {tooYoung
-            ? <p className="error-text">Devi avere almeno 16 anni per iscriverti a JES.</p>
-            : <p className="hint-text">Questo serve a personalizzare la tua esperienza e non sarà visibile sul profilo</p>
+            ? <p className="error-text">{t('onb_age_error')}</p>
+            : <p className="hint-text">{t('onb_age_hint')}</p>
           }
         </div>
         <div className="onb-bottom">
           <button className="btn-primary" onClick={handleNext} disabled={!isEnabled}>
-            Avanti
+            {t('onb_next')}
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         </div>

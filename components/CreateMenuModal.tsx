@@ -1,56 +1,57 @@
 'use client';
+import { useLang } from '@/lib/i18n';
+
 interface Props {
   visible: boolean; onClose: () => void;
   onPost: () => void; onStory: () => void; onPoll: () => void;
 }
 
-const OPTIONS = [
-  {
-    key: 'post', label: 'Post', sub: 'Condividi una foto o più',
-    color: '#5B6AF5', bg: '#5B6AF518',
-    icon: (
-      <svg width="28" height="28" fill="none" stroke="#5B6AF5" strokeWidth="1.8" viewBox="0 0 24 24">
-        <rect x="3" y="3" width="18" height="18" rx="3"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <path d="M21 15l-5-5L5 21"/>
-      </svg>
-    ),
-  },
-  {
-    key: 'story', label: 'Storia', sub: 'Scompare dopo 24 ore',
-    color: '#F07B1D', bg: '#F07B1D18',
-    icon: (
-      <svg width="28" height="28" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="9" strokeDasharray="3 2"/>
-        <polygon points="10,8 16,12 10,16" fill="#F07B1D" stroke="none"/>
-      </svg>
-    ),
-  },
-  {
-    key: 'poll', label: 'Sondaggio', sub: "Chiedi l'opinione dei tuoi follower",
-    color: '#34C759', bg: '#34C75918',
-    icon: (
-      <svg width="28" height="28" fill="none" stroke="#34C759" strokeWidth="1.8" viewBox="0 0 24 24">
-        <rect x="3" y="13" width="4" height="8" rx="1"/>
-        <rect x="10" y="8" width="4" height="13" rx="1"/>
-        <rect x="17" y="3" width="4" height="18" rx="1"/>
-      </svg>
-    ),
-  },
-];
-
 export default function CreateMenuModal({ visible, onClose, onPost, onStory, onPoll }: Props) {
+  const { t } = useLang();
   if (!visible) return null;
+
+  const OPTIONS = [
+    {
+      key: 'post', label: t('post_label'), sub: t('post_sub'),
+      color: '#5B6AF5', bg: '#5B6AF518',
+      icon: (
+        <svg width="28" height="28" fill="none" stroke="#5B6AF5" strokeWidth="1.8" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+        </svg>
+      ),
+    },
+    {
+      key: 'story', label: t('story_label'), sub: t('story_sub'),
+      color: '#F07B1D', bg: '#F07B1D18',
+      icon: (
+        <svg width="28" height="28" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" strokeDasharray="3 2"/>
+          <polygon points="10,8 16,12 10,16" fill="#F07B1D" stroke="none"/>
+        </svg>
+      ),
+    },
+    {
+      key: 'poll', label: t('create_poll_label'), sub: t('poll_sub'),
+      color: '#34C759', bg: '#34C75918',
+      icon: (
+        <svg width="28" height="28" fill="none" stroke="#34C759" strokeWidth="1.8" viewBox="0 0 24 24">
+          <rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/>
+        </svg>
+      ),
+    },
+  ];
+
   const handlers: Record<string, () => void> = {
     post: () => { onClose(); setTimeout(onPost, 200); },
     story: () => { onClose(); setTimeout(onStory, 200); },
     poll: () => { onClose(); setTimeout(onPoll, 200); },
   };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ paddingBottom: 40 }}>
         <div className="modal-handle" />
-        <h2 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20, color: '#111', marginBottom: 8, paddingLeft: 6 }}>Cosa vuoi creare?</h2>
+        <h2 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20, color: '#111', marginBottom: 8, paddingLeft: 6 }}>{t('create_what')}</h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {OPTIONS.map(opt => (
             <button key={opt.key} onClick={handlers[opt.key]}
@@ -69,7 +70,7 @@ export default function CreateMenuModal({ visible, onClose, onPost, onStory, onP
           ))}
         </div>
         <div style={{ marginTop: 16, borderTop: '1px solid #F0F0F0', paddingTop: 16, textAlign: 'center' }}>
-          <button onClick={onClose} style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16, color: '#999', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 24px' }}>Annulla</button>
+          <button onClick={onClose} style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 16, color: '#999', background: 'none', border: 'none', cursor: 'pointer', padding: '8px 24px' }}>{t('cancel')}</button>
         </div>
       </div>
     </div>

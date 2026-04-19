@@ -1,13 +1,9 @@
 'use client';
 import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
-
-const PRIVACY_OPTS = [
-  { id: 'all', label: 'Pubblico', desc: 'Visibile a chiunque' },
-  { id: 'me',  label: 'Solo io',  desc: 'Privato' },
-] as const;
 
 const TEXT_COLORS = ['#FFFFFF', '#000000', ORANGE, '#FFD700', '#FF3B30', '#34C759', '#5B6AF5'];
 
@@ -23,6 +19,13 @@ interface Props {
 }
 
 export default function CreateStoryModal({ visible, onClose, onPublished, authorUserId }: Props) {
+  const { t } = useLang();
+  
+  const PRIVACY_OPTS = [
+    { id: 'all', label: t('privacy_public'), desc: t('privacy_public_desc') },
+    { id: 'me',  label: t('privacy_private'),  desc: t('privacy_private_desc') },
+  ] as const;
+
   const [step, setStep]                   = useState<Step>('picker');
   const [file, setFile]                   = useState<File | null>(null);
   const [preview, setPreview]             = useState<string | null>(null);
@@ -67,9 +70,9 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
       let storyUserId = authorUserId ?? null;
       if (!storyUserId) {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Non sei loggato.');
+        if (!user) throw new Error(t('not_logged'));
         const { data: dbUser, error: userErr } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-        if (userErr || !dbUser) throw new Error('Profilo non trovato.');
+        if (userErr || !dbUser) throw new Error(t('profile_not_found'));
         storyUserId = dbUser.id;
       }
       const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
@@ -88,7 +91,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
       if (storyErr) throw new Error(storyErr.message);
       close(); onPublished();
     } catch (e: any) {
-      alert(e.message || 'Impossibile pubblicare. Riprova.');
+      alert(e.message || 'Error');
     } finally { setPublishing(false); }
   };
 
@@ -105,12 +108,12 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
           </button>
           <svg width="64" height="64" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: '#fff', marginBottom: 8 }}>Aggiungi una foto</div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Visibile per 30 giorni</div>
+            <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: '#fff', marginBottom: 8 }}>{t('add_photo_story')}</div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{t('visible_days').replace('{days}', '30')}</div>
           </div>
           <button onClick={() => fileInputRef.current?.click()}
             style={{ backgroundColor: ORANGE, border: 'none', borderRadius: 26, padding: '14px 32px', cursor: 'pointer' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: '#fff' }}>Scegli foto</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: '#fff' }}>{t('choose_photo')}</span>
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
         </div>
@@ -153,10 +156,10 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
             </button>
             <div style={{ display: 'flex', gap: 6 }}>
               {[
-                { label: 'Testo', icon: <svg width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>, action: () => { closeAllInputs(); setShowTextInput(true); } },
-                { label: 'Link', icon: <svg width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>, action: () => { closeAllInputs(); setShowLinkInput(true); } },
-                { label: 'Foto', icon: <svg width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>, action: () => changeFileRef.current?.click() },
-                { label: 'Menziona', icon: <svg width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 006 0v-1a10 10 0 10-3.92 7.94"/></svg>, action: () => { closeAllInputs(); setShowMentionInput(true); } },
+                { label: t('text_tool'), icon: <svg width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>, action: () => { closeAllInputs(); setShowTextInput(true); } },
+                { label: t('link_tool'), icon: <svg width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>, action: () => { closeAllInputs(); setShowLinkInput(true); } },
+                { label: t('photo_tool'), icon: <svg width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>, action: () => changeFileRef.current?.click() },
+                { label: t('mention_tool'), icon: <svg width="19" height="19" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 006 0v-1a10 10 0 10-3.92 7.94"/></svg>, action: () => { closeAllInputs(); setShowMentionInput(true); } },
               ].map(t => (
                 <button key={t.label} onClick={t.action}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 14, padding: '7px 10px', gap: 2, border: 'none', cursor: 'pointer' }}>
@@ -171,7 +174,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
           {/* Text input panel */}
           {showTextInput && (
             <div style={{ position: 'absolute', bottom: 90, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.85)', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 4 }}>Aggiungi testo</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 4 }}>{t('add_text')}</span>
               <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 4 }}>
                 {TEXT_COLORS.map(c => (
                   <button key={c} onClick={() => setTextColor(c)}
@@ -181,7 +184,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
                   style={{ flex: 1, background: 'none', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,0.3)', outline: 'none', fontFamily: 'var(--font-body)', fontSize: 16, color: textColor, paddingBottom: 6 }}
-                  placeholder="Scrivi qualcosa..."
+                  placeholder={t('write_something')}
                   value={currentText}
                   onChange={e => setCurrentText(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addText(); }}
@@ -200,7 +203,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
           {/* Link input panel */}
           {showLinkInput && (
             <div style={{ position: 'absolute', bottom: 90, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.85)', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 4 }}>Aggiungi link</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 4 }}>{t('add_link')}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <input
                   style={{ flex: 1, background: 'none', border: 'none', borderBottom: '1.5px solid rgba(255,255,255,0.3)', outline: 'none', fontFamily: 'var(--font-body)', fontSize: 16, color: '#fff', paddingBottom: 6 }}
@@ -219,7 +222,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
           {/* Mention input panel */}
           {showMentionInput && (
             <div style={{ position: 'absolute', bottom: 90, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.85)', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 4 }}>Menziona qualcuno</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#fff', marginBottom: 4 }}>{t('mention_someone')}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20, color: '#fff' }}>@</span>
                 <input
@@ -251,7 +254,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
               {publishing
                 ? <div className="spin" style={{ width: 18, height: 18, borderColor: 'rgba(255,255,255,0.4)', borderTopColor: '#fff' }} />
                 : <>
-                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: '#fff' }}>Pubblica storia</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: '#fff' }}>{t('publish_story')}</span>
                     <svg width="18" height="18" fill="none" stroke="#fff" strokeWidth="2.2" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                   </>
               }
@@ -261,7 +264,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
           {/* Privacy sheet */}
           {showPrivacy && (
             <div style={{ position: 'absolute', bottom: 85, left: 12, right: 12, backgroundColor: '#fff', borderRadius: 22, padding: 20, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: '#111', display: 'block', marginBottom: 14 }}>Chi può vedere la storia?</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: '#111', display: 'block', marginBottom: 14 }}>{t('who_can_see_story')}</span>
               {PRIVACY_OPTS.map(opt => (
                 <button key={opt.id} onClick={() => { setPrivacy(opt.id); setShowPrivacy(false); }}
                   style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 0', borderBottom: '1px solid #F5F5F5', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', borderBottomWidth: 1, borderBottomColor: '#F5F5F5', paddingTop: 13, paddingBottom: 13 }}>
@@ -286,3 +289,4 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
     </div>
   );
 }
+

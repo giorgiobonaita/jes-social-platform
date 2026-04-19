@@ -17,24 +17,24 @@ interface Notification {
   postThumb?: string;
 }
 
-function formatTimeAgo(isoDate: string): string {
+function formatTimeAgo(isoDate: string, tFn: (k: string) => string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'ora';
-  if (m < 60) return `${m} min fa`;
+  if (m < 1)  return tFn('notif_now');
+  if (m < 60) return `${m} ${tFn('notif_mins_ago')}`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ore fa`;
+  if (h < 24) return `${h} ${tFn('notif_hours_ago')}`;
   const d = Math.floor(h / 24);
-  if (d === 1) return 'Ieri';
-  return `${d} giorni fa`;
+  if (d === 1) return tFn('notif_yesterday');
+  return `${d} ${tFn('notif_days_ago')}`;
 }
 
-function notifText(type: NotifType): string {
+function notifText(type: NotifType, tFn: (k: string) => string): string {
   switch (type) {
-    case 'like':    return 'ha messo Mi piace alla tua opera';
-    case 'comment': return 'ha commentato il tuo post';
-    case 'follow':  return 'ha iniziato a seguirti';
-    case 'mention': return 'ti ha menzionato in un commento';
+    case 'like':    return tFn('notif_like');
+    case 'comment': return tFn('notif_comment');
+    case 'follow':  return tFn('notif_follow');
+    case 'mention': return tFn('notif_mention');
   }
 }
 
@@ -101,8 +101,8 @@ export default function NotificationsModal({ visible, onClose }: Props) {
       return {
         id: n.id, type: n.type as NotifType,
         username: sender.username || 'utente', avatarUrl: sender.avatar_url || null,
-        text: notifText(n.type as NotifType),
-        timeAgo: n.created_at ? formatTimeAgo(n.created_at) : '',
+        text: notifText(n.type as NotifType, t),
+        timeAgo: n.created_at ? formatTimeAgo(n.created_at, t) : '',
         postThumb: n.post_id ? postMap[n.post_id] : undefined,
       };
     }));

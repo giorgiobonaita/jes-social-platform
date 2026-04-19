@@ -2,29 +2,50 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 
-const CATEGORIES = [
-  { id: '1', title: 'Pittura', image: 'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=600&q=80', emoji: '🎨' },
-  { id: '2', title: 'Scultura', image: 'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=600&q=80', emoji: '🗿' },
-  { id: '3', title: 'Disegno', image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&q=80', emoji: '✏️' },
-  { id: '4', title: 'Fotografia', image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=80', emoji: '📷' },
-  { id: '5', title: 'Arte digitale', image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&q=80', emoji: '💻' },
-  { id: '6', title: 'Street Art', image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80', emoji: '🎭' },
-  { id: '7', title: 'Illustrazione', image: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=600&q=80', emoji: '📚' },
-  { id: '8', title: 'Grafica', image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80', emoji: '🖼️' },
-  { id: '9', title: 'Arte astratta', image: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600&q=80', emoji: '🌀' },
-  { id: '10', title: 'Arte figurativa', image: 'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=600&q=80', emoji: '👤' },
-  { id: '11', title: 'Arte concettuale', image: 'https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=600&q=80', emoji: '💡' },
-  { id: '12', title: 'Arte contemporanea', image: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=600&q=80', emoji: '🏛️' },
-  { id: '13', title: 'Arte classica', image: 'https://images.unsplash.com/photo-1564457461758-8ff96e439e83?w=600&q=80', emoji: '🏺' },
-  { id: '14', title: 'Arte tessile', image: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600&q=80', emoji: '🧵' },
-  { id: '15', title: 'Calligrafia', image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&q=80', emoji: '🖊️' },
-];
 const MIN_SELECTIONS = 3;
+
+const CATEGORY_IMAGES = [
+  'https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?w=600&q=80',
+  'https://images.unsplash.com/photo-1561214115-f2f134cc4912?w=600&q=80',
+  'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=600&q=80',
+  'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=600&q=80',
+  'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&q=80',
+  'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80',
+  'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=600&q=80',
+  'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&q=80',
+  'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=600&q=80',
+  'https://images.unsplash.com/photo-1571115764595-644a1f56a55c?w=600&q=80',
+  'https://images.unsplash.com/photo-1580136579312-94651dfd596d?w=600&q=80',
+  'https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=600&q=80',
+  'https://images.unsplash.com/photo-1564457461758-8ff96e439e83?w=600&q=80',
+  'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=600&q=80',
+  'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=600&q=80',
+  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
+  'https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=600&q=80',
+];
+
+const CATEGORY_EMOJIS = ['🎨','🗿','✏️','📷','💻','🎭','📚','🖼️','🌀','👤','💡','🏛️','🏺','🧵','🖊️','👗','📣'];
+const CATEGORY_KEYS = [
+  'cat_painting','cat_sculpture','cat_drawing','cat_photography','cat_digital',
+  'cat_street','cat_illustration','cat_graphic','cat_abstract','cat_figurative',
+  'cat_conceptual','cat_contemporary','cat_classical','cat_textile','cat_calligraphy',
+  'cat_fashion','cat_sponsor',
+];
 
 export default function OnboardingCategoriesPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const CATEGORIES = CATEGORY_KEYS.map((key, i) => ({
+    id: String(i + 1),
+    key,
+    title: t(key),
+    image: CATEGORY_IMAGES[i],
+    emoji: CATEGORY_EMOJIS[i],
+  }));
 
   const toggle = (id: string) =>
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -49,9 +70,9 @@ export default function OnboardingCategoriesPage() {
   return (
     <div className="shell categories-page">
       <div className="categories-header">
-        <h1 className="onb-title lg" style={{ marginBottom: 8 }}>Le tue passioni</h1>
+        <h1 className="onb-title lg" style={{ marginBottom: 8 }}>{t('onb_cat_title')}</h1>
         <p className="onb-subtitle">
-          Scegli <span className="onb-subtitle orange">almeno 3 categorie</span> che ami
+          {t('onb_cat_subtitle_pre')} <span className="onb-subtitle orange">{t('onb_cat_subtitle_bold')}</span> {t('onb_cat_subtitle_post')}
         </p>
       </div>
 
@@ -80,8 +101,8 @@ export default function OnboardingCategoriesPage() {
       <div className="sticky-bottom">
         <button className="btn-primary" onClick={handleContinue} disabled={!canProceed}>
           {canProceed ? (
-            <>Continua <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
-          ) : `Seleziona ancora ${MIN_SELECTIONS - selectedIds.length}`}
+            <>{t('onb_continue')} <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
+          ) : `${t('onb_cat_select_more')} ${MIN_SELECTIONS - selectedIds.length}`}
         </button>
       </div>
     </div>

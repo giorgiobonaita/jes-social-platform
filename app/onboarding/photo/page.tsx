@@ -2,9 +2,11 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 
 export default function OnboardingPhotoPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -50,9 +52,9 @@ export default function OnboardingPhotoPage() {
       </div>
       <div className="onb-body">
         <div className="onb-top">
-          <h1 className="onb-title" style={{ textAlign: 'center' }}>Aggiungi una foto</h1>
+          <h1 className="onb-title" style={{ textAlign: 'center' }}>{t('onb_photo_title')}</h1>
           <p className="onb-subtitle" style={{ marginBottom: 40, paddingLeft: 16, paddingRight: 16 }}>
-            Clicca il cerchio o il pulsante qui sotto per scegliere la tua foto profilo
+            {t('onb_photo_subtitle')}
           </p>
 
           <div className="photo-circle-wrap" onClick={() => inputRef.current?.click()}>
@@ -74,13 +76,13 @@ export default function OnboardingPhotoPage() {
 
           <button className="add-photo-btn" onClick={() => inputRef.current?.click()}>
             <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
-            {previewUrl ? 'Cambia foto' : 'Aggiungi foto'}
+            {previewUrl ? t('change_photo') : t('add_photo')}
           </button>
         </div>
         <div className="onb-bottom">
           <button className="btn-primary" onClick={handleContinue} disabled={uploading}>
             {uploading ? <span className="spin" /> : (
-              <>{previewUrl ? 'Continua' : 'Salta'} <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
+              <>{previewUrl ? t('onb_continue') : t('onb_skip')} <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></>
             )}
           </button>
         </div>

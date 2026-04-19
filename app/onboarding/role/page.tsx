@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -34,17 +35,18 @@ const ROLE_ICONS: Record<string, React.ReactElement> = {
   ),
 };
 
-const ROLES = [
-  { id: 'user', title: 'Utente', description: "Esplora l'arte, scopri nuovi talenti e interagisci." },
-  { id: 'student', title: 'Studente / Insegnante', description: "Studia, insegna o condividi la tua passione per l'arte." },
-  { id: 'hobby_artist', title: 'Artista emergente', description: "Crea arte nel tempo libero o sei alle prime armi." },
-  { id: 'pro_artist', title: 'Artista professionista', description: "L'arte è la tua professione e la tua carriera principale." },
-  { id: 'gallery', title: 'Gallerie & Società', description: "Promuovi e gestisci opere d'arte o artisti." },
-];
-
 export default function OnboardingRolePage() {
   const router = useRouter();
+  const { t } = useLang();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const ROLES = [
+    { id: 'user', title: t('role_user_title'), description: t('role_user_desc') },
+    { id: 'student', title: t('role_student_title'), description: t('role_student_desc') },
+    { id: 'hobby_artist', title: t('role_hobby_title'), description: t('role_hobby_desc') },
+    { id: 'pro_artist', title: t('role_pro_title'), description: t('role_pro_desc') },
+    { id: 'gallery', title: t('role_gallery_title'), description: t('role_gallery_desc') },
+  ];
 
   const handleContinue = async () => {
     if (!selectedId) return;
@@ -64,9 +66,13 @@ export default function OnboardingRolePage() {
   return (
     <div className="shell roles-page">
       <div style={{ padding: '24px 20px 24px' }}>
-        <h1 className="onb-title lg" style={{ marginBottom: 8 }}>Cosa ti rappresenta?</h1>
+        <h1 className="onb-title lg" style={{ marginBottom: 8 }}>{t('onb_role_title')}</h1>
         <p className="onb-subtitle" style={{ textAlign: 'left' }}>
-          Scegli il profilo che si <span className="onb-subtitle orange">adatta meglio</span> a te. Potrai comunque esplorare tutto.
+          {t('onb_role_subtitle').split(t('onb_role_subtitle_bold')).map((part, i, arr) =>
+            i < arr.length - 1
+              ? <span key={i}>{part}<span className="onb-subtitle orange">{t('onb_role_subtitle_bold')}</span></span>
+              : <span key={i}>{part}</span>
+          )}
         </p>
       </div>
 
@@ -93,7 +99,7 @@ export default function OnboardingRolePage() {
 
       <div className="sticky-bottom">
         <button className="btn-primary" onClick={handleContinue} disabled={!selectedId}>
-          Continua
+          {t('onb_continue')}
           {selectedId && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
         </button>
       </div>

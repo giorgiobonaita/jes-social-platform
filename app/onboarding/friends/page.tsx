@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 
 interface RealUser {
   id: string;
@@ -14,6 +15,7 @@ interface RealUser {
 
 export default function OnboardingFriendsPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [users, setUsers] = useState<RealUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [addedFriends, setAddedFriends] = useState<Record<string, boolean>>({});
@@ -42,18 +44,18 @@ export default function OnboardingFriendsPage() {
     const wasAdded = !!addedFriends[id];
     setAddedFriends(prev => ({ ...prev, [id]: !wasAdded }));
     if (!wasAdded && currentUserId) {
-      supabase.from('follows').insert({ follower_id: currentUserId, following_id: id }).then(() => {});
+      supabase.from('follows').insert({ follower_id: currentUserId, followed_id: id }).then(() => {});
     } else if (wasAdded && currentUserId) {
-      supabase.from('follows').delete().eq('follower_id', currentUserId).eq('following_id', id).then(() => {});
+      supabase.from('follows').delete().eq('follower_id', currentUserId).eq('followed_id', id).then(() => {});
     }
   };
 
   return (
     <div className="shell friends-page">
       <div style={{ padding: '24px 20px 20px' }}>
-        <h1 className="onb-title lg" style={{ marginBottom: 8 }}>Trova amici</h1>
+        <h1 className="onb-title lg" style={{ marginBottom: 8 }}>{t('onb_friends_title')}</h1>
         <p className="onb-subtitle" style={{ textAlign: 'left' }}>
-          Connettiti con persone che condividono le tue <strong style={{ color: '#F07B1D' }}>stesse passioni</strong>.
+          {t('onb_friends_subtitle')} <strong style={{ color: '#F07B1D' }}>{t('onb_friends_subtitle_bold')}</strong>.
         </p>
       </div>
 
@@ -61,7 +63,7 @@ export default function OnboardingFriendsPage() {
         {loading ? (
           <div className="spinner"><div className="spin" /></div>
         ) : users.length === 0 ? (
-          <p className="empty-text">Nessun altro utente ancora</p>
+          <p className="empty-text">{t('onb_friends_empty')}</p>
         ) : (
           users.map(user => {
             const isAdded = !!addedFriends[user.id];
@@ -79,11 +81,11 @@ export default function OnboardingFriendsPage() {
                     {user.name || user.username}
                     {isOfficial && <span style={{ color: '#007AFF', fontSize: 14 }}>✓</span>}
                   </div>
-                  <div className="user-role">{user.discipline || 'Artista'}</div>
+                  <div className="user-role">{user.discipline || t('onb_friends_default_role')}</div>
                 </div>
                 <button className={`follow-btn${isAdded ? ' added' : ''}`} onClick={() => toggleFriend(user.id)}>
-                  {isAdded ? 'Inviata' : (
-                    <><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style={{ marginRight: 4 }}><path d="M15 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>Segui</>
+                  {isAdded ? t('onb_friends_follow_sent') : (
+                    <><svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24" style={{ marginRight: 4 }}><path d="M15 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.7 0-8 1.3-8 4v2h16v-2c0-2.7-5.3-4-8-4z"/></svg>{t('follow')}</>
                   )}
                 </button>
               </div>
@@ -94,7 +96,7 @@ export default function OnboardingFriendsPage() {
 
       <div className="sticky-bottom">
         <button className="btn-primary" onClick={() => router.replace('/home')}>
-          Continua
+          {t('onb_continue')}
           <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
       </div>

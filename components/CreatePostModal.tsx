@@ -1,13 +1,10 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { containsBlacklistedWord } from '@/lib/blacklist';
+import { useLang } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
-
-const PRIVACY_OPTIONS = [
-  { id: 'all', label: 'Pubblico',  desc: 'Chiunque può vedere' },
-  { id: 'me',  label: 'Solo io',   desc: 'Privato' },
-] as const;
 
 const OFFICIAL_GROUP_NAMES = [
   'Pittura', 'Scultura', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
@@ -22,7 +19,7 @@ type Step = 'picker' | 'details';
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onPublished: () => void;
+  onPublished?: () => void;
   authorUserId?: string;
 }
 
@@ -41,22 +38,22 @@ function DescriptionPreview({ text }: { text: string }) {
 }
 
 export default function CreatePostModal({ visible, onClose, onPublished, authorUserId }: Props) {
+  const { t } = useLang();
   const [step, setStep]                     = useState<Step>('picker');
   const [files, setFiles]                   = useState<File[]>([]);
   const [previews, setPreviews]             = useState<string[]>([]);
   const [groups, setGroups]                 = useState<GroupOption[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [title, setTitle]                   = useState('');
-  const [description, setDescription]       = useState('');
+  const [caption, setCaption]               = useState('');
   const [privacy, setPrivacy]               = useState<'all' | 'me'>('all');
-  const [descFocused, setDescFocused]       = useState(false);
+  const [captionFocused, setCaptionFocused] = useState(false);
   const [publishing, setPublishing]         = useState(false);
   const fileInputRef  = useRef<HTMLInputElement>(null);
   const changeFileRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
-    setStep('picker'); setFiles([]); setPreviews([]); setTitle(''); setDescription('');
-    setPrivacy('all'); setDescFocused(false); setSelectedGroupId(null);
+    setStep('picker'); setFiles([]); setPreviews([]); setCaption('');
+    setPrivacy('all'); setCaptionFocused(false); setSelectedGroupId(null);
   };
   const close = () => { reset(); onClose(); };
 
@@ -94,18 +91,20 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
     return data.publicUrl;
   };
 
-  const canPublish = title.trim().length > 0 && description.trim().length > 0 && files.length > 0;
+  const canPublish = caption.trim().length > 0 && files.length > 0;
 
   const publish = async () => {
     if (!canPublish || publishing) return;
+    const blocked = await containsBlacklistedWord(caption.trim());
+    if (blocked) { alert(`${t('word_not_allowed')}: "${blocked}"`); return; }
     setPublishing(true);
     try {
       let postUserId = authorUserId ?? null;
       if (!postUserId) {
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Non sei loggato.');
+        if (!user) throw new Error(t('not_logged'));
         const { data: dbUser, error: userErr } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-        if (userErr || !dbUser) throw new Error('Profilo non trovato.');
+        if (userErr || !dbUser) throw new Error(t('profile_not_found'));
         postUserId = dbUser.id;
       }
 
@@ -114,7 +113,7 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
 
       const { data: post, error: postErr } = await supabase.from('posts').insert({
         user_id:      postUserId,
-        caption:      `${title.trim()}\n\n${description.trim()}`,
+        caption:      caption.trim(),
         image_urls:   uploadedUrls,
         image_url:    uploadedUrls[0] ?? null,
         aspect_ratio: 1,
@@ -124,13 +123,13 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
 
       if (postErr || !post) throw new Error(`Errore DB: ${postErr?.message}`);
 
-      const tags = [...new Set((description.match(/#\w+/g) || []).map(t => t.slice(1)))];
+      const tags = [...new Set((caption.match(/#\w+/g) || []).map(t => t.slice(1)))];
       if (tags.length > 0) {
         await supabase.from('post_tags').insert(tags.map(tag => ({ post_id: post.id, tag })));
       }
 
       close();
-      onPublished();
+      onPublished?.();
     } catch (e: any) {
       alert(e.message || 'Impossibile pubblicare. Riprova.');
     } finally { setPublishing(false); }
@@ -148,7 +147,7 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
             <button onClick={close} style={{ width: 40, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}>
               <svg width="24" height="24" fill="none" stroke="#111" strokeWidth="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: '#111' }}>Nuovo post</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: '#111' }}>{t('new_post')}</span>
             <div style={{ width: 40 }} />
           </div>
           {/* Picker area */}
@@ -157,11 +156,11 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
               style={{ width: '100%', maxWidth: 360, border: '2px dashed #DDD', borderRadius: 24, padding: '50px 30px', textAlign: 'center', cursor: 'pointer', backgroundColor: '#FAFAFA', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
               <svg width="56" height="56" fill="none" stroke="#CCC" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               <div>
-                <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 17, color: '#111', marginBottom: 6 }}>Aggiungi foto</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>Fino a 10 immagini · JPG, PNG, HEIC</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 17, color: '#111', marginBottom: 6 }}>{t('add_photo')}</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>{t('photo_hint')}</div>
               </div>
               <div style={{ backgroundColor: ORANGE, borderRadius: 22, padding: '12px 28px' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#fff' }}>Scegli foto</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#fff' }}>{t('choose_photo')}</span>
               </div>
             </div>
             <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
@@ -176,12 +175,12 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
             <button onClick={() => setStep('picker')} style={{ width: 40, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}>
               <svg width="24" height="24" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: '#111' }}>Nuovo post</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 18, color: '#111' }}>{t('new_post')}</span>
             <button onClick={publish} disabled={!canPublish || publishing}
               style={{ backgroundColor: canPublish && !publishing ? ORANGE : '#E0E0E0', border: 'none', borderRadius: 22, padding: '10px 20px', cursor: canPublish && !publishing ? 'pointer' : 'default', transition: 'background .15s' }}>
               {publishing
                 ? <div className="spin" style={{ width: 16, height: 16, borderColor: 'rgba(255,255,255,0.4)', borderTopColor: '#fff' }} />
-                : <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#fff' }}>Pubblica</span>
+                : <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#fff' }}>{t('publish')}</span>
               }
             </button>
           </div>
@@ -204,50 +203,36 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
               <button onClick={() => changeFileRef.current?.click()}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#F5F5F5', border: 'none', borderRadius: 16, padding: '8px 16px', cursor: 'pointer' }}>
                 <svg width="16" height="16" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 13, color: '#666' }}>Cambia foto</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 13, color: '#666' }}>{t('change_photo')}</span>
               </button>
               <input ref={changeFileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
             </div>
 
-            {/* Title */}
+            {/* Testo (titolo + descrizione unificati) */}
             <div style={{ padding: '22px 20px 0' }}>
               <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#333', display: 'block', marginBottom: 10 }}>
-                Titolo <span style={{ color: ORANGE }}>*</span>
+                {t('caption_label')} <span style={{ color: ORANGE }}>*</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 12, color: '#BBB', marginLeft: 8 }}>{t('caption_hint')}</span>
               </label>
-              <input
-                style={{ width: '100%', fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 16, color: '#111', border: '1.5px solid #E8E8E8', borderRadius: 14, padding: '13px 16px', outline: 'none', boxSizing: 'border-box' }}
-                placeholder='Es. «La mia ultima opera»'
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                maxLength={100}
-              />
-            </div>
-
-            {/* Description */}
-            <div style={{ padding: '22px 20px 0' }}>
-              <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#333', display: 'block', marginBottom: 10 }}>
-                Descrizione <span style={{ color: ORANGE }}>*</span>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 12, color: '#BBB', marginLeft: 8 }}>Scrivi #hashtag per evidenziarli</span>
-              </label>
-              <div style={{ border: '1.5px solid #E8E8E8', borderRadius: 14, minHeight: 110, overflow: 'hidden', position: 'relative' }}>
-                {!descFocused && description.length > 0
-                  ? <div onClick={() => setDescFocused(true)}><DescriptionPreview text={description} /></div>
+              <div style={{ border: '1.5px solid #E8E8E8', borderRadius: 14, minHeight: 130, overflow: 'hidden', position: 'relative' }}>
+                {!captionFocused && caption.length > 0
+                  ? <div onClick={() => setCaptionFocused(true)}><DescriptionPreview text={caption} /></div>
                   : <textarea
-                      style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', outline: 'none', padding: '13px 16px', minHeight: 110, lineHeight: '24px', resize: 'none', boxSizing: 'border-box', backgroundColor: 'transparent' }}
-                      placeholder={'Racconta qualcosa sul tuo lavoro...\n\nUsa #hashtag per essere trovato più facilmente'}
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      maxLength={500}
-                      rows={5}
-                      onFocus={() => setDescFocused(true)}
-                      onBlur={() => setDescFocused(false)}
-                      autoFocus={descFocused}
+                      style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', outline: 'none', padding: '13px 16px', minHeight: 130, lineHeight: '24px', resize: 'none', boxSizing: 'border-box', backgroundColor: 'transparent' }}
+                      placeholder={t('caption_placeholder')}
+                      value={caption}
+                      onChange={e => setCaption(e.target.value)}
+                      maxLength={600}
+                      rows={6}
+                      onFocus={() => setCaptionFocused(true)}
+                      onBlur={() => setCaptionFocused(false)}
+                      autoFocus={captionFocused}
                     />
                 }
               </div>
-              {descFocused && description.includes('#') && (
+              {captionFocused && caption.includes('#') && (
                 <div style={{ marginTop: 8, padding: 12, backgroundColor: '#FFF8F3', borderRadius: 12, border: `1px solid ${ORANGE}30` }}>
-                  <DescriptionPreview text={description} />
+                  <DescriptionPreview text={caption} />
                 </div>
               )}
             </div>
@@ -256,12 +241,12 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
             {groups.length > 0 && (
               <div style={{ padding: '22px 20px 0' }}>
                 <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#333', display: 'block', marginBottom: 10 }}>
-                  Pubblica anche nel gruppo <span style={{ fontWeight: 400, fontSize: 12, color: '#AAA' }}>(opzionale)</span>
+                  {t('post_in_group')} <span style={{ fontWeight: 400, fontSize: 12, color: '#AAA' }}>({t('optional_label')})</span>
                 </label>
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
                   <button onClick={() => setSelectedGroupId(null)}
                     style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '9px 14px', borderRadius: 20, border: `1.5px solid ${!selectedGroupId ? ORANGE : '#E8E8E8'}`, backgroundColor: !selectedGroupId ? ORANGE : '#FAFAFA', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: !selectedGroupId ? '#fff' : '#888' }}>Solo feed</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: !selectedGroupId ? '#fff' : '#888' }}>{t('feed_only')}</span>
                   </button>
                   {groups.map(g => (
                     <button key={g.id} onClick={() => setSelectedGroupId(g.id)}
@@ -276,9 +261,9 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
 
             {/* Privacy */}
             <div style={{ padding: '22px 20px 0' }}>
-              <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#333', display: 'block', marginBottom: 10 }}>Chi può vedere</label>
+              <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#333', display: 'block', marginBottom: 10 }}>{t('who_can_see')}</label>
               <div style={{ display: 'flex', gap: 10 }}>
-                {PRIVACY_OPTIONS.map(opt => {
+                {([{id:'all',label:t('privacy_public'),desc:t('privacy_public_desc')},{id:'me',label:t('privacy_me'),desc:t('privacy_me_desc')}] as const).map(opt => {
                   const active = privacy === opt.id;
                   return (
                     <button key={opt.id} onClick={() => setPrivacy(opt.id)}

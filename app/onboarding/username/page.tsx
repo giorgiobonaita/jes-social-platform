@@ -3,9 +3,11 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Suspense } from 'react';
+import { useLang } from '@/lib/i18n';
 
 function UsernameContent() {
   const router = useRouter();
+  const { t } = useLang();
   const params = useSearchParams();
   const firstName = params.get('firstName') || 'user';
   const lastName = params.get('lastName') || 'name';
@@ -47,8 +49,8 @@ function UsernameContent() {
       </div>
       <div className="onb-body">
         <div className="onb-top" style={{ justifyContent: 'center' }}>
-          <h1 className="onb-title lg" style={{ marginBottom: 8 }}>Il tuo username</h1>
-          <p className="onb-subtitle" style={{ marginBottom: 32 }}>Scegli bene, non potrai cambiarlo</p>
+          <h1 className="onb-title lg" style={{ marginBottom: 8 }}>{t('onb_username_title')}</h1>
+          <p className="onb-subtitle" style={{ marginBottom: 32 }}>{t('onb_username_subtitle')}</p>
 
           <input
             className="username-input"
@@ -65,11 +67,11 @@ function UsernameContent() {
           {tooShort && (
             <div className="warning-row">
               <svg width="15" height="15" fill="#E74C3C" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11"/><path d="M12 7v5M12 16h.01" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
-              <span className="warning-text">Minimo 3 caratteri</span>
+              <span className="warning-text">{t('onb_username_min')}</span>
             </div>
           )}
 
-          <p className="suggestions-label" style={{ marginTop: tooShort ? 0 : 40 }}>Suggerimenti</p>
+          <p className="suggestions-label" style={{ marginTop: tooShort ? 0 : 40 }}>{t('onb_username_suggestions')}</p>
           <div className="pills-grid">
             {suggestions.map((s, i) => (
               <button key={i} className={`pill${username === s ? ' active' : ''}`} onClick={() => setUsername(s)}>
@@ -81,7 +83,7 @@ function UsernameContent() {
         </div>
         <div className="onb-bottom">
           <button className="btn-primary" onClick={handleContinue} disabled={!isValid}>
-            Continua
+            {t('onb_continue')}
             {isValid && <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>}
           </button>
         </div>

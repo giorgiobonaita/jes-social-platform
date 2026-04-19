@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import AvatarImg from './AvatarImg';
+import { useLang } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -40,6 +41,7 @@ interface Props {
 }
 
 export default function ChatModal({ visible, onClose, openWithUserId, openWithName, openWithAvatar }: Props) {
+  const { t } = useLang();
   const [myId, setMyId]                     = useState<string | null>(null);
   const [conversations, setConversations]   = useState<Conversation[]>([]);
   const [activeId, setActiveId]             = useState<string | null>(null);
@@ -50,6 +52,11 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
   const [loadingConvs, setLoadingConvs]     = useState(false);
   const [loadingMsgs, setLoadingMsgs]       = useState(false);
   const [isSending, setIsSending]           = useState(false);
+  const [suggested, setSuggested]           = useState<{ id: string; name: string; username: string; avatarUrl: string | null }[]>([]);
+  const [newMsgMode, setNewMsgMode]         = useState(false);
+  const [newMsgQuery, setNewMsgQuery]       = useState('');
+  const [newMsgResults, setNewMsgResults]   = useState<{ id: string; name: string; username: string; avatarUrl: string | null }[]>([]);
+  const [loadingNewMsg, setLoadingNewMsg]   = useState(false);
   const listRef  = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = (animated = false) => {
@@ -58,13 +65,20 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
     }, 80);
   };
 
-  // Carica utente corrente
+  // Carica utente corrente + seguiti (suggeriti per nuovo messaggio)
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-      if (data) setMyId(data.id);
+      if (!data) return;
+      setMyId(data.id);
+      const { data: follows } = await supabase.from('follows').select('followed_id').eq('follower_id', data.id).limit(20);
+      const fIds = (follows || []).map((f: any) => f.followed_id);
+      if (fIds.length > 0) {
+        const { data: su } = await supabase.from('users').select('id, name, username, avatar_url').in('id', fIds);
+        setSuggested((su || []).map((u: any) => ({ id: u.id, name: u.name || 'Utente', username: u.username || '', avatarUrl: u.avatar_url || null })));
+      }
     })();
   }, []);
 
@@ -178,8 +192,28 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
 
   const handleBack = () => {
     if (activeId) { setActiveId(null); setMessages([]); }
+    else if (newMsgMode) { setNewMsgMode(false); setNewMsgQuery(''); }
     else onClose();
   };
+
+  // Ricerca utenti per nuovo messaggio (seguiti prima)
+  const newMsgDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!newMsgMode) return;
+    if (!newMsgQuery.trim()) { setNewMsgResults(suggested); return; }
+    if (newMsgDebounce.current) clearTimeout(newMsgDebounce.current);
+    newMsgDebounce.current = setTimeout(async () => {
+      if (!myId) return;
+      setLoadingNewMsg(true);
+      const pattern = `%${newMsgQuery}%`;
+      const { data } = await supabase.from('users').select('id, name, username, avatar_url').neq('id', myId).or(`username.ilike.${pattern},name.ilike.${pattern}`).limit(30);
+      const all = (data || []).map((u: any) => ({ id: u.id, name: u.name || 'Utente', username: u.username || '', avatarUrl: u.avatar_url || null }));
+      const fIds = new Set(suggested.map(s => s.id));
+      setNewMsgResults([...all.filter(u => fIds.has(u.id)), ...all.filter(u => !fIds.has(u.id))]);
+      setLoadingNewMsg(false);
+    }, 350);
+    return () => { if (newMsgDebounce.current) clearTimeout(newMsgDebounce.current); };
+  }, [newMsgQuery, newMsgMode, suggested, myId]);
 
   if (!visible) return null;
 
@@ -189,7 +223,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0' }}>
         <button onClick={handleBack} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}>
           <svg width="24" height="24" fill="none" stroke="#111" strokeWidth="2.2" viewBox="0 0 24 24">
-            {activeId ? <polyline points="15 18 9 12 15 6"/> : <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}
+            {(activeId || newMsgMode) ? <polyline points="15 18 9 12 15 6"/> : <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>}
           </svg>
         </button>
         {activeId ? (
@@ -197,14 +231,66 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
             <AvatarImg uri={activeAvatar} size={32} seed={activeName} />
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>{activeName}</span>
           </div>
+        ) : newMsgMode ? (
+          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>{t('chat_new')}</span>
         ) : (
-          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>Messaggi</span>
+          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>{t('chat_title')}</span>
         )}
-        <div style={{ width: 24 }} />
+        {!activeId && !newMsgMode ? (
+          <button onClick={() => { setNewMsgQuery(''); setNewMsgResults(suggested); setNewMsgMode(true); }} title={t('chat_new')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#111' }}>
+            <svg width="22" height="22" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        ) : (
+          <div style={{ width: 24 }} />
+        )}
       </div>
 
       {/* Body */}
-      {activeId ? (
+      {newMsgMode && !activeId ? (
+        /* ── Pannello Nuovo Messaggio ── */
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#F5F5F5', margin: '12px 16px 4px', padding: '10px 14px', borderRadius: 14, gap: 8 }}>
+            <svg width="17" height="17" fill="none" stroke="#AAAAAA" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontFamily: 'var(--font-body)', fontSize: 14, color: '#111' }}
+              placeholder={t('chat_search_user')}
+              value={newMsgQuery}
+              onChange={e => setNewMsgQuery(e.target.value)}
+              autoFocus
+            />
+            {newMsgQuery && <button onClick={() => setNewMsgQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#AAAAAA', display: 'flex' }}>
+              <svg width="17" height="17" fill="#AAAAAA" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+            </button>}
+          </div>
+          {!newMsgQuery && suggested.length > 0 && (
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 11, color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '10px 20px 6px' }}>{t('chat_suggested')}</span>
+          )}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {loadingNewMsg ? (
+              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24 }}><div className="spin" /></div>
+            ) : newMsgResults.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}><span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>{t('search_no_users')}</span></div>
+            ) : newMsgResults.map(item => {
+              const isFollowed = suggested.some(s => s.id === item.id);
+              return (
+                <div key={item.id} onClick={() => { setNewMsgMode(false); openConversation(item.id, item.name, item.avatarUrl); }}
+                  style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }}>
+                  <div style={{ position: 'relative', marginRight: 14 }}>
+                    <AvatarImg uri={item.avatarUrl} size={48} seed={item.name} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#111' }}>{item.name}</span>
+                      {isFollowed && <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: ORANGE, backgroundColor: ORANGE + '20', borderRadius: 10, padding: '2px 8px' }}>{t('following_btn')}</span>}
+                    </div>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>@{item.username}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : activeId ? (
         /* Chat thread */
         <>
           <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 8px' }}>
@@ -212,7 +298,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
               <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}><div className="spin" /></div>
             ) : messages.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>Inizia la conversazione</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>{t('chat_start')}</span>
               </div>
             ) : (
               messages.map((item, index) => {
@@ -242,7 +328,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, padding: '8px 16px 16px', borderTop: '1px solid #F0F0F0' }}>
             <textarea
               style={{ flex: 1, backgroundColor: '#F5F5F5', borderRadius: 22, padding: '10px 16px', fontFamily: 'var(--font-body)', fontSize: 14, color: '#111', border: 'none', outline: 'none', resize: 'none', maxHeight: 100, lineHeight: '20px' }}
-              placeholder="Scrivi un messaggio…"
+              placeholder={t('write_message')}
               value={inputText}
               onChange={e => setInputText(e.target.value)}
               rows={1}
@@ -262,33 +348,51 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {loadingConvs ? (
             <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}><div className="spin" /></div>
-          ) : conversations.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 60, gap: 10 }}>
-              <svg width="48" height="48" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>Nessun messaggio ancora</span>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAAAAA', marginTop: 4 }}>Cerca un utente e inizia a chattare</span>
-            </div>
           ) : (
-            conversations.map(item => (
-              <div key={item.otherId} onClick={() => openConversation(item.otherId, item.name, item.avatarUrl)}
-                style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }}>
-                <div style={{ position: 'relative', marginRight: 14 }}>
-                  <AvatarImg uri={item.avatarUrl} size={52} seed={item.name} />
-                  {item.unread > 0 && (
-                    <div style={{ position: 'absolute', top: -2, right: -2, backgroundColor: ORANGE, borderRadius: 9, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
-                      <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 10, color: '#fff' }}>{item.unread}</span>
-                    </div>
-                  )}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: item.unread > 0 ? 700 : 600, fontSize: 15, color: '#111' }}>{item.name}</span>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAAAAA' }}>{item.time}</span>
+            <>
+              {/* Persone che segui — scroll orizzontale in cima */}
+              {suggested.length > 0 && (
+                <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid #F5F5F5' }}>
+                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 11, color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: 12 }}>{t('chat_suggested')}</span>
+                  <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 4 }}>
+                    {suggested.map(item => (
+                      <div key={item.id} onClick={() => openConversation(item.id, item.name, item.avatarUrl)}
+                        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 64, cursor: 'pointer', flexShrink: 0 }}>
+                        <AvatarImg uri={item.avatarUrl} size={48} seed={item.name} />
+                        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 11, color: '#333', marginTop: 5, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name.split(' ')[0]}</span>
+                      </div>
+                    ))}
                   </div>
-                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: item.unread > 0 ? 600 : 400, fontSize: 13, color: item.unread > 0 ? '#111' : '#888', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>{item.lastMessage}</span>
                 </div>
-              </div>
-            ))
+              )}
+              {conversations.length === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 40, gap: 8 }}>
+                  <svg width="40" height="40" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAAAAA' }}>{t('chat_no_messages')}</span>
+                  {suggested.length > 0 && <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAAAAA', marginTop: 4 }}>{t('chat_touch_to_start')}</span>}
+                </div>
+              )}
+              {conversations.map(item => (
+                <div key={item.otherId} onClick={() => openConversation(item.otherId, item.name, item.avatarUrl)}
+                  style={{ display: 'flex', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }}>
+                  <div style={{ position: 'relative', marginRight: 14 }}>
+                    <AvatarImg uri={item.avatarUrl} size={52} seed={item.name} />
+                    {item.unread > 0 && (
+                      <div style={{ position: 'absolute', top: -2, right: -2, backgroundColor: ORANGE, borderRadius: 9, minWidth: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
+                        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 10, color: '#fff' }}>{item.unread}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontWeight: item.unread > 0 ? 700 : 600, fontSize: 15, color: '#111' }}>{item.name}</span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAAAAA' }}>{item.time}</span>
+                    </div>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: item.unread > 0 ? 600 : 400, fontSize: 13, color: item.unread > 0 ? '#111' : '#888', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80%' }}>{item.lastMessage}</span>
+                  </div>
+                </div>
+              ))}
+            </>
           )}
         </div>
       )}

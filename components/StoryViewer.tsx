@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export interface UserStoryGroup {
   userId: string; username: string; name: string; avatarUrl: string | null;
@@ -9,11 +10,13 @@ export interface UserStoryGroup {
 interface Props {
   groups: UserStoryGroup[]; initialGroupIndex: number;
   visible: boolean; onClose: () => void;
+  currentUserId?: string | null;
+  onUserPress?: (userId: string) => void;
 }
 
 const STORY_DURATION = 5000;
 
-export default function StoryViewer({ groups, initialGroupIndex, visible, onClose }: Props) {
+export default function StoryViewer({ groups, initialGroupIndex, visible, onClose, currentUserId, onUserPress }: Props) {
   const [groupIdx, setGroupIdx] = useState(initialGroupIndex);
   const [storyIdx, setStoryIdx] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -90,7 +93,7 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
     }, tick);
   }, [clearTimers, groups, groupIdx, onClose]);
 
-  // Reset on story/group change or visibility
+  // Reset on story/group change or visibility — also fetch like state
   useEffect(() => {
     if (!visible) { clearTimers(); return; }
     setIsLiked(false);
@@ -99,6 +102,10 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
     pausedRef.current = false;
     setPaused(false);
     startTimer();
+    if (currentUserId && story?.id) {
+      supabase.from('story_likes').select('id').eq('story_id', story.id).eq('user_id', currentUserId).maybeSingle()
+        .then(({ data }) => { if (data) setIsLiked(true); });
+    }
     return clearTimers;
   }, [groupIdx, storyIdx, visible]); // eslint-disable-line
 
@@ -138,15 +145,20 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
 
       {/* Header */}
       <div className="sv-header">
-        <div className="sv-avatar">
-          {group.avatarUrl
-            ? <img src={group.avatarUrl} alt={group.name} className="sv-avatar-img" />
-            : <svg width="20" height="20" fill="#888" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
-          }
-        </div>
-        <div className="sv-info">
-          <div className="sv-name">{group.name}</div>
-          <div className="sv-time">{story.timeAgo}</div>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, cursor: onUserPress ? 'pointer' : 'default' }}
+          onClick={() => { if (onUserPress) { onClose(); onUserPress(group.userId); } }}
+        >
+          <div className="sv-avatar">
+            {group.avatarUrl
+              ? <img src={group.avatarUrl} alt={group.name} className="sv-avatar-img" />
+              : <svg width="20" height="20" fill="#888" viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+            }
+          </div>
+          <div className="sv-info">
+            <div className="sv-name">{group.name}</div>
+            <div className="sv-time">{story.timeAgo}</div>
+          </div>
         </div>
         <button className="sv-close" onClick={onClose}>
           <svg width="26" height="26" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -173,7 +185,16 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
 
       {/* Footer: like button */}
       <div className="sv-footer">
-        <button className="sv-like-btn" onClick={() => setIsLiked(p => !p)}>
+        <button className="sv-like-btn" onClick={async () => {
+          if (!currentUserId || !story?.id) { setIsLiked(p => !p); return; }
+          const newVal = !isLiked;
+          setIsLiked(newVal);
+          if (newVal) {
+            await supabase.from('story_likes').upsert({ story_id: story.id, user_id: currentUserId }, { onConflict: 'story_id,user_id' });
+          } else {
+            await supabase.from('story_likes').delete().eq('story_id', story.id).eq('user_id', currentUserId);
+          }
+        }}>
           {isLiked
             ? <svg width="52" height="52" fill="#FF3B5C" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             : <svg width="52" height="52" fill="none" stroke="white" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>

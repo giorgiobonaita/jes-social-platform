@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         <div className={s.pageTag}>Documenti legali</div>
         <h1>Privacy Policy</h1>
         <p>Come raccogliamo, utilizziamo e proteggiamo i tuoi dati personali su JES.</p>
-        <span className={s.updateBadge}>Aggiornata: aprile 2025</span>
+        <span className={s.updateBadge}>Aggiornata: aprile 2026</span>
       </div>
 
       {/* CONTENUTO */}
@@ -36,7 +36,10 @@ export default function PrivacyPage() {
           <div className={s.infoBox}>
             <p>
               <strong>Titolare del trattamento:</strong> JES — Il Social delle Emozioni.<br />
-              Per qualsiasi richiesta relativa alla privacy: <strong>privacy@jesocial.com</strong>
+              Per qualsiasi richiesta relativa alla privacy:{' '}
+              <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+                jes.socialdelleemozioni@gmail.com
+              </a>
             </p>
           </div>
         </div>
@@ -49,8 +52,12 @@ export default function PrivacyPage() {
           <ul>
             <li>Indirizzo email (autenticazione e comunicazioni di servizio)</li>
             <li>Password (conservata in forma cifrata con hashing — non leggibile da noi)</li>
-            <li>Username, nome visualizzato, biografia, disciplina artistica</li>
+            <li>Nome e cognome, username, biografia, disciplina/titolo artistico</li>
+            <li>Numero di telefono (fornito volontariamente, opzionale)</li>
+            <li>Nazionalità (fornita volontariamente, opzionale)</li>
             <li>Foto profilo fornita volontariamente dall&apos;utente</li>
+            <li>Anno di nascita approssimativo (derivato dall&apos;età dichiarata in fase di registrazione, non visibile pubblicamente)</li>
+            <li>Consenso esplicito alla ricezione di comunicazioni promozionali (<em>accepts_promotions</em>) — opzionale e revocabile in qualsiasi momento</li>
           </ul>
 
           <p><strong>1.2 Contenuti pubblicati</strong></p>
@@ -93,7 +100,7 @@ export default function PrivacyPage() {
           <ul>
             <li><strong>Esecuzione del contratto (art. 6, par. 1, lett. b):</strong> i dati di registrazione, profilo e contenuti sono necessari per fornirti il servizio richiesto (account, feed, messaggi, gruppi)</li>
             <li><strong>Legittimo interesse (art. 6, par. 1, lett. f):</strong> rilevamento di abusi, sicurezza della piattaforma, analisi aggregate anonimizzate per il miglioramento del servizio</li>
-            <li><strong>Consenso (art. 6, par. 1, lett. a):</strong> comunicazioni promozionali e newsletter opzionali — puoi revocare il consenso in qualsiasi momento</li>
+            <li><strong>Consenso (art. 6, par. 1, lett. a):</strong> comunicazioni promozionali e newsletter opzionali (campo <em>accepts_promotions</em> selezionato volontariamente in fase di registrazione) — puoi revocare il consenso in qualsiasi momento scrivendo a <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a></li>
             <li><strong>Obbligo legale (art. 6, par. 1, lett. c):</strong> conservazione dei dati richiesta da normative fiscali, penali o di altra natura</li>
           </ul>
         </div>
@@ -107,7 +114,9 @@ export default function PrivacyPage() {
             <li><strong>Erogazione del servizio:</strong> gestione dell&apos;account, pubblicazione di contenuti, feed, messaggi, gruppi e notifiche</li>
             <li><strong>Sicurezza e moderazione:</strong> rilevamento di abusi, gestione segnalazioni, applicazione di provvedimenti disciplinari</li>
             <li><strong>Miglioramento della piattaforma:</strong> analisi statistiche aggregate e anonimizzate sull&apos;utilizzo delle funzionalità</li>
-            <li><strong>Comunicazioni di servizio:</strong> email transazionali (reset password, conferma account, notifiche di sicurezza) — senza newsletter commerciali senza consenso esplicito</li>
+            <li><strong>Comunicazioni di servizio:</strong> email transazionali (reset password, conferma account, notifiche di sicurezza)</li>
+            <li><strong>Comunicazioni promozionali:</strong> invio di newsletter, promozioni e novità JES esclusivamente agli utenti che hanno espresso il consenso esplicito tramite il campo <em>accepts_promotions</em>. Il consenso è opzionale e revocabile in qualsiasi momento senza conseguenze sull&apos;utilizzo del servizio</li>
+            <li><strong>Contatto diretto:</strong> utilizzo del numero di telefono e/o dell&apos;email per comunicazioni dirette, esclusivamente se forniti dall&apos;utente</li>
           </ul>
         </div>
 
@@ -157,6 +166,7 @@ export default function PrivacyPage() {
             <li><strong>Account eliminati su richiesta:</strong> dati rimossi entro 30 giorni, salvo obblighi legali di conservazione (es. obblighi fiscali fino a 10 anni)</li>
             <li><strong>Messaggi diretti:</strong> conservati finché almeno uno dei partecipanti mantiene l&apos;account attivo</li>
             <li><strong>Log di sicurezza:</strong> conservati per un massimo di 12 mesi</li>
+            <li><strong>Dati promozionali (email, telefono):</strong> conservati fino alla revoca del consenso o all&apos;eliminazione dell&apos;account</li>
           </ul>
         </div>
 
@@ -173,10 +183,13 @@ export default function PrivacyPage() {
             <li><strong>Limitazione del trattamento (art. 18):</strong> ottenere la sospensione del trattamento in determinati casi</li>
             <li><strong>Portabilità (art. 20):</strong> ricevere i dati forniti in formato strutturato e leggibile da macchina</li>
             <li><strong>Opposizione (art. 21):</strong> opporti al trattamento fondato sul legittimo interesse</li>
-            <li><strong>Revoca del consenso:</strong> in qualsiasi momento, senza pregiudizio per la liceità del trattamento anteriore</li>
+            <li><strong>Revoca del consenso promozionale:</strong> in qualsiasi momento, senza pregiudizio per la liceità del trattamento anteriore, e senza conseguenze sull&apos;accesso al servizio</li>
           </ul>
           <p>
-            Per esercitare i tuoi diritti scrivi a <strong>privacy@jesocial.com</strong>.
+            Per esercitare i tuoi diritti scrivi a{' '}
+            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+              jes.socialdelleemozioni@gmail.com
+            </a>.
             Risponderemo entro <strong>30 giorni</strong> dalla ricezione della richiesta
             (prorogabili di ulteriori 60 giorni in caso di complessità, con avviso motivato).
           </p>
@@ -213,7 +226,8 @@ export default function PrivacyPage() {
             <li>Crittografia in transito (HTTPS/TLS 1.2+)</li>
             <li>Hashing delle password (bcrypt)</li>
             <li>Row-Level Security (RLS) sul database per l&apos;isolamento dei dati per utente</li>
-            <li>Accesso ai dati limitato al personale autorizzato sulla base del principio del minimo privilegio</li>
+            <li>Accesso al pannello di amministrazione limitato agli utenti con ruolo <em>admin</em> verificato tramite autenticazione</li>
+            <li>Accesso ai dati degli utenti limitato al personale autorizzato sulla base del principio del minimo privilegio</li>
           </ul>
           <p>
             In caso di violazione dei dati che comporti un rischio per i diritti e le libertà degli interessati,
@@ -233,7 +247,10 @@ export default function PrivacyPage() {
             con il consenso espresso del titolare della responsabilità genitoriale.
             Non raccogliamo consapevolmente dati di minori di 16 anni: qualora ne venissimo a conoscenza,
             provvederemo alla cancellazione immediata dell&apos;account e di tutti i dati associati.
-            Segnalazioni a: <strong>privacy@jesocial.com</strong>.
+            Segnalazioni a:{' '}
+            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+              jes.socialdelleemozioni@gmail.com
+            </a>.
           </p>
         </div>
 
@@ -259,7 +276,12 @@ export default function PrivacyPage() {
           <h2><span className={s.num}>11</span> Contatti e diritto di reclamo</h2>
           <p>Per qualsiasi questione relativa alla presente Informativa o all&apos;esercizio dei tuoi diritti:</p>
           <ul>
-            <li>Email: <strong>privacy@jesocial.com</strong></li>
+            <li>
+              Email:{' '}
+              <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
+                jes.socialdelleemozioni@gmail.com
+              </a>
+            </li>
             <li>Sito: <strong>jesocial.com</strong></li>
           </ul>
           <p>
@@ -281,9 +303,9 @@ export default function PrivacyPage() {
         <ul className={s.footerLinks}>
           <li><Link href="/legal/privacy">Privacy</Link></li>
           <li><Link href="/legal/termini">Termini</Link></li>
-          <li><a href="mailto:privacy@jesocial.com">Contatti</a></li>
+          <li><a href="mailto:jes.socialdelleemozioni@gmail.com">Contatti</a></li>
         </ul>
-        <span className={s.footerCopy}>© 2025 JES — Il Social delle Emozioni</span>
+        <span className={s.footerCopy}>© 2026 JES — Il Social delle Emozioni</span>
       </footer>
 
     </div>

@@ -19,17 +19,37 @@ import GroupsModal from '@/components/GroupsModal';
 import AvatarImg from '@/components/AvatarImg';
 
 const ORANGE = '#F07B1D';
+const GNG_MAIL = 'mailto:mogideag74@gmail.com';
 
-const GNG_MAIL = 'mailto:mogildeag74@gmail.com';
-
-const ADV_SPONSORS = [
-  { imageUrl: '/adv1.png', url: 'https://www.gbsrl-studioimmobiliare.it/' },
-  { imageUrl: '/adv2.png', url: 'https://gescompany.it/' },
-  { imageUrl: '/adv3.png', url: 'https://www.mercury-auctions.com/it_it/index/' },
+const ADV_GB  = [
+  { imageUrl: '/adv-gb1.png',  url: 'https://www.gbsrl-studioimmobiliare.it/' },
+  { imageUrl: '/adv-gb2.png',  url: 'https://www.gbsrl-studioimmobiliare.it/' },
+  { imageUrl: '/adv-gb3.png',  url: 'https://www.gbsrl-studioimmobiliare.it/' },
+];
+const ADV_GNG = [
   { imageUrl: '/adv-gng1.png', url: GNG_MAIL },
   { imageUrl: '/adv-gng2.png', url: GNG_MAIL },
   { imageUrl: '/adv-gng3.png', url: GNG_MAIL },
 ];
+const ADV_GES = [
+  { imageUrl: '/adv-ges1.png', url: 'https://gescompany.it/' },
+  { imageUrl: '/adv-ges2.png', url: 'https://gescompany.it/' },
+  { imageUrl: '/adv-ges3.png', url: 'https://gescompany.it/' },
+];
+const ADV_MER = [
+  { imageUrl: '/adv-mer1.png', url: 'https://www.mercury-auctions.com/it_it/index/' },
+  { imageUrl: '/adv-mer2.png', url: 'https://www.mercury-auctions.com/it_it/index/' },
+  { imageUrl: '/adv-mer3.png', url: 'https://www.mercury-auctions.com/it_it/index/' },
+];
+
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 function formatTimeAgo(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
@@ -41,17 +61,22 @@ function formatTimeAgo(isoDate: string): string {
   return `${Math.floor(h / 24)} g fa`;
 }
 
-function buildFeed(posts: any[]): any[] {
+function buildFeed(posts: any[], viewerUsername?: string | null): any[] {
   const feed: any[] = [];
+  const isMercury = viewerUsername === 'giuseppemercury';
+  const advList = isMercury
+    ? shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...ADV_MER])
+    : shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER]);
   let advIdx = 0;
-  posts.forEach((p, i) => {
-    feed.push(p);
-    if ((i + 1) % 4 === 0 && ADV_SPONSORS.length > 0) {
-      const sp = ADV_SPONSORS[advIdx % ADV_SPONSORS.length];
-      feed.push({ type: 'adv', id: `adv_${advIdx}`, imageUrl: sp.imageUrl, url: sp.url });
-      advIdx++;
-    }
-  });
+  const nextAdv = () => {
+    const sp = advList[advIdx % advList.length];
+    advIdx++;
+    return { type: 'adv', id: `adv_${advIdx}_${Date.now()}`, imageUrl: sp.imageUrl, url: sp.url };
+  };
+  for (let i = 0; i < posts.length; i++) {
+    feed.push(posts[i]);
+    if ((i + 1) % 4 === 0) feed.push(nextAdv());
+  }
   return feed;
 }
 
@@ -84,17 +109,67 @@ function StoryRing({ id, username, avatarUrl, isCustom, hasUnwatched, onPress }:
   );
 }
 
+// ── Report Sheet ──────────────────────────────────────────────────────────────
+const REPORT_TYPES = [
+  { id: 'spam', label: 'Spam' },
+  { id: 'offensive', label: 'Contenuto offensivo' },
+  { id: 'harassment', label: 'Molestie' },
+  { id: 'fake', label: 'Informazioni false' },
+  { id: 'other', label: 'Altro' },
+];
+
+function ReportSheet({ postId, currentUserId, reportedUserId, onDone }: { postId: string; currentUserId: string | null; reportedUserId: string | null; onDone: () => void }) {
+  const { t } = useLang();
+  const [type, setType] = useState('spam');
+  const [desc, setDesc] = useState('');
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  if (sent) return (
+    <>
+      <p className="confirm-title">{t('report_sent_title')}</p>
+      <p className="confirm-msg">{t('report_sent_msg')}</p>
+      <button className="confirm-btn-cancel" onClick={onDone}>{t('report_close')}</button>
+    </>
+  );
+
+  return (
+    <>
+      <p className="confirm-title">{t('report_title')}</p>
+      <div style={{ textAlign: 'left', width: '100%', marginBottom: 12 }}>
+        {REPORT_TYPES.map(rt => (
+          <label key={rt.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', cursor: 'pointer' }}>
+            <input type="radio" name="rtype" value={rt.id} checked={type === rt.id} onChange={() => setType(rt.id)} style={{ accentColor: ORANGE }} />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#111' }}>{rt.label}</span>
+          </label>
+        ))}
+      </div>
+      <textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder={t('report_desc_ph')} rows={3} style={{ width: '100%', borderRadius: 10, border: '1px solid #EEE', padding: 10, fontFamily: 'var(--font-body)', fontSize: 14, resize: 'none', outline: 'none', boxSizing: 'border-box', marginBottom: 12 } as any} />
+      <button className="confirm-btn-danger" onClick={async () => {
+        setSending(true);
+        await supabase.from('reports').insert({ reporter_id: currentUserId || null, reported_user_id: reportedUserId || null, post_id: postId, type, description: desc.trim() || null });
+        setSending(false); setSent(true);
+      }}>{sending ? '…' : t('report_send')}</button>
+      <button className="confirm-btn-cancel" onClick={onDone}>{t('cancel')}</button>
+    </>
+  );
+}
+
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, isAdmin, onImagePress }: {
+function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onShareToast }: {
   post: any; currentUserAvatar?: string | null;
   onComment: () => void; onUserPress: (id: string) => void;
   onDelete: () => void; isAdmin: boolean;
   onImagePress: (url: string) => void;
+  isFollowingAuthor?: boolean; onFollowAuthor?: (userId: string) => void;
+  onShareToast?: () => void;
 }) {
   const { t } = useLang();
   const [liked, setLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likesCount);
+  const [viewsCount, setViewsCount] = useState(post.viewsCount || 0);
   const [saved, setSaved] = useState(false);
+  const viewedRef = useRef(false);
   const [carouselIdx, setCarouselIdx] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -109,6 +184,14 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
 
   useEffect(() => { setLiked(post.isLiked); }, [post.isLiked]);
   useEffect(() => { setLikesCount(post.likesCount); }, [post.likesCount]);
+
+  useEffect(() => {
+    if (viewedRef.current || !post.id) return;
+    viewedRef.current = true;
+    supabase.rpc('increment_post_views', { pid: post.id }).then(() => {
+      setViewsCount((v: number) => v + 1);
+    });
+  }, [post.id]);
 
   useEffect(() => {
     if (!post.currentUserId) return;
@@ -208,6 +291,15 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
             <div className="pc-discipline">{post.author?.discipline}</div>
           </div>
           <span className="pc-timeago">{post.timeAgo}</span>
+          {!isOwn && !isFollowingAuthor && post.currentUserId && onFollowAuthor && (
+            <button onClick={async () => {
+              if (!post.currentUserId || !post.userId) return;
+              onFollowAuthor(post.userId);
+              await supabase.from('follows').insert({ follower_id: post.currentUserId, followed_id: post.userId });
+            }} style={{ background: 'none', border: `1.5px solid ${ORANGE}`, borderRadius: 20, padding: '3px 10px', cursor: 'pointer', marginRight: 4 }}>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: ORANGE }}>{t('post_follow_btn')}</span>
+            </button>
+          )}
           <button className="pc-more-btn" onClick={() => setMenuOpen(true)}>
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
@@ -238,39 +330,61 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
         {/* Actions */}
         <div className="pc-actions">
           <div className="pc-actions-left">
-            <button className={`pc-action-btn${liked ? ' liked' : ''}`} onClick={toggleLike}>
-              {liked
-                ? <svg width="28" height="28" fill={ORANGE} viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                : <svg width="28" height="28" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              }
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button className={`pc-action-btn${liked ? ' liked' : ''}`} onClick={toggleLike}>
+                {liked
+                  ? <svg width="28" height="28" fill={ORANGE} viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  : <svg width="28" height="28" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                }
+              </button>
+              {likesCount > 0 && <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#111' }}>{likesCount.toLocaleString('it-IT')}</span>}
+            </div>
             <button className="pc-action-btn" onClick={onComment}>
               <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             </button>
             <button className="pc-action-btn" onClick={async () => {
               const shareUrl = `${window.location.origin}/post/${post.id}`;
-              const shareData = { title: `Post di @${post.author?.username} su JES`, url: shareUrl };
               if (navigator.share) {
-                try { await navigator.share(shareData); } catch {}
-              } else {
+                try {
+                  await navigator.share({ title: `Post di @${post.author?.username} su JES`, url: shareUrl });
+                  return;
+                } catch (e: any) {
+                  if (e?.name === 'AbortError') return;
+                }
+              }
+              try {
                 await navigator.clipboard.writeText(shareUrl);
-                alert('Link copiato!');
+                onShareToast?.();
+              } catch {
+                onShareToast?.();
               }
             }}>
               <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           </div>
-          <button className={`pc-action-btn${saved ? ' saved' : ''}`} onClick={toggleSave}>
-            {saved
-              ? <svg width="26" height="26" fill={ORANGE} viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-              : <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-            }
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            {!isOwn && (
+              <button className="pc-action-btn" title="Segnala" onClick={() => { setMenuOpen(false); setTimeout(() => setConfirmAction('report'), 50); }} style={{ opacity: 0.55 }}>
+                <svg width="22" height="22" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+              </button>
+            )}
+            <button className={`pc-action-btn${saved ? ' saved' : ''}`} onClick={toggleSave}>
+              {saved
+                ? <svg width="26" height="26" fill={ORANGE} viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                : <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+              }
+            </button>
+          </div>
         </div>
 
         {/* Text block */}
         <div className="pc-text">
-          {likesCount > 0 && <p className="pc-likes">{likesCount.toLocaleString('it-IT')} mi piace</p>}
+          {viewsCount > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+              <svg width="14" height="14" fill="none" stroke="#AAAAAA" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAAAAA' }}>{viewsCount.toLocaleString('it-IT')}</span>
+            </div>
+          )}
 
           {post.caption && (
             <div className="pc-caption-wrap" onClick={() => setExpanded(p => !p)}>
@@ -278,7 +392,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
                 <strong className="pc-caption-user">{post.author?.username} </strong>
                 {!expanded && post.caption.length > 80 ? renderCaption(post.caption.slice(0, 80)) : renderCaption(post.caption)}
               </span>
-              {!expanded && post.caption.length > 80 && <span className="pc-more"> altro</span>}
+              {!expanded && post.caption.length > 80 && <span className="pc-more"> {t('post_more')}</span>}
             </div>
           )}
 
@@ -297,10 +411,10 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
           )}
 
           {post.commentsCount > 4 && (
-            <button className="pc-view-comments" onClick={onComment}>Guarda tutti i {post.commentsCount} commenti</button>
+            <button className="pc-view-comments" onClick={onComment}>{t('post_see_all_comments')} {post.commentsCount} {t('post_comments_label')}</button>
           )}
           {post.commentsCount > 0 && post.commentsCount <= 4 && (
-            <button className="pc-view-comments" onClick={onComment}>Visualizza i commenti</button>
+            <button className="pc-view-comments" onClick={onComment}>{t('post_see_comments')}</button>
           )}
         </div>
 
@@ -325,21 +439,21 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
             {(isOwn || isAdmin) && (
               <div className="pc-sheet-option danger" onClick={() => { setMenuOpen(false); setTimeout(() => setConfirmAction('delete'), 200); }}>
                 <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                <span>{isAdmin && !isOwn ? 'Elimina post (Admin)' : 'Elimina post'}</span>
+                <span>{isAdmin && !isOwn ? t('delete_post_admin') : t('delete_post')}</span>
               </div>
             )}
             {isAdmin && !isOwn && post.userId && (
               <div className="pc-sheet-option danger" onClick={() => { setMenuOpen(false); setTimeout(() => setConfirmAction('ban'), 200); }}>
                 <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-                <span>Banna utente (Admin)</span>
+                <span>{t('ban_user')}</span>
               </div>
             )}
             <div className="pc-sheet-divider" />
             <div className="pc-sheet-option" onClick={() => { setMenuOpen(false); setTimeout(() => setConfirmAction('report'), 200); }}>
               <svg width="20" height="20" fill="none" stroke="#555" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-              <span>Segnala</span>
+              <span>{t('report')}</span>
             </div>
-            <div className="pc-sheet-cancel" onClick={() => setMenuOpen(false)}>Annulla</div>
+            <div className="pc-sheet-cancel" onClick={() => setMenuOpen(false)}>{t('cancel')}</div>
           </div>
         </div>
       )}
@@ -349,22 +463,18 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
         <div className="modal-overlay center" onClick={() => setConfirmAction(null)}>
           <div className="confirm-card" onClick={e => e.stopPropagation()}>
             {confirmAction === 'delete' && <>
-              <p className="confirm-title">Elimina post</p>
-              <p className="confirm-msg">Sei sicuro? L'azione è irreversibile.</p>
-              <button className="confirm-btn-danger" onClick={handleDelete}>Elimina</button>
-              <button className="confirm-btn-cancel" onClick={() => setConfirmAction(null)}>Annulla</button>
+              <p className="confirm-title">{t('confirm_delete_post')}</p>
+              <p className="confirm-msg">{t('confirm_delete_msg')}</p>
+              <button className="confirm-btn-danger" onClick={handleDelete}>{t('delete')}</button>
+              <button className="confirm-btn-cancel" onClick={() => setConfirmAction(null)}>{t('cancel')}</button>
             </>}
             {confirmAction === 'ban' && <>
-              <p className="confirm-title">Banna {post.author?.username}</p>
-              <p className="confirm-msg">L'utente non potrà più accedere all'app.</p>
-              <button className="confirm-btn-danger" onClick={handleBan}>Banna</button>
-              <button className="confirm-btn-cancel" onClick={() => setConfirmAction(null)}>Annulla</button>
+              <p className="confirm-title">{t('confirm_ban_title')} {post.author?.username}</p>
+              <p className="confirm-msg">{t('confirm_ban_msg')}</p>
+              <button className="confirm-btn-danger" onClick={handleBan}>{t('confirm_ban_btn')}</button>
+              <button className="confirm-btn-cancel" onClick={() => setConfirmAction(null)}>{t('cancel')}</button>
             </>}
-            {confirmAction === 'report' && <>
-              <p className="confirm-title">Grazie per la segnalazione</p>
-              <p className="confirm-msg">Esamineremo il contenuto e interverremo se necessario.</p>
-              <button className="confirm-btn-ok" onClick={() => setConfirmAction(null)}>Ok</button>
-            </>}
+            {confirmAction === 'report' && <ReportSheet postId={post.id} currentUserId={post.currentUserId} reportedUserId={post.userId} onDone={() => setConfirmAction(null)} />}
           </div>
         </div>
       )}
@@ -374,6 +484,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
 
 // ── ADV Card ──────────────────────────────────────────────────────────────────
 function AdvCard({ imageUrl, url }: { imageUrl: string; url: string }) {
+  const { t } = useLang();
   const handleClick = () => {
     if (url.startsWith('mailto:')) { window.location.href = url; } else { window.open(url, '_blank'); }
   };
@@ -382,13 +493,13 @@ function AdvCard({ imageUrl, url }: { imageUrl: string; url: string }) {
       <div style={{ display: 'flex' }}>
         <div className="adv-badge">
           <svg width="11" height="11" fill="none" stroke="#888" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <span className="adv-badge-text">SPONSORIZZATO</span>
+          <span className="adv-badge-text">{t('adv_sponsored')}</span>
         </div>
       </div>
       <img className="adv-img" src={imageUrl} alt="sponsor" loading="lazy" />
       <div className="adv-footer">
         <div className="adv-link-btn">
-          <span className="adv-link-text">Visita il link</span>
+          <span className="adv-link-text">{t('adv_visit_link')}</span>
           <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </div>
       </div>
@@ -403,8 +514,12 @@ export default function HomePage() {
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
+  const [myUsername, setMyUsername] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const feedScrollRef = useRef<HTMLDivElement>(null);
 
   const [dbPosts, setDbPosts] = useState<any[]>([]);
   const [groupPosts, setGroupPosts] = useState<any[]>([]);
@@ -433,26 +548,48 @@ export default function HomePage() {
   const [createStoryVisible, setCreateStoryVisible] = useState(false);
   const [createPollVisible, setCreatePollVisible] = useState(false);
   const [jesPostAuthorId, setJesPostAuthorId] = useState<string | undefined>();
+  const [jesStoryAuthorId, setJesStoryAuthorId] = useState<string | undefined>();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+  const [showSplash, setShowSplash] = useState(true);
+  useEffect(() => { const t = setTimeout(() => setShowSplash(false), 500); return () => clearTimeout(t); }, []);
 
   const allPosts = useMemo(() => [...groupPosts, ...dbPosts], [groupPosts, dbPosts]);
-  const feedData = useMemo(() => buildFeed(allPosts), [allPosts]);
+  const feedData = useMemo(() => buildFeed(allPosts, myUsername), [allPosts, myUsername]);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/'); return; }
-      const { data } = await supabase.from('users').select('id, avatar_url, role').eq('auth_id', user.id).single();
+      const { data } = await supabase.from('users').select('id, avatar_url, role, username').eq('auth_id', user.id).single();
       if (data) {
         setCurrentUserId(data.id);
         setCurrentUserAvatar(data.avatar_url || null);
         setIsAdmin(data.role === 'admin');
+        setMyUsername(data.username || null);
+        supabase.from('follows').select('followed_id').eq('follower_id', data.id).then(({ data: rows }) => {
+          if (rows) setFollowingIds(prev => new Set([...prev, ...rows.map((r: any) => r.followed_id)]));
+        });
         const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', data.id).eq('read', false);
         setHasUnread((count || 0) > 0);
       }
     })();
   }, [router]);
 
+  const CACHE_KEY = 'jes_feed_v1';
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minuti
+
   const loadDbPosts = useCallback(async () => {
+    // Mostra cache subito se fresca (< 5 min)
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const { ts, data } = JSON.parse(raw);
+        if (Date.now() - ts < CACHE_TTL) setDbPosts(data);
+      }
+    } catch {}
+
     const { data: posts, error } = await supabase
       .from('posts').select('*').order('created_at', { ascending: false }).limit(50);
     if (error || !posts || posts.length === 0) return;
@@ -483,7 +620,7 @@ export default function HomePage() {
     const commentsByPost: Record<string, number> = {};
     (commentsData || []).forEach((c: any) => { commentsByPost[c.post_id] = (commentsByPost[c.post_id] || 0) + 1; });
 
-    setDbPosts(posts.map((p: any) => {
+    const mapped = posts.map((p: any) => {
       const u = userMap[p.user_id] || {};
       const imageUrls: string[] = Array.isArray(p.image_urls) && p.image_urls.length > 0
         ? p.image_urls : p.image_url ? [p.image_url] : [];
@@ -494,6 +631,7 @@ export default function HomePage() {
         imageUrls, aspectRatio: p.aspect_ratio || 1,
         likesCount: (likesByPost[p.id] || []).length,
         commentsCount: commentsByPost[p.id] || 0,
+        viewsCount: p.views_count || 0,
         isLiked: dbUserId ? (likesByPost[p.id] || []).includes(dbUserId) : false,
         currentUserId: dbUserId,
         caption: p.caption || '',
@@ -501,7 +639,9 @@ export default function HomePage() {
         tags: tagsByPost[p.id] || [],
         groupName: p.group_name || undefined,
       };
-    }));
+    });
+    setDbPosts(mapped);
+    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: mapped })); } catch {}
   }, []);
 
   const loadStories = useCallback(async () => {
@@ -532,6 +672,10 @@ export default function HomePage() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, loadDbPosts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, loadDbPosts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'stories' }, loadStories)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, (payload: any) => {
+        const pid = payload.new?.post_id;
+        setDbPosts(prev => prev.map((p: any) => p.id === pid ? { ...p, commentsCount: p.commentsCount + 1 } : p));
+      })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUserId}` }, () => setHasUnread(true))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
@@ -539,20 +683,41 @@ export default function HomePage() {
 
   return (
     <div className="shell home-page">
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: '#111', color: '#fff', padding: '10px 20px', borderRadius: 20, fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, zIndex: 9998, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+          {toast}
+        </div>
+      )}
+      {showSplash && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: '#fff',
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+          <img src="/logo.png" alt="JES" style={{ width: 120, height: 120, objectFit: 'contain' }} />
+          <span style={{ position: 'absolute', bottom: 48, fontSize: 22, fontWeight: 700, color: '#444', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', gap: 8 }}>
+            art by
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#F07B1D">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+          </span>
+        </div>
+      )}
       {/* Header */}
       <header className="home-header">
         <div className="header-side">
+          <button className="icon-btn" onClick={() => setChatVisible(true)}>
+            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </button>
           <button className="icon-btn" onClick={() => setSearchVisible(true)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
         </div>
 
-        <span style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, color: ORANGE, letterSpacing: -1 }}>JES</span>
+        <span style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, color: ORANGE, letterSpacing: -1, cursor: 'pointer' }} onClick={() => feedScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}>JES</span>
 
         <div className="header-side">
-          <button className="icon-btn" onClick={() => setChatVisible(true)}>
-            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </button>
           <button className="icon-btn" onClick={() => setGroupsVisible(true)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           </button>
@@ -564,7 +729,10 @@ export default function HomePage() {
       </header>
 
       {/* Feed */}
-      <div className="feed-scroll">
+      <div className="feed-scroll" ref={feedScrollRef} onScroll={e => {
+        const y = (e.target as HTMLDivElement).scrollTop;
+        setShowScrollTop(y > 300);
+      }}>
         {/* Stories */}
         <div className="stories-section">
           <p className="stories-label">{t('following')}</p>
@@ -605,10 +773,21 @@ export default function HomePage() {
               onDelete={() => setDbPosts(prev => prev.filter(p => p.id !== item.id))}
               isAdmin={isAdmin}
               onImagePress={(url) => { setImageViewerUrl(url); setImageViewerVisible(true); }}
+              isFollowingAuthor={item.userId ? followingIds.has(item.userId) : false}
+              onFollowAuthor={(uid) => setFollowingIds(prev => new Set([...prev, uid]))}
+              onShareToast={() => showToast(t('share_toast'))}
             />
           );
         })}
       </div>
+
+      {/* Scroll-to-top */}
+      {showScrollTop && (
+        <button onClick={() => { feedScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); setShowScrollTop(false); }}
+          style={{ position: 'fixed', bottom: 76, left: '50%', transform: 'translateX(-50%)', zIndex: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', border: '1px solid #E0E0E0', boxShadow: '0 2px 8px rgba(0,0,0,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <svg width="20" height="20" fill="none" stroke="#555" strokeWidth="2.2" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+      )}
 
       {/* Bottom Nav */}
       <nav className="bottom-nav">
@@ -627,7 +806,7 @@ export default function HomePage() {
 
       {/* Modals */}
       <ImageViewerModal imageUrl={imageViewerUrl} visible={imageViewerVisible} onClose={() => { setImageViewerVisible(false); setImageViewerUrl(null); }} />
-      <StoryViewer groups={stories} initialGroupIndex={activeStoryIndex} visible={storyVisible} onClose={() => setStoryVisible(false)} />
+      <StoryViewer groups={stories} initialGroupIndex={activeStoryIndex} visible={storyVisible} onClose={() => setStoryVisible(false)} currentUserId={currentUserId} onUserPress={(uid) => { setStoryVisible(false); setProfileTargetUserId(uid); setProfileVisible(true); }} />
       <CommentsModal visible={commentsVisible} postId={commentsPostId} postAuthorId={commentsAuthorId} onClose={() => { setCommentsVisible(false); setCommentsPostId(null); setCommentsAuthorId(null); }} />
       <SearchModal visible={searchVisible} onClose={() => setSearchVisible(false)}
         onUserPress={uid => { setProfileTargetUserId(uid); setProfileVisible(true); }}
@@ -638,7 +817,12 @@ export default function HomePage() {
         onClose={() => { setProfileVisible(false); setProfileTargetUserId(undefined); }}
         onMessagePress={(uid, name, avatar) => { setChatOpenWith({ userId: uid, name, avatar }); setProfileVisible(false); setTimeout(() => setChatVisible(true), 350); }}
         onRequestViewUser={uid => setProfileTargetUserId(uid)}
-        onPostAsJes={(jesId, type) => { if (type === 'post') setJesPostAuthorId(jesId); setProfileVisible(false); setTimeout(() => setCreatePostVisible(true), 700); }}
+        onPostAsJes={(jesId, type) => {
+          if (type === 'post') setJesPostAuthorId(jesId);
+          else setJesStoryAuthorId(jesId);
+          setProfileVisible(false);
+          setTimeout(() => { if (type === 'post') setCreatePostVisible(true); else setCreateStoryVisible(true); }, 700);
+        }}
       />
       <ChatModal visible={chatVisible} openWithUserId={chatOpenWith?.userId} openWithName={chatOpenWith?.name} openWithAvatar={chatOpenWith?.avatar} onClose={() => { setChatVisible(false); setChatOpenWith(null); }} />
       <GroupsModal visible={groupsVisible} initialGroupId={groupsInitialId}
@@ -648,7 +832,7 @@ export default function HomePage() {
         onPost={() => setCreatePostVisible(true)} onStory={() => setCreateStoryVisible(true)} onPoll={() => { setCreateMenuVisible(false); setCreatePollVisible(true); }} />
       <CreatePostModal visible={createPostVisible} authorUserId={jesPostAuthorId}
         onClose={() => { setCreatePostVisible(false); setJesPostAuthorId(undefined); }} onPublished={loadDbPosts} />
-      <CreateStoryModal visible={createStoryVisible} onClose={() => setCreateStoryVisible(false)} onPublished={loadStories} />
+      <CreateStoryModal visible={createStoryVisible} onClose={() => { setCreateStoryVisible(false); setJesStoryAuthorId(undefined); }} onPublished={loadStories} authorUserId={jesStoryAuthorId} />
       <CreatePollModal visible={createPollVisible} onClose={() => setCreatePollVisible(false)} />
     </div>
   );

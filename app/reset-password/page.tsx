@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useLang } from '@/lib/i18n';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,8 +14,8 @@ export default function ResetPasswordPage() {
 
   const handleUpdate = async () => {
     if (loading) return;
-    if (password.length < 6) { setError('La password deve essere di almeno 6 caratteri.'); return; }
-    if (password !== confirm) { setError('Le password non corrispondono.'); return; }
+    if (password.length < 6) { setError(t('rp_err_short')); return; }
+    if (password !== confirm) { setError(t('rp_err_mismatch')); return; }
     setLoading(true);
     const { error: err } = await supabase.auth.updateUser({ password });
     setLoading(false);
@@ -30,23 +32,23 @@ export default function ResetPasswordPage() {
       </div>
 
       <div className="form-scroll">
-        <h1 className="form-title">Nuova password</h1>
-        <p className="form-subtitle">Scegli una nuova password per il tuo account. Deve essere di almeno 6 caratteri.</p>
+        <h1 className="form-title">{t('rp_title')}</h1>
+        <p className="form-subtitle">{t('rp_subtitle')}</p>
 
         <div className="input-group">
-          <label className="input-label">Nuova password</label>
-          <input className="input-field" type="password" placeholder="Almeno 6 caratteri" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
+          <label className="input-label">{t('rp_new_password')}</label>
+          <input className="input-field" type="password" placeholder={t('rp_placeholder_new')} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" />
         </div>
 
         <div className="input-group" style={{ marginBottom: 32 }}>
-          <label className="input-label">Conferma password</label>
-          <input className="input-field" type="password" placeholder="Ripeti la password" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" onKeyDown={e => e.key === 'Enter' && handleUpdate()} />
+          <label className="input-label">{t('rp_confirm_password')}</label>
+          <input className="input-field" type="password" placeholder={t('rp_placeholder_confirm')} value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" onKeyDown={e => e.key === 'Enter' && handleUpdate()} />
         </div>
 
         {error && <p className="error-text" style={{ marginBottom: 16 }}>{error}</p>}
 
         <button className="btn-primary" onClick={handleUpdate} disabled={loading}>
-          {loading ? <span className="spin" /> : 'Aggiorna password'}
+          {loading ? <span className="spin" /> : t('rp_update_btn')}
         </button>
       </div>
     </div>

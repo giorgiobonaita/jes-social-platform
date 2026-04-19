@@ -1,12 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-
-const DURATIONS = [
-  { id: '1d', label: '1 giorno' },
-  { id: '3d', label: '3 giorni' },
-  { id: '7d', label: '7 giorni' },
-] as const;
+import { useLang } from '@/lib/i18n';
 
 interface Props {
   visible: boolean;
@@ -14,6 +9,14 @@ interface Props {
 }
 
 export default function CreatePollModal({ visible, onClose }: Props) {
+  const { t } = useLang();
+  
+  const DURATIONS = [
+    { id: '1d', label: t('day_1') },
+    { id: '3d', label: t('days_3') },
+    { id: '7d', label: t('days_7') },
+  ] as const;
+
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [duration, setDuration] = useState<'1d' | '3d' | '7d'>('1d');
@@ -32,14 +35,14 @@ export default function CreatePollModal({ visible, onClose }: Props) {
   const canPublish = question.trim().length > 0 && filledOptions.length >= 2;
 
   const publish = async () => {
-    if (!canPublish || publishing) { setError('Inserisci una domanda e almeno 2 risposte.'); return; }
+    if (!canPublish || publishing) { setError(t('poll_fill_error')); return; }
     setPublishing(true);
     setError('');
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non loggato');
+      if (!user) throw new Error(t('not_logged'));
       const { data: dbUser } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-      if (!dbUser) throw new Error('Profilo non trovato');
+      if (!dbUser) throw new Error(t('profile_not_found'));
 
       const pollOptions = filledOptions.map((opt, idx) => ({ id: String.fromCharCode(65 + idx), label: opt, votes: 0 }));
       const durationDays: Record<string, number> = { '1d': 1, '3d': 3, '7d': 7 };
@@ -72,13 +75,13 @@ export default function CreatePollModal({ visible, onClose }: Props) {
           <button className="modal-close" onClick={close}>
             <svg width="18" height="18" fill="none" stroke="#111" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-          <span className="modal-title">Nuovo sondaggio</span>
+          <span className="modal-title">{t('new_poll')}</span>
           <button
             className={`poll-publish-btn${canPublish ? '' : ' off'}`}
             onClick={publish}
             disabled={publishing}
           >
-            {publishing ? '...' : 'Pubblica'}
+            {publishing ? '...' : t('publish')}
           </button>
         </div>
 
@@ -86,10 +89,10 @@ export default function CreatePollModal({ visible, onClose }: Props) {
 
         {/* Domanda */}
         <div className="poll-section">
-          <label className="poll-section-title">Domanda <span className="poll-req">*</span></label>
+          <label className="poll-section-title">{t('question_label')} <span className="poll-req">*</span></label>
           <textarea
             className="poll-question-input"
-            placeholder="Cosa vuoi chiedere al tuo pubblico?"
+            placeholder={t('write_something')}
             value={question}
             onChange={e => setQuestion(e.target.value)}
             maxLength={200}
@@ -102,8 +105,8 @@ export default function CreatePollModal({ visible, onClose }: Props) {
         {/* Risposte */}
         <div className="poll-section">
           <label className="poll-section-title">
-            Risposte <span className="poll-req">*</span>
-            <span className="poll-section-note"> — minimo 2, massimo 5</span>
+            {t('answers_label')} <span className="poll-req">*</span>
+            <span className="poll-section-note"> {t('answers_note')}</span>
           </label>
           {options.map((opt, i) => (
             <div key={i} className="poll-opt-row">
@@ -112,7 +115,7 @@ export default function CreatePollModal({ visible, onClose }: Props) {
               </div>
               <input
                 className="poll-opt-input"
-                placeholder={`Risposta ${String.fromCharCode(65 + i)}`}
+                placeholder={`${t('answers_label')} ${String.fromCharCode(65 + i)}`}
                 value={opt}
                 onChange={e => updateOption(i, e.target.value)}
                 maxLength={80}
@@ -127,14 +130,14 @@ export default function CreatePollModal({ visible, onClose }: Props) {
           {options.length < 5 && (
             <button className="poll-add-btn" onClick={addOption}>
               <svg width="20" height="20" fill="none" stroke="var(--orange)" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-              Aggiungi un'altra risposta
+              {t('add_answer')}
             </button>
           )}
         </div>
 
         {/* Durata */}
         <div className="poll-section">
-          <label className="poll-section-title">Durata</label>
+          <label className="poll-section-title">{t('duration_label')}</label>
           <div className="poll-duration-row">
             {DURATIONS.map(d => (
               <button

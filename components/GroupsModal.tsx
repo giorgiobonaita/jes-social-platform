@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import GroupDetail, { Group } from './GroupDetailModal';
+import { useLang } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -21,6 +22,7 @@ const OFFICIAL_GROUPS = [
 ];
 
 export default function GroupsModal({ visible, onClose, onPostPublished, initialGroupId }: Props) {
+  const { t } = useLang();
   const [screen, setScreen]         = useState<Screen>('list');
   const [groups, setGroups]         = useState<Group[]>([]);
   const [loading, setLoading]       = useState(false);
@@ -140,11 +142,11 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
             <button onClick={handleClose} style={{ width: 40, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}>
               <svg width="24" height="24" fill="none" stroke="#111" strokeWidth="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20, color: '#111' }}>Gruppi</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20, color: '#111' }}>{t('groups_title')}</span>
             <button onClick={() => setScreen('create')}
               style={{ display: 'flex', alignItems: 'center', gap: 5, backgroundColor: ORANGE, border: 'none', borderRadius: 20, padding: '9px 14px', cursor: 'pointer' }}>
               <svg width="18" height="18" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#fff' }}>Crea</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#fff' }}>{t('groups_create')}</span>
             </button>
           </div>
 
@@ -153,7 +155,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
             <svg width="18" height="18" fill="none" stroke="#AAA" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input
               style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontFamily: 'var(--font-body)', fontSize: 15, color: '#111' }}
-              placeholder="Cerca gruppi..."
+              placeholder={t('groups_search')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -171,7 +173,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
             ) : filteredGroups.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 60, gap: 12 }}>
                 <svg width="40" height="40" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: '#CCC' }}>Nessun gruppo trovato</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: '#CCC' }}>{t('groups_not_found')}</span>
               </div>
             ) : (
               filteredGroups.map(item => {
@@ -195,7 +197,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
                             ? <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
                             : <circle cx="12" cy="12" r="10"/>}
                         </svg>
-                        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#fff' }}>{item.isPrivate ? 'Privato' : 'Pubblico'}</span>
+                        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#fff' }}>{item.isPrivate ? t('groups_private') : t('groups_public')}</span>
                       </div>
                     </div>
                     {/* Body */}
@@ -209,18 +211,18 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
                           <svg width="13" height="13" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-                          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>{item.members.toLocaleString()} membri</span>
+                          <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>{item.members.toLocaleString()} {t('groups_members')}</span>
                           {joined && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 3, backgroundColor: '#34C75914', padding: '2px 7px', borderRadius: 8 }}>
                               <svg width="12" height="12" fill="#34C759" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#34C759' }}>Membro</span>
+                              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#34C759' }}>{t('groups_member')}</span>
                             </div>
                           )}
                         </div>
                         <button
                           onClick={e => { e.stopPropagation(); toggleJoin(item.id); }}
                           style={{ border: `1.5px solid ${ORANGE}`, borderRadius: 18, padding: '7px 14px', backgroundColor: joined ? ORANGE : 'transparent', cursor: 'pointer' }}>
-                          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: joined ? '#fff' : ORANGE }}>{joined ? '✓ Iscritto' : 'Iscriviti'}</span>
+                          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: joined ? '#fff' : ORANGE }}>{joined ? t('groups_joined') : t('groups_join')}</span>
                         </button>
                       </div>
                     </div>
@@ -250,12 +252,12 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
             <button onClick={() => setScreen('list')} style={{ width: 40, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}>
               <svg width="24" height="24" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
             </button>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20, color: '#111' }}>Nuovo gruppo</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 20, color: '#111' }}>{t('groups_new')}</span>
             <div style={{ width: 60 }} />
           </div>
           <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 0 }}>
             <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#333', marginBottom: 8, marginTop: 20 }}>
-              Nome del gruppo <span style={{ color: ORANGE }}>*</span>
+              {t('groups_name_label')} <span style={{ color: ORANGE }}>*</span>
             </label>
             <input
               style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: '1.5px solid #E8E8E8', borderRadius: 14, padding: '13px 16px', outline: 'none', backgroundColor: '#fff' }}
@@ -265,10 +267,10 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
               maxLength={50}
               autoFocus
             />
-            <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#333', marginBottom: 8, marginTop: 20 }}>Descrizione</label>
+            <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#333', marginBottom: 8, marginTop: 20 }}>{t('groups_desc_label')}</label>
             <textarea
               style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: '1.5px solid #E8E8E8', borderRadius: 14, padding: '13px 16px', outline: 'none', backgroundColor: '#fff', minHeight: 90, resize: 'none', lineHeight: '22px' }}
-              placeholder="Di cosa parla il gruppo?"
+              placeholder={t('groups_desc_placeholder')}
               value={newDesc}
               onChange={e => setNewDesc(e.target.value)}
               maxLength={200}
@@ -278,7 +280,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
               onClick={handleCreate}
               disabled={!newName.trim()}
               style={{ backgroundColor: newName.trim() ? ORANGE : '#E0E0E0', border: 'none', borderRadius: 16, padding: '16px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, color: '#fff', cursor: newName.trim() ? 'pointer' : 'default', marginTop: 28 }}>
-              Crea gruppo
+              {t('groups_create_btn')}
             </button>
           </div>
         </>

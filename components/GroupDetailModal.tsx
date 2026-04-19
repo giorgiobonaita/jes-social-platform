@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { supabase } from '@/lib/supabase';
 import AvatarImg from './AvatarImg';
+import { useLang } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -27,14 +28,14 @@ interface Post {
   userId?: string;
 }
 
-function formatTimeAgo(isoDate: string): string {
+function formatTimeAgo(isoDate: string, nowLabel: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'Adesso';
+  if (m < 1)  return nowLabel;
   if (m < 60) return `${m} min fa`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ore fa`;
-  return `${Math.floor(h / 24)} g fa`;
+  if (h < 24) return `${h}h fa`;
+  return `${Math.floor(h / 24)}g fa`;
 }
 
 // ─── COMPOSE BOX ──────────────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ interface ComposeBoxProps {
 }
 
 const ComposeBox = memo(function ComposeBox({ myAvatar, myId, groupId, groupName, onPublished }: ComposeBoxProps) {
+  const { t } = useLang();
   const [postText, setPostText]         = useState('');
   const [focused, setFocused]           = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -86,12 +88,12 @@ const ComposeBox = memo(function ComposeBox({ myAvatar, myId, groupId, groupName
       if (post) {
         onPublished({
           type: 'post', id: post.id,
-          author: { name: 'Tu', username: 'tu', avatarUrl: myAvatar || null, discipline: '' },
+          author: { name: t('me_label'), username: 'me', avatarUrl: myAvatar || null, discipline: '' },
           imageUrl: imageUrl || '', aspectRatio: 1, likesCount: 0, commentsCount: 0,
-          caption: captionSnapshot, timeAgo: 'Adesso', tags: [], groupName, currentUserId: myId, isLiked: false,
+          caption: captionSnapshot, timeAgo: t('groups_now'), tags: [], groupName, currentUserId: myId, isLiked: false,
         });
       }
-    } catch { alert('Impossibile pubblicare. Riprova.'); }
+    } catch { alert(t('groups_publish_error')); }
     finally { setPublishing(false); }
   };
 
@@ -103,7 +105,7 @@ const ComposeBox = memo(function ComposeBox({ myAvatar, myId, groupId, groupName
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <textarea
           style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: '#111', border: '1.5px solid #E8E8E8', borderRadius: 16, padding: '11px 14px', minHeight: 46, lineHeight: '22px', resize: 'none', outline: 'none', width: '100%', boxSizing: 'border-box' }}
-          placeholder="Scrivi qualcosa nel gruppo..."
+          placeholder={t('groups_write_placeholder')}
           value={postText}
           onChange={e => setPostText(e.target.value)}
           onFocus={() => setFocused(true)}
@@ -126,7 +128,7 @@ const ComposeBox = memo(function ComposeBox({ myAvatar, myId, groupId, groupName
               <svg width="20" height="20" fill="none" stroke={ORANGE} strokeWidth="1.8" viewBox="0 0 24 24">
                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
               </svg>
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: ORANGE }}>Foto</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: ORANGE }}>{t('photo_tool')}</span>
             </button>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageChange} />
             <button onClick={publishPost} disabled={!postText.trim() || publishing}
@@ -135,7 +137,7 @@ const ComposeBox = memo(function ComposeBox({ myAvatar, myId, groupId, groupName
                 ? <div className="spin" style={{ width: 16, height: 16 }} />
                 : <>
                     <svg width="15" height="15" fill="white" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#fff' }}>Pubblica</span>
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#fff' }}>{t('publish')}</span>
                   </>
               }
             </button>
@@ -156,6 +158,7 @@ interface Props {
 }
 
 export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPostPublished }: Props) {
+  const { t } = useLang();
   const [localJoined, setLocalJoined]       = useState(joined);
   const [posts, setPosts]                   = useState<Post[]>([]);
   const [loading, setLoading]               = useState(false);
@@ -201,17 +204,18 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
     const commentsByPost: Record<string, number> = {};
     (commentsData || []).forEach((c: any) => { commentsByPost[c.post_id] = (commentsByPost[c.post_id] || 0) + 1; });
 
+    const nowLabel = t('groups_now');
     setPosts(rawPosts.map((p: any) => {
       const u = userMap[p.user_id] || {};
       return {
-        id: p.id, author: u.name || u.username || 'Utente', avatarUrl: u.avatar_url || null,
-        timeAgo: formatTimeAgo(p.created_at), text: p.caption || '', imageUrl: p.image_url || undefined,
+        id: p.id, author: u.name || u.username || t('role_user_title'), avatarUrl: u.avatar_url || null,
+        timeAgo: formatTimeAgo(p.created_at, nowLabel), text: p.caption || '', imageUrl: p.image_url || undefined,
         likes: (likesByPost[p.id] || []).length, comments: commentsByPost[p.id] || 0,
         liked: myId ? (likesByPost[p.id] || []).includes(myId) : false, userId: p.user_id,
       };
     }));
     setLoading(false);
-  }, [group.id, myId]);
+  }, [group.id, myId, t]);
 
   useEffect(() => { loadPosts(); }, [loadPosts]);
 
@@ -228,7 +232,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
       const url = data.publicUrl;
       await supabase.from('groups').update({ cover_url: url }).eq('id', group.id);
       setCoverUrl(url);
-    } catch { alert('Impossibile caricare la copertina.'); }
+    } catch { alert(t('groups_cover_error')); }
     finally { setUploadingCover(false); }
   };
 
@@ -270,7 +274,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
         </button>
         <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(52,199,89,0.92)', padding: '5px 12px', borderRadius: 14 }}>
           <svg width="12" height="12" fill="white" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
-          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: '#fff' }}>Pubblico</span>
+          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: '#fff' }}>{t('groups_public')}</span>
         </div>
         {localJoined && (
           <button onClick={() => coverInputRef.current?.click()}
@@ -279,7 +283,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
               ? <div className="spin" style={{ width: 14, height: 14, borderColor: 'rgba(255,255,255,0.4)', borderTopColor: '#fff' }} />
               : <>
                   <svg width="15" height="15" fill="none" stroke="#fff" strokeWidth="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#fff' }}>Copertina</span>
+                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#fff' }}>{t('groups_cover_btn')}</span>
                 </>
             }
           </button>
@@ -294,11 +298,11 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 22, color: '#111', display: 'block', marginBottom: 6 }}>{group.name}</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <svg width="14" height="14" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>{group.members.toLocaleString()} membri</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>{group.members.toLocaleString()} {t('groups_members')}</span>
               {localJoined && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, backgroundColor: '#34C75918', padding: '3px 8px', borderRadius: 10 }}>
                   <svg width="13" height="13" fill="#34C759" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#34C759' }}>Membro</span>
+                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#34C759' }}>{t('groups_member')}</span>
                 </div>
               )}
             </div>
@@ -308,7 +312,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
             <svg width="16" height="16" fill="none" stroke={localJoined ? '#888' : '#fff'} strokeWidth="2.2" viewBox="0 0 24 24">
               {localJoined ? <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></> : <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>}
             </svg>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: localJoined ? 600 : 700, fontSize: 14, color: localJoined ? '#888' : '#fff' }}>{localJoined ? 'Esci' : 'Iscriviti'}</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: localJoined ? 600 : 700, fontSize: 14, color: localJoined ? '#888' : '#fff' }}>{localJoined ? t('groups_leave') : t('groups_join')}</span>
           </button>
         </div>
         <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#666', lineHeight: '21px' }}>{group.description}</span>
@@ -324,18 +328,18 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
         <button onClick={handleToggleJoin} style={{ display: 'flex', alignItems: 'center', gap: 12, margin: 14, padding: 16, backgroundColor: '#FFF8F3', border: `1.5px solid ${ORANGE}40`, borderRadius: 18, cursor: 'pointer', width: 'calc(100% - 28px)', textAlign: 'left' }}>
           <svg width="20" height="20" fill="none" stroke={ORANGE} strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 3 }}>Iscriviti per pubblicare</div>
-            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>Entra nel gruppo per condividere</div>
+            <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 3 }}>{t('groups_join_to_post')}</div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>{t('groups_join_to_post_sub')}</div>
           </div>
           <div style={{ backgroundColor: ORANGE, padding: '9px 14px', borderRadius: 16 }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, color: '#fff' }}>Iscriviti</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, color: '#fff' }}>{t('groups_join')}</span>
           </div>
         </button>
       )}
 
       {/* Feed header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 18px', backgroundColor: '#F5F5F5' }}>
-        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#AAA', flex: 1 }}>Post nel gruppo</span>
+        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#AAA', flex: 1 }}>{t('groups_post_header')}</span>
         <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, color: '#CCC' }}>{posts.length}</span>
       </div>
 
@@ -345,7 +349,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
       ) : posts.length === 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 40, gap: 10 }}>
           <svg width="40" height="40" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAA' }}>Nessun post ancora</span>
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAA' }}>{t('groups_no_posts')}</span>
         </div>
       ) : (
         posts.map(item => (
