@@ -553,7 +553,7 @@ export default function HomePage() {
   const [toast, setToast] = useState<string | null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
   const [showSplash, setShowSplash] = useState(true);
-  useEffect(() => { const t = setTimeout(() => setShowSplash(false), 500); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(() => setShowSplash(false), 1200); return () => clearTimeout(t); }, []);
 
   const allPosts = useMemo(() => [...groupPosts, ...dbPosts], [groupPosts, dbPosts]);
   const feedData = useMemo(() => buildFeed(allPosts, myUsername), [allPosts, myUsername]);
