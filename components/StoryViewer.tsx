@@ -11,12 +11,14 @@ interface Props {
   groups: UserStoryGroup[]; initialGroupIndex: number;
   visible: boolean; onClose: () => void;
   currentUserId?: string | null;
+  isAdmin?: boolean;
+  onStoryDeleted?: (storyId: string) => void;
   onUserPress?: (userId: string) => void;
 }
 
 const STORY_DURATION = 5000;
 
-export default function StoryViewer({ groups, initialGroupIndex, visible, onClose, currentUserId, onUserPress }: Props) {
+export default function StoryViewer({ groups, initialGroupIndex, visible, onClose, currentUserId, isAdmin, onStoryDeleted, onUserPress }: Props) {
   const [groupIdx, setGroupIdx] = useState(initialGroupIndex);
   const [storyIdx, setStoryIdx] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -160,9 +162,27 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
             <div className="sv-time">{story.timeAgo}</div>
           </div>
         </div>
-        <button className="sv-close" onClick={onClose}>
-          <svg width="26" height="26" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {(group.userId === currentUserId || isAdmin) && (
+            <button
+              onClick={async () => {
+                if (!confirm('Eliminare questa storia?')) return;
+                const deletedId = story.id;
+                await supabase.from('stories').delete().eq('id', deletedId);
+                onStoryDeleted?.(deletedId);
+                if (group.stories.length === 1) { onClose(); return; }
+                if (storyIdx < group.stories.length - 1) { setStoryIdx(s => s + 1); }
+                else { setStoryIdx(s => s - 1); }
+              }}
+              style={{ background: 'rgba(255,59,48,0.85)', border: 'none', borderRadius: 10, padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+            </button>
+          )}
+          <button className="sv-close" onClick={onClose}>
+            <svg width="26" height="26" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
       </div>
 
       {/* Tap zones */}

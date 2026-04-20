@@ -95,7 +95,7 @@ function StoryRing({ id, username, avatarUrl, isCustom, hasUnwatched, onPress }:
       <div style={{ position: 'relative' }}>
         <div className={`story-ring-border${(!hasUnwatched && !isCustom) ? ' no-story' : ''}`}>
           <div className="story-ring-inner">
-            <AvatarImg uri={avatarUrl} size={56} seed={username} style={{ borderRadius: '50%', width: '100%', height: '100%' }} />
+            <AvatarImg uri={avatarUrl} size={56} seed={username} style={{ borderRadius: '12px', width: '100%', height: '100%' }} />
           </div>
         </div>
         {isCustom && (
@@ -806,7 +806,21 @@ export default function HomePage() {
 
       {/* Modals */}
       <ImageViewerModal imageUrl={imageViewerUrl} visible={imageViewerVisible} onClose={() => { setImageViewerVisible(false); setImageViewerUrl(null); }} />
-      <StoryViewer groups={stories} initialGroupIndex={activeStoryIndex} visible={storyVisible} onClose={() => setStoryVisible(false)} currentUserId={currentUserId} onUserPress={(uid) => { setStoryVisible(false); setProfileTargetUserId(uid); setProfileVisible(true); }} />
+      <StoryViewer
+        groups={stories}
+        initialGroupIndex={activeStoryIndex}
+        visible={storyVisible}
+        onClose={() => setStoryVisible(false)}
+        currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onStoryDeleted={(deletedId) => {
+          setStories(prev => prev.map(g => ({
+            ...g,
+            stories: g.stories.filter(s => s.id !== deletedId),
+          })).filter(g => g.stories.length > 0));
+        }}
+        onUserPress={(uid) => { setStoryVisible(false); setProfileTargetUserId(uid); setProfileVisible(true); }}
+      />
       <CommentsModal visible={commentsVisible} postId={commentsPostId} postAuthorId={commentsAuthorId} onClose={() => { setCommentsVisible(false); setCommentsPostId(null); setCommentsAuthorId(null); }} />
       <SearchModal visible={searchVisible} onClose={() => setSearchVisible(false)}
         onUserPress={uid => { setProfileTargetUserId(uid); setProfileVisible(true); }}
