@@ -570,9 +570,9 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Desktop layout ── */
 @media (min-width: 768px) {
-  body { background: #F0F0F0; }
-  .home-page { max-width: 680px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,.08); }
-  .bottom-nav { max-width: 680px; left: 50%; transform: translateX(-50%); right: auto; }
+  body { background: #fff; }
+  .home-page { max-width: 100%; margin: 0; box-shadow: none; }
+  .bottom-nav { max-width: 100%; left: 0; transform: none; right: 0; }
 
   /* Profile panel: side panel on desktop */
   .pm-panel {

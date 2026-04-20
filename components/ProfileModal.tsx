@@ -102,11 +102,12 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       let dbMyId: string | null = myDbId;
-      if (!dbMyId) {
-        const { data: me } = await supabase.from('users').select('id, role').eq('auth_id', user.id).single();
-        dbMyId = me?.id ?? null;
-        setMyDbId(dbMyId);
-        setMyRole(me?.role ?? null);
+      const { data: me, error: meError } = await supabase.from('users').select('id, role').eq('auth_id', user.id).single();
+      console.log('ProfileModal me:', me, 'error:', meError);
+      if (me) {
+        dbMyId = me.id;
+        setMyDbId(me.id);
+        setMyRole(me.role ?? null);
       }
       setCurrentDbId(dbMyId);
       const userId = targetUserId ?? dbMyId;
@@ -386,7 +387,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                 <>
                   <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>{t('admin_panel')}</p>
                   {[
-                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: t('admin_panel'), action: () => { setShowAdminPanel(true); } },
+                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: t('admin_panel'), action: () => { window.open('/admin', '_blank'); } },
                     { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5 6.5-7"/></svg>, label: t('official_profile'), action: async () => {
                       const { data } = await supabase.from('users').select('id').eq('username', JES_OFFICIAL_USERNAME).maybeSingle();
                       if (data) { setShowSettings(false); onRequestViewUser(data.id); } else alert(`Crea prima l'utente "${JES_OFFICIAL_USERNAME}" in Supabase.`);

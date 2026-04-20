@@ -6,6 +6,21 @@ import { useLang } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
+const PARTNER_ADV = [
+  { img: '/adv-gb1.png',  url: 'https://www.gbsrl-studioimmobiliare.it/', label: 'GB Studio Immobiliare' },
+  { img: '/adv-gb2.png',  url: 'https://www.gbsrl-studioimmobiliare.it/', label: 'GB Studio Immobiliare' },
+  { img: '/adv-gb3.png',  url: 'https://www.gbsrl-studioimmobiliare.it/', label: 'GB Studio Immobiliare' },
+  { img: '/adv-gng1.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
+  { img: '/adv-gng2.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
+  { img: '/adv-gng3.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
+  { img: '/adv-ges1.png', url: 'https://gescompany.it/',                  label: 'GES Company' },
+  { img: '/adv-ges2.png', url: 'https://gescompany.it/',                  label: 'GES Company' },
+  { img: '/adv-ges3.png', url: 'https://gescompany.it/',                  label: 'GES Company' },
+  { img: '/adv-mer1.png', url: 'https://www.mercury-auctions.com/it_it/index/', label: 'Mercury Auctions' },
+  { img: '/adv-mer2.png', url: 'https://www.mercury-auctions.com/it_it/index/', label: 'Mercury Auctions' },
+  { img: '/adv-mer3.png', url: 'https://www.mercury-auctions.com/it_it/index/', label: 'Mercury Auctions' },
+];
+
 export interface Group {
   id: string;
   name: string;
@@ -320,6 +335,27 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
 
       {/* Separator */}
       <div style={{ height: 8, backgroundColor: '#F0F0F0' }} />
+
+      {/* Sponsor gallery — solo per il gruppo Partner */}
+      {group.name === 'Partner' && (
+        <div style={{ backgroundColor: '#fff', paddingBottom: 8 }}>
+          <div style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="16" height="16" fill="none" stroke={ORANGE} strokeWidth="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#111' }}>Sponsor JES</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: '0 2px' }}>
+            {PARTNER_ADV.map((adv, i) => (
+              <a key={i} href={adv.url} target={adv.url.startsWith('mailto') ? undefined : '_blank'} rel="noopener noreferrer"
+                style={{ display: 'block', aspectRatio: '1', overflow: 'hidden', position: 'relative' }}>
+                <img src={adv.img} alt={adv.label}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {group.name === 'Partner' && <div style={{ height: 8, backgroundColor: '#F0F0F0' }} />}
 
       {/* Compose or join banner */}
       {localJoined ? (
