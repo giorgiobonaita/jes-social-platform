@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, JES_OFFICIAL_USERNAME } from '@/lib/supabase';
 import AvatarImg from './AvatarImg';
-import { useLang } from '@/lib/i18n';
+import { useLang, T } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -19,7 +19,8 @@ interface Props {
 }
 
 export default function SearchModal({ visible, onClose, onUserPress, onGroupPress, onPostPress }: Props) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
   const [query, setQuery]               = useState('');
   const [tab, setTab]                   = useState<'utenti' | 'post' | 'gruppi'>('utenti');
   const [users, setUsers]               = useState<SearchUser[]>([]);
@@ -46,7 +47,7 @@ export default function SearchModal({ visible, onClose, onUserPress, onGroupPres
     const aIds = [...new Set(postList.map((p: any) => p.user_id).filter(Boolean))];
     const aMap: Record<string, any> = {};
     if (aIds.length > 0) { const { data: au } = await supabase.from('users').select('id, username, avatar_url').in('id', aIds as string[]); (au || []).forEach((a: any) => { aMap[a.id] = a; }); }
-    setSuggestedPosts(postList.map((p: any) => ({ id: p.id, caption: p.caption || '', imageUrl: p.image_url || '', userId: p.user_id, username: aMap[p.user_id]?.username || 'utente', avatarUrl: aMap[p.user_id]?.avatar_url || null })));
+    setSuggestedPosts(postList.map((p: any) => ({ id: p.id, caption: p.caption || '', imageUrl: p.image_url || '', userId: p.user_id, username: aMap[p.user_id]?.username || tl('user_fallback'), avatarUrl: aMap[p.user_id]?.avatar_url || null })));
     const gList = gData || [];
     const gIds = gList.map((g: any) => g.id);
     const mc: Record<string, number> = {};
@@ -98,7 +99,7 @@ export default function SearchModal({ visible, onClose, onUserPress, onGroupPres
     }
     setPosts(postList.map((p: any) => ({
       id: p.id, caption: p.caption || '', imageUrl: p.image_url || '',
-      userId: p.user_id, username: authorMap[p.user_id]?.username || 'utente', avatarUrl: authorMap[p.user_id]?.avatar_url || null,
+      userId: p.user_id, username: authorMap[p.user_id]?.username || tl('user_fallback'), avatarUrl: authorMap[p.user_id]?.avatar_url || null,
     })));
 
     const groupList = gData || [];

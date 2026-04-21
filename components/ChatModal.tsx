@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import AvatarImg from './AvatarImg';
-import { useLang } from '@/lib/i18n';
+import { useLang, T } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -23,13 +23,13 @@ interface Message {
   created_at: string;
 }
 
-function fmtTime(iso: string): string {
+function fmtTime(iso: string, locale: string, yesterdayLabel: string): string {
   const d = new Date(iso);
   const now = new Date();
   const diff = now.getTime() - d.getTime();
-  if (diff < 86400000) return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-  if (diff < 172800000) return 'Ieri';
-  return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+  if (diff < 86400000) return d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  if (diff < 172800000) return yesterdayLabel;
+  return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' });
 }
 
 interface Props {
@@ -41,7 +41,9 @@ interface Props {
 }
 
 export default function ChatModal({ visible, onClose, openWithUserId, openWithName, openWithAvatar }: Props) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
+  const fmt = (iso: string) => fmtTime(iso, lang.replace('_', '-'), tl('yesterday'));
   const [myId, setMyId]                     = useState<string | null>(null);
   const [conversations, setConversations]   = useState<Conversation[]>([]);
   const [activeId, setActiveId]             = useState<string | null>(null);
@@ -77,7 +79,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
       const fIds = (follows || []).map((f: any) => f.followed_id);
       if (fIds.length > 0) {
         const { data: su } = await supabase.from('users').select('id, name, username, avatar_url').in('id', fIds);
-        setSuggested((su || []).map((u: any) => ({ id: u.id, name: u.name || 'Utente', username: u.username || '', avatarUrl: u.avatar_url || null })));
+        setSuggested((su || []).map((u: any) => ({ id: u.id, name: u.name || tl('user_fallback'), username: u.username || '', avatarUrl: u.avatar_url || null })));
       }
     })();
   }, []);
@@ -109,8 +111,8 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
     setConversations(otherIds.map(otherId => {
       const u = userMap[otherId] || {};
       return {
-        otherId, name: u.name || u.username || 'Utente', avatarUrl: u.avatar_url || null,
-        lastMessage: convMap[otherId].msg.content || '', time: fmtTime(convMap[otherId].msg.created_at),
+        otherId, name: u.name || u.username || tl('user_fallback'), avatarUrl: u.avatar_url || null,
+        lastMessage: convMap[otherId].msg.content || '', time: fmt(convMap[otherId].msg.created_at),
         unread: convMap[otherId].unread,
       };
     }));
@@ -122,7 +124,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
   // Auto-apri conversazione se passato utente
   useEffect(() => {
     if (!visible || !myId || !openWithUserId) return;
-    openConversation(openWithUserId, openWithName || 'Utente', openWithAvatar || null);
+    openConversation(openWithUserId, openWithName || tl('user_fallback'), openWithAvatar || null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, myId, openWithUserId]);
 
@@ -150,7 +152,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
       .or(`and(sender_id.eq.${myId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${myId})`)
       .order('created_at', { ascending: true });
     setMessages((msgs || []).map((m: any) => ({
-      id: m.id, text: m.content, mine: m.sender_id === myId, time: fmtTime(m.created_at), created_at: m.created_at,
+      id: m.id, text: m.content, mine: m.sender_id === myId, time: fmt(m.created_at), created_at: m.created_at,
     })));
     await supabase.from('messages').update({ read: true }).eq('sender_id', otherId).eq('receiver_id', myId).eq('read', false);
     setConversations(prev => prev.map(c => c.otherId === otherId ? { ...c, unread: 0 } : c));
@@ -165,7 +167,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
         const m = payload.new as any;
         if (m.receiver_id !== myId || m.sender_id !== activeId) return;
-        setMessages(prev => [...prev, { id: m.id, text: m.content, mine: false, time: fmtTime(m.created_at), created_at: m.created_at }]);
+        setMessages(prev => [...prev, { id: m.id, text: m.content, mine: false, time: fmt(m.created_at), created_at: m.created_at }]);
         supabase.from('messages').update({ read: true }).eq('id', m.id).then(() => {});
         scrollToBottom(true);
       }).subscribe();
@@ -182,9 +184,9 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
         sender_id: myId, receiver_id: activeId, content: text,
       }).select('id, sender_id, content, created_at').single();
       if (newMsg) {
-        const msg: Message = { id: newMsg.id, text: newMsg.content, mine: true, time: fmtTime(newMsg.created_at), created_at: newMsg.created_at };
+        const msg: Message = { id: newMsg.id, text: newMsg.content, mine: true, time: fmt(newMsg.created_at), created_at: newMsg.created_at };
         setMessages(prev => [...prev, msg]);
-        setConversations(prev => prev.map(c => c.otherId === activeId ? { ...c, lastMessage: text, time: fmtTime(newMsg.created_at) } : c));
+        setConversations(prev => prev.map(c => c.otherId === activeId ? { ...c, lastMessage: text, time: fmt(newMsg.created_at) } : c));
         scrollToBottom(true);
       }
     } finally { setIsSending(false); }
@@ -207,7 +209,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
       setLoadingNewMsg(true);
       const pattern = `%${newMsgQuery}%`;
       const { data } = await supabase.from('users').select('id, name, username, avatar_url').neq('id', myId).or(`username.ilike.${pattern},name.ilike.${pattern}`).limit(30);
-      const all = (data || []).map((u: any) => ({ id: u.id, name: u.name || 'Utente', username: u.username || '', avatarUrl: u.avatar_url || null }));
+      const all = (data || []).map((u: any) => ({ id: u.id, name: u.name || tl('user_fallback'), username: u.username || '', avatarUrl: u.avatar_url || null }));
       const fIds = new Set(suggested.map(s => s.id));
       setNewMsgResults([...all.filter(u => fIds.has(u.id)), ...all.filter(u => !fIds.has(u.id))]);
       setLoadingNewMsg(false);

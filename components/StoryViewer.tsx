@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useLang, T } from '@/lib/i18n';
 
 export interface UserStoryGroup {
   userId: string; username: string; name: string; avatarUrl: string | null;
@@ -19,6 +20,8 @@ interface Props {
 const STORY_DURATION = 5000;
 
 export default function StoryViewer({ groups, initialGroupIndex, visible, onClose, currentUserId, isAdmin, onStoryDeleted, onUserPress }: Props) {
+  const { lang } = useLang();
+  const t = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
   const [groupIdx, setGroupIdx] = useState(initialGroupIndex);
   const [storyIdx, setStoryIdx] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -166,7 +169,7 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
           {(group.userId === currentUserId || isAdmin) && (
             <button
               onClick={async () => {
-                if (!confirm('Eliminare questa storia?')) return;
+                if (!confirm(t('delete_story_confirm'))) return;
                 const deletedId = story.id;
                 await supabase.from('stories').delete().eq('id', deletedId);
                 onStoryDeleted?.(deletedId);

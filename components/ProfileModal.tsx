@@ -103,8 +103,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
       if (!user) return;
       let dbMyId: string | null = myDbId;
       const { data: me, error: meError } = await supabase.from('users').select('id, role').eq('auth_id', user.id).single();
-      console.log('ProfileModal me:', me, 'error:', meError);
-      if (me) {
+if (me) {
         dbMyId = me.id;
         setMyDbId(me.id);
         setMyRole(me.role ?? null);
@@ -271,10 +270,10 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
     return (
       <div className="pm-panel" style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0' }}>
-          <button onClick={() => setShowEditProfile(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, color: '#888' }}>Annulla</button>
-          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: '#111' }}>Modifica profilo</span>
+          <button onClick={() => setShowEditProfile(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, color: '#888' }}>{t('cancel')}</button>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: '#111' }}>{t('edit_profile')}</span>
           <button onClick={saveProfile} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: ORANGE }}>
-            {savingProfile ? <div className="spin" style={{ width: 18, height: 18 }} /> : 'Salva'}
+            {savingProfile ? <div className="spin" style={{ width: 18, height: 18 }} /> : t('save')}
           </button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 20px 60px' }}>
@@ -297,14 +296,14 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
             </div>
           ))}
           <div style={{ marginBottom: 20 }}>
-            <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>Bio</label>
-            <textarea value={editBio} onChange={e => setEditBio(e.target.value)} placeholder="Raccontati in poche parole..." rows={3} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', borderBottom: '1.5px solid #EEE', outline: 'none', background: 'transparent', resize: 'none', boxSizing: 'border-box', paddingTop: 10, paddingBottom: 10 } as any} />
+            <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>{t('bio_edit_label')}</label>
+            <textarea value={editBio} onChange={e => setEditBio(e.target.value)} placeholder={t('bio_edit_placeholder')} rows={3} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', borderBottom: '1.5px solid #EEE', outline: 'none', background: 'transparent', resize: 'none', boxSizing: 'border-box', paddingTop: 10, paddingBottom: 10 } as any} />
           </div>
           <div style={{ marginBottom: 20 }}>
             <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>
-              Telefono <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 12, color: '#AAA', textTransform: 'none', letterSpacing: 0 }}>(opzionale)</span>
+              {t('phone_edit_label')} <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 12, color: '#AAA', textTransform: 'none', letterSpacing: 0 }}>({t('optional_label')})</span>
             </label>
-            <input type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+39 000 000 0000" maxLength={20} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', borderBottom: '1.5px solid #EEE', paddingBottom: 10, paddingTop: 10, outline: 'none', background: 'transparent', boxSizing: 'border-box' } as any} />
+            <input type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder={t('phone_placeholder')} maxLength={20} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', borderBottom: '1.5px solid #EEE', paddingBottom: 10, paddingTop: 10, outline: 'none', background: 'transparent', boxSizing: 'border-box' } as any} />
           </div>
         </div>
       </div>
@@ -339,7 +338,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
             </>
           ) : settingsScreen === 'notifiche' ? (
             <>
-              <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>PUSH NOTIFICATION</p>
+              <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>{t('push_notif_label')}</p>
               {[
                 { label: t('setting_notif_likes'), value: notifLike, setter: setNotifLike },
                 { label: t('setting_notif_followers'), value: notifFollower, setter: setNotifFollower },
@@ -486,7 +485,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '-8px 20px 12px', background: '#FFF0E6', borderRadius: 20, padding: '7px 14px', alignSelf: 'flex-start', width: 'fit-content' }}>
               <svg width="18" height="18" fill="#F07B1D" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
               <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: ORANGE }}>{formatNum(totalLikes)}</span>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>like totali</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>{t('likes_total')}</span>
             </div>
           )}
 
@@ -494,14 +493,14 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
           {!isOwnProfile && isFollower && isFollowing && (
             <div style={{ margin: '0 20px 12px', background: ORANGE, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
               <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#fff' }}>Vi seguite a vicenda</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#fff' }}>{t('mutual_follow')}</span>
             </div>
           )}
 
           {/* Name + bio */}
           <div style={{ paddingLeft: 20, paddingRight: 20, paddingBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>{profile.name || 'Utente'}</span>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 17, color: '#111' }}>{profile.name || t('user_fallback')}</span>
               {profile.username === JES_OFFICIAL_USERNAME && (
                 <svg width="20" height="20" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
                   <circle cx="12" cy="12" r="12" fill="#F07B1D"/>
@@ -549,18 +548,18 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
             <div style={{ padding: '0 20px 16px' }}>
               <button onClick={() => { onMessagePress(profile.id, profile.name || profile.username, profile.avatar_url); onClose(); }} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, border: '1.5px solid #E0E0E0', padding: '10px 0', background: 'none', cursor: 'pointer' }}>
                 <svg width="16" height="16" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>Scrivi messaggio</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>{t('write_message')}</span>
               </button>
             </div>
           )}
           {!isOwnProfile && isJes && myRole === 'admin' && (
             <div style={{ padding: '0 20px 16px' }}>
               <button onClick={() => {
-                const type = confirm('Pubblica come JES\n\nOK = Post\nAnnulla = Storia') ? 'post' : 'story';
+                const type = confirm(t('publish_as_jes')) ? 'post' : 'story';
                 onPostAsJes(profile.id, type);
               }} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, border: `1.5px solid ${ORANGE}`, padding: '10px 0', background: 'none', cursor: 'pointer' }}>
                 <svg width="16" height="16" fill="none" stroke={ORANGE} strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: ORANGE }}>Pubblica come JES</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: ORANGE }}>{t('publish_as_jes')}</span>
               </button>
             </div>
           )}
@@ -666,7 +665,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                 <AvatarImg uri={(selectedPost.users as any)?.avatar_url} size={40} seed={(selectedPost.users as any)?.username} className="pc-avatar-img" style={{ borderRadius: '50%' }} />
               </div>
               <div className="pc-meta">
-                <div className="pc-username">{(selectedPost.users as any)?.username || 'utente'}</div>
+                <div className="pc-username">{(selectedPost.users as any)?.username || t('user_fallback')}</div>
                 <div className="pc-discipline">{(selectedPost.users as any)?.discipline || ''}</div>
               </div>
             </div>
@@ -741,7 +740,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               {/* Comments */}
               {selectedPostComments.map((c: any) => (
                 <p key={c.id} className="pc-comment-line">
-                  <strong>{(c.users as any)?.username || 'utente'} </strong>{c.text}
+                  <strong>{(c.users as any)?.username || t('user_fallback')} </strong>{c.text}
                 </p>
               ))}
             </div>

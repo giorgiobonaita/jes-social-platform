@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { useLang } from '@/lib/i18n';
+import { useLang, T } from '@/lib/i18n';
 import FeedPoll from '@/components/FeedPoll';
 import CommentsModal from '@/components/CommentsModal';
 import CreateMenuModal from '@/components/CreateMenuModal';
@@ -51,14 +51,14 @@ function shuffleArray<T>(arr: T[]): T[] {
   return a;
 }
 
-function formatTimeAgo(isoDate: string): string {
+function formatTimeAgo(isoDate: string, nowLabel: string, minSuffix: string, hSuffix: string, dSuffix: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'Adesso';
-  if (m < 60) return `${m} min fa`;
+  if (m < 1) return nowLabel;
+  if (m < 60) return `${m} ${minSuffix}`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ore fa`;
-  return `${Math.floor(h / 24)} g fa`;
+  if (h < 24) return `${h} ${hSuffix}`;
+  return `${Math.floor(h / 24)} ${dSuffix}`;
 }
 
 function buildFeed(posts: any[], viewerUsername?: string | null): any[] {
@@ -510,7 +510,9 @@ function AdvCard({ imageUrl, url }: { imageUrl: string; url: string }) {
 // ── Home Screen ───────────────────────────────────────────────────────────────
 export default function HomePage() {
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
+  const fmtTime = (iso: string) => formatTimeAgo(iso, tl('groups_now'), tl('notif_mins_ago'), tl('notif_hours_ago'), tl('time_d_ago'));
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
@@ -635,7 +637,7 @@ export default function HomePage() {
         isLiked: dbUserId ? (likesByPost[p.id] || []).includes(dbUserId) : false,
         currentUserId: dbUserId,
         caption: p.caption || '',
-        timeAgo: formatTimeAgo(p.created_at),
+        timeAgo: fmtTime(p.created_at),
         tags: tagsByPost[p.id] || [],
         groupName: p.group_name || undefined,
       };
@@ -657,9 +659,9 @@ export default function HomePage() {
       if (!s.user_id) return;
       if (!groupMap[s.user_id]) {
         const u = userMap[s.user_id] || {};
-        groupMap[s.user_id] = { userId: s.user_id, username: u.username || 'utente', name: u.name || 'Utente', avatarUrl: u.avatar_url || null, stories: [] };
+        groupMap[s.user_id] = { userId: s.user_id, username: u.username || tl('user_fallback').toLowerCase(), name: u.name || tl('user_fallback'), avatarUrl: u.avatar_url || null, stories: [] };
       }
-      groupMap[s.user_id].stories.push({ id: s.id, imageUrl: s.image_url, timeAgo: formatTimeAgo(s.created_at) });
+      groupMap[s.user_id].stories.push({ id: s.id, imageUrl: s.image_url, timeAgo: fmtTime(s.created_at) });
     });
     setStories(Object.values(groupMap));
   }, []);

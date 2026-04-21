@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { supabase } from '@/lib/supabase';
 import AvatarImg from './AvatarImg';
-import { useLang } from '@/lib/i18n';
+import { useLang, T } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -43,14 +43,14 @@ interface Post {
   userId?: string;
 }
 
-function formatTimeAgo(isoDate: string, nowLabel: string): string {
+function formatTimeAgo(isoDate: string, nowLabel: string, minSuffix: string, hSuffix: string, dSuffix: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
   const m = Math.floor(diff / 60000);
   if (m < 1)  return nowLabel;
-  if (m < 60) return `${m} min fa`;
+  if (m < 60) return `${m} ${minSuffix}`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h fa`;
-  return `${Math.floor(h / 24)}g fa`;
+  if (h < 24) return `${h}${hSuffix}`;
+  return `${Math.floor(h / 24)}${dSuffix}`;
 }
 
 // ─── COMPOSE BOX ──────────────────────────────────────────────────────────────
@@ -173,7 +173,8 @@ interface Props {
 }
 
 export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPostPublished }: Props) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
   const [localJoined, setLocalJoined]       = useState(joined);
   const [posts, setPosts]                   = useState<Post[]>([]);
   const [loading, setLoading]               = useState(false);
@@ -224,7 +225,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
       const u = userMap[p.user_id] || {};
       return {
         id: p.id, author: u.name || u.username || t('role_user_title'), avatarUrl: u.avatar_url || null,
-        timeAgo: formatTimeAgo(p.created_at, nowLabel), text: p.caption || '', imageUrl: p.image_url || undefined,
+        timeAgo: formatTimeAgo(p.created_at, nowLabel, tl('notif_mins_ago'), tl('time_h_ago'), tl('time_d_ago')), text: p.caption || '', imageUrl: p.image_url || undefined,
         likes: (likesByPost[p.id] || []).length, comments: commentsByPost[p.id] || 0,
         liked: myId ? (likesByPost[p.id] || []).includes(myId) : false, userId: p.user_id,
       };
@@ -341,7 +342,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
         <div style={{ backgroundColor: '#fff', paddingBottom: 8 }}>
           <div style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <svg width="16" height="16" fill="none" stroke={ORANGE} strokeWidth="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#111' }}>Sponsor JES</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#111' }}>{tl('sponsor_jes')}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2, padding: '0 2px' }}>
             {PARTNER_ADV.map((adv, i) => (

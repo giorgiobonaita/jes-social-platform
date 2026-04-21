@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useLang, T } from '@/lib/i18n';
 
 export interface PollOption {
   id: string;
@@ -23,6 +24,9 @@ export default function FeedPoll({
   postId, question, initialOptions, initialTotalVotes,
   currentUserId, postUserId, isAdmin, onDelete,
 }: FeedPollProps) {
+  const { lang } = useLang();
+  const t = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
+
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [options, setOptions] = useState(initialOptions);
@@ -65,9 +69,9 @@ export default function FeedPoll({
     setTotalVotes(p => p + 1);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Non loggato');
+      if (!user) throw new Error(t('not_logged'));
       const { data: dbUser } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-      if (!dbUser) throw new Error('Profilo non trovato');
+      if (!dbUser) throw new Error(t('profile_not_found'));
       const { error } = await supabase.from('poll_votes').insert({ post_id: postId, user_id: dbUser.id, option_id: id });
       if (error) throw error;
       await supabase.from('posts').update({ poll_options: newOptions }).eq('id', postId);
@@ -89,7 +93,7 @@ export default function FeedPoll({
   return (
     <div className="feed-poll">
       <div className="poll-header-row">
-        <span className="poll-label">SONDAGGIO</span>
+        <span className="poll-label">{t('sondaggio')}</span>
         {canDelete && (
           <button className="poll-delete-btn" onClick={() => setConfirmDelete(true)}>
             <svg width="18" height="18" fill="none" stroke="#AAAAAA" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -124,15 +128,15 @@ export default function FeedPoll({
         })}
       </div>
 
-      <p className="poll-footer">{totalVotes.toLocaleString('it-IT')} VOTI • ANONIMO</p>
+      <p className="poll-footer">{totalVotes.toLocaleString()} {t('votes_anonymous')}</p>
 
       {confirmDelete && (
         <div className="modal-overlay center" onClick={() => setConfirmDelete(false)}>
           <div className="confirm-card" onClick={e => e.stopPropagation()}>
-            <p className="confirm-title">Elimina sondaggio</p>
-            <p className="confirm-msg">Sei sicuro di voler eliminare questo sondaggio?</p>
-            <button className="confirm-btn-danger" onClick={handleDelete}>Elimina</button>
-            <button className="confirm-btn-cancel" onClick={() => setConfirmDelete(false)}>Annulla</button>
+            <p className="confirm-title">{t('delete_poll')}</p>
+            <p className="confirm-msg">{t('delete_poll_confirm')}</p>
+            <button className="confirm-btn-danger" onClick={handleDelete}>{t('delete')}</button>
+            <button className="confirm-btn-cancel" onClick={() => setConfirmDelete(false)}>{t('cancel')}</button>
           </div>
         </div>
       )}

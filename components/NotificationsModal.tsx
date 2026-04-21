@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
-import { useLang } from '@/lib/i18n';
+import { useLang, T } from '@/lib/i18n';
 import AvatarImg from './AvatarImg';
 
 type NotifType = 'like' | 'comment' | 'follow' | 'mention';
@@ -64,7 +64,8 @@ const NOTIF_ICON_FALLBACK: { icon: React.ReactElement; color: string; bg: string
 interface Props { visible: boolean; onClose: () => void; }
 
 export default function NotificationsModal({ visible, onClose }: Props) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
+  const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading]             = useState(false);
   const [myDbId, setMyDbId]               = useState<string | null>(null);
@@ -100,7 +101,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
       const sender = senderMap[n.actor_id] || {};
       return {
         id: n.id, type: n.type as NotifType,
-        username: sender.username || 'utente', avatarUrl: sender.avatar_url || null,
+        username: sender.username || tl('user_fallback'), avatarUrl: sender.avatar_url || null,
         text: notifText(n.type as NotifType, t),
         timeAgo: n.created_at ? formatTimeAgo(n.created_at, t) : '',
         postThumb: n.post_id ? postMap[n.post_id] : undefined,
