@@ -18,11 +18,12 @@ export default function SignupPage() {
   const [bio, setBio] = useState('');
   const [acceptsPromotions, setAcceptsPromotions] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [emailConfirmed, setEmailConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const isReady = firstName.trim().length > 0 && lastName.trim().length > 0 &&
-    email.trim().length > 0 && password.trim().length > 0 && termsAccepted;
+    email.trim().length > 0 && password.trim().length > 0 && termsAccepted && emailConfirmed;
 
   const handleSignUp = async () => {
     if (!isReady || loading) return;
@@ -132,6 +133,13 @@ export default function SignupPage() {
             {' '}{t('and_the')}{' '}
             <Link href="/legal/privacy" target="_blank" onClick={e => e.stopPropagation()}>{t('terms_privacy')}</Link>
           </span>
+        </label>
+
+        <label className="checkbox-row" onClick={() => setEmailConfirmed(p => !p)}>
+          <div className={`checkbox-box${emailConfirmed ? ' checked' : ''}`}>
+            {emailConfirmed && <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 7l4 4 6-6"/></svg>}
+          </div>
+          <span className="checkbox-label">{t('email_ownership_confirm')}</span>
         </label>
 
         <label className="checkbox-row" onClick={() => setAcceptsPromotions(p => !p)} style={{ marginBottom: 24 }}>

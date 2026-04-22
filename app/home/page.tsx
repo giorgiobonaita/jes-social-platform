@@ -613,8 +613,15 @@ export default function HomePage() {
     (commentsData || []).forEach((c: any) => { commentsByPost[c.post_id] = (commentsByPost[c.post_id] || 0) + 1; });
     const mapped = posts.map((p: any) => {
       const u = userMap[p.user_id] || {};
-      const imageUrls: string[] = Array.isArray(p.image_urls) && p.image_urls.length > 0
-        ? p.image_urls : p.image_url ? [p.image_url] : [];
+      let imageUrls: string[] = [];
+      if (Array.isArray(p.image_urls) && p.image_urls.length > 0) {
+        imageUrls = p.image_urls;
+      } else if (typeof p.image_urls === 'string' && p.image_urls.startsWith('{')) {
+        // PostgreSQL array format: {url1,url2}
+        imageUrls = p.image_urls.slice(1, -1).split(',').map((s: string) => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
+      } else if (p.image_url) {
+        imageUrls = [p.image_url];
+      }
       return {
         type: p.type || 'post', id: p.id, userId: p.user_id,
         pollQuestion: p.poll_question, pollOptions: p.poll_options,

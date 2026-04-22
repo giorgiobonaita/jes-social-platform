@@ -50,6 +50,7 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
   const [publishing, setPublishing]         = useState(false);
   const fileInputRef  = useRef<HTMLInputElement>(null);
   const changeFileRef = useRef<HTMLInputElement>(null);
+  const [inputKey, setInputKey] = useState(0);
 
   const reset = () => {
     setStep('picker'); setFiles([]); setPreviews([]); setCaption('');
@@ -78,7 +79,7 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files || []);
     if (selected.length > 0) onFilesSelected(selected);
-    e.target.value = '';
+    setInputKey(k => k + 1);
   };
 
   const uploadImage = async (file: File): Promise<string> => {
@@ -152,7 +153,7 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
           </div>
           {/* Picker area */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, gap: 20 }}>
-            <div onClick={() => fileInputRef.current?.click()}
+            <div onClick={() => { setInputKey(k => k + 1); setTimeout(() => fileInputRef.current?.click(), 0); }}
               style={{ width: '100%', maxWidth: 360, border: '2px dashed #DDD', borderRadius: 24, padding: '50px 30px', textAlign: 'center', cursor: 'pointer', backgroundColor: '#FAFAFA', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
               <svg width="56" height="56" fill="none" stroke="#CCC" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
               <div>
@@ -163,7 +164,7 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
                 <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#fff' }}>{t('choose_photo')}</span>
               </div>
             </div>
-            <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
+            <input key={inputKey} ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
           </div>
         </>
       )}
@@ -200,12 +201,12 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
 
             {/* Change photo button */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10, marginBottom: 4 }}>
-              <button onClick={() => changeFileRef.current?.click()}
+              <button onClick={() => { setInputKey(k => k + 1); setTimeout(() => changeFileRef.current?.click(), 0); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, backgroundColor: '#F5F5F5', border: 'none', borderRadius: 16, padding: '8px 16px', cursor: 'pointer' }}>
                 <svg width="16" height="16" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 <span style={{ fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 13, color: '#666' }}>{t('change_photo')}</span>
               </button>
-              <input ref={changeFileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
+              <input key={inputKey + 1000} ref={changeFileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleFileChange} />
             </div>
 
             {/* Testo (titolo + descrizione unificati) */}
