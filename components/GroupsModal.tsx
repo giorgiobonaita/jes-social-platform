@@ -18,7 +18,7 @@ interface Props {
 const OFFICIAL_GROUPS = [
   'Pittura', 'Scultura', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
   'Design', 'Architettura', 'Archeologia', 'Storia', 'Recitazione e Danza',
-  'Musica', 'Fumettistica', 'Arte di Strada', 'Partner',
+  'Musica', 'Fumettistica', 'Arte di Strada', 'Partner', 'Sponsor',
 ];
 
 export default function GroupsModal({ visible, onClose, onPostPublished, initialGroupId }: Props) {

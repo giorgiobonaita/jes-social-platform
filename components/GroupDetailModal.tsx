@@ -337,8 +337,8 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
       {/* Separator */}
       <div style={{ height: 8, backgroundColor: '#F0F0F0' }} />
 
-      {/* Sponsor gallery — solo per il gruppo Partner */}
-      {group.name === 'Partner' && (
+      {/* Sponsor gallery — solo per il gruppo Sponsor */}
+      {group.name === 'Sponsor' && (
         <div style={{ backgroundColor: '#fff', paddingBottom: 8 }}>
           <div style={{ padding: '14px 16px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <svg width="16" height="16" fill="none" stroke={ORANGE} strokeWidth="2" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -356,7 +356,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
         </div>
       )}
 
-      {group.name === 'Partner' && <div style={{ height: 8, backgroundColor: '#F0F0F0' }} />}
+      {group.name === 'Sponsor' && <div style={{ height: 8, backgroundColor: '#F0F0F0' }} />}
 
       {/* Compose or join banner */}
       {localJoined ? (
