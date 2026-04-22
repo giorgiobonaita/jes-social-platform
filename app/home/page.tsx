@@ -174,6 +174,9 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'delete' | 'report' | 'ban' | null>(null);
+  const [editingCaption, setEditingCaption] = useState(false);
+  const [editCaptionText, setEditCaptionText] = useState('');
+  const [caption, setCaption] = useState(post.caption || '');
   const [previewComments, setPreviewComments] = useState<{ id: string; username: string; text: string }[]>([]);
   const lastTap = useRef<number>(0);
 
@@ -240,6 +243,14 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
       if (!liked && post.currentUserId) { setLiked(true); setLikesCount((p: number) => p + 1); supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId }); }
     }
     lastTap.current = now;
+  };
+
+  const handleEditCaption = async () => {
+    const trimmed = editCaptionText.trim();
+    if (!trimmed) return;
+    await supabase.from('posts').update({ caption: trimmed }).eq('id', post.id);
+    setCaption(trimmed);
+    setEditingCaption(false);
   };
 
   const handleDelete = async () => {
@@ -393,13 +404,13 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
             </div>
           )}
 
-          {post.caption && (
+          {caption && (
             <div className="pc-caption-wrap" onClick={() => setExpanded(p => !p)}>
               <span className="pc-caption">
                 <strong className="pc-caption-user">{post.author?.username} </strong>
-                {!expanded && post.caption.length > 80 ? renderCaption(post.caption.slice(0, 80)) : renderCaption(post.caption)}
+                {!expanded && caption.length > 80 ? renderCaption(caption.slice(0, 80)) : renderCaption(caption)}
               </span>
-              {!expanded && post.caption.length > 80 && <span className="pc-more"> {t('post_more')}</span>}
+              {!expanded && caption.length > 80 && <span className="pc-more"> {t('post_more')}</span>}
             </div>
           )}
 
@@ -443,6 +454,12 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
             <div className="modal-handle" />
             <p className="pc-sheet-title">{post.author?.username}</p>
 
+            {isOwn && (
+              <div className="pc-sheet-option" onClick={() => { setMenuOpen(false); setEditCaptionText(caption); setTimeout(() => setEditingCaption(true), 200); }}>
+                <svg width="20" height="20" fill="none" stroke="#555" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                <span>{t('edit_msg')}</span>
+              </div>
+            )}
             {(isOwn || isAdmin) && (
               <div className="pc-sheet-option danger" onClick={() => { setMenuOpen(false); setTimeout(() => setConfirmAction('delete'), 200); }}>
                 <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
@@ -461,6 +478,28 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
               <span>{t('report')}</span>
             </div>
             <div className="pc-sheet-cancel" onClick={() => setMenuOpen(false)}>{t('cancel')}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit caption sheet */}
+      {editingCaption && (
+        <div className="modal-overlay" onClick={() => setEditingCaption(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()}>
+            <div className="modal-handle" />
+            <p className="pc-sheet-title">{t('edit_msg')}</p>
+            <textarea
+              autoFocus
+              value={editCaptionText}
+              onChange={e => setEditCaptionText(e.target.value)}
+              maxLength={2000}
+              rows={5}
+              style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 15, color: '#111', border: '1.5px solid #EEE', borderRadius: 14, padding: '12px 14px', outline: 'none', resize: 'none', boxSizing: 'border-box', marginBottom: 12 }}
+            />
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setEditingCaption(false)} style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: '1.5px solid #EEE', background: 'none', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#555', cursor: 'pointer' }}>{t('cancel')}</button>
+              <button onClick={handleEditCaption} disabled={!editCaptionText.trim()} style={{ flex: 1, padding: '12px 0', borderRadius: 14, border: 'none', background: ORANGE, fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#fff', cursor: 'pointer', opacity: editCaptionText.trim() ? 1 : 0.4 }}>{t('save')}</button>
+            </div>
           </div>
         </div>
       )}
