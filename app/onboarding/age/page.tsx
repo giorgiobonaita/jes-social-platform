@@ -23,7 +23,7 @@ export default function OnboardingAgePage() {
         await supabase.from('users').update({ birth_date: `${birthYear}-01-01` }).eq('auth_id', user.id);
       }
     } catch {}
-    router.push('/onboarding/photo');
+    router.push('/onboarding/nationality');
   };
 
   return (

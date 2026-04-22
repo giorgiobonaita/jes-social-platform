@@ -21,6 +21,7 @@ interface Message {
   mine:       boolean;
   time:       string;
   created_at: string;
+  edited?:    boolean;
 }
 
 function fmtTime(iso: string, locale: string, yesterdayLabel: string): string {
@@ -45,6 +46,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
   const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
   const fmt = (iso: string) => fmtTime(iso, lang.replace('_', '-'), tl('yesterday'));
   const [myId, setMyId]                     = useState<string | null>(null);
+  const [isAdmin, setIsAdmin]               = useState(false);
   const [conversations, setConversations]   = useState<Conversation[]>([]);
   const [activeId, setActiveId]             = useState<string | null>(null);
   const [activeName, setActiveName]         = useState('');
@@ -54,6 +56,10 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
   const [loadingConvs, setLoadingConvs]     = useState(false);
   const [loadingMsgs, setLoadingMsgs]       = useState(false);
   const [isSending, setIsSending]           = useState(false);
+  const [selectedMsgId, setSelectedMsgId]   = useState<string | null>(null);
+  const [editingMsgId, setEditingMsgId]     = useState<string | null>(null);
+  const [editMsgText, setEditMsgText]       = useState('');
+  const editMsgRef = useRef<HTMLTextAreaElement>(null);
   const [suggested, setSuggested]           = useState<{ id: string; name: string; username: string; avatarUrl: string | null }[]>([]);
   const [newMsgMode, setNewMsgMode]         = useState(false);
   const [newMsgQuery, setNewMsgQuery]       = useState('');
@@ -144,6 +150,8 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
     setActiveId(otherId);
     setActiveName(name);
     setActiveAvatar(avatarUrl);
+    setSelectedMsgId(null);
+    setEditingMsgId(null);
     setLoadingMsgs(true);
     if (!myId) return;
     const { data: msgs } = await supabase
@@ -173,6 +181,27 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
       }).subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [activeId, myId]);
+
+  const startEditMsg = (item: Message) => {
+    setEditingMsgId(item.id);
+    setEditMsgText(item.text);
+    setSelectedMsgId(null);
+    setTimeout(() => editMsgRef.current?.focus(), 50);
+  };
+
+  const saveEditMsg = async () => {
+    if (!editingMsgId || !editMsgText.trim()) return;
+    await supabase.from('messages').update({ content: editMsgText.trim() }).eq('id', editingMsgId);
+    setMessages(prev => prev.map(m => m.id === editingMsgId ? { ...m, text: editMsgText.trim(), edited: true } : m));
+    setEditingMsgId(null);
+  };
+
+  const deleteMsg = async (id: string) => {
+    if (!confirm(tl('delete_chat_msg_confirm'))) return;
+    await supabase.from('messages').delete().eq('id', id);
+    setMessages(prev => prev.filter(m => m.id !== id));
+    setSelectedMsgId(null);
+  };
 
   const sendMessage = async () => {
     if (!inputText.trim() || !myId || !activeId || isSending) return;
@@ -306,20 +335,53 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
               messages.map((item, index) => {
                 const next = messages[index + 1];
                 const isLastInGroup = !next || next.mine !== item.mine;
+                const isSelected = selectedMsgId === item.id;
+                const isEditing = editingMsgId === item.id;
                 return (
-                  <div key={item.id} style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: isLastInGroup ? 12 : 3, justifyContent: item.mine ? 'flex-end' : 'flex-start' }}>
-                    {!item.mine && (
-                      isLastInGroup
-                        ? <AvatarImg uri={activeAvatar} size={28} seed={activeName} />
-                        : <div style={{ width: 28, flexShrink: 0 }} />
-                    )}
-                    <div>
-                      <div style={{ maxWidth: '72vw', borderRadius: 18, borderBottomRightRadius: item.mine ? 4 : 18, borderBottomLeftRadius: item.mine ? 18 : 4, padding: '10px 14px', backgroundColor: item.mine ? ORANGE : '#F2F2F2' }}>
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: item.mine ? '#fff' : '#111', lineHeight: '20px' }}>{item.text}</span>
+                  <div key={item.id} style={{ display: 'flex', flexDirection: 'column', alignItems: item.mine ? 'flex-end' : 'flex-start', marginBottom: isLastInGroup ? 12 : 3 }}>
+                    {/* Action bar for own messages */}
+                    {isSelected && item.mine && (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 4, paddingRight: 4 }}>
+                        <button onClick={() => startEditMsg(item)} style={{ background: '#F0F0F0', border: 'none', borderRadius: 12, padding: '4px 12px', fontFamily: 'var(--font-body)', fontSize: 12, color: '#333', cursor: 'pointer' }}>{tl('edit_msg')}</button>
+                        <button onClick={() => deleteMsg(item.id)} style={{ background: '#FFE8E8', border: 'none', borderRadius: 12, padding: '4px 12px', fontFamily: 'var(--font-body)', fontSize: 12, color: '#E53935', cursor: 'pointer' }}>{tl('delete_msg')}</button>
                       </div>
-                      {isLastInGroup && (
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: '#AAAAAA', marginTop: 3, paddingLeft: item.mine ? 0 : 4, paddingRight: item.mine ? 4 : 0, textAlign: item.mine ? 'right' : 'left' }}>{item.time}</div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-end', gap: 8, justifyContent: item.mine ? 'flex-end' : 'flex-start' }}>
+                      {!item.mine && (
+                        isLastInGroup
+                          ? <AvatarImg uri={activeAvatar} size={28} seed={activeName} />
+                          : <div style={{ width: 28, flexShrink: 0 }} />
                       )}
+                      <div>
+                        {isEditing ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: '72vw' }}>
+                            <textarea
+                              ref={editMsgRef}
+                              value={editMsgText}
+                              onChange={e => setEditMsgText(e.target.value)}
+                              style={{ borderRadius: 14, border: '1.5px solid ' + ORANGE, padding: '8px 12px', fontFamily: 'var(--font-body)', fontSize: 14, color: '#111', resize: 'none', outline: 'none', maxHeight: 120 }}
+                              rows={2}
+                              maxLength={500}
+                            />
+                            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                              <button onClick={() => setEditingMsgId(null)} style={{ background: '#F0F0F0', border: 'none', borderRadius: 12, padding: '4px 12px', fontFamily: 'var(--font-body)', fontSize: 12, color: '#555', cursor: 'pointer' }}>{tl('cancel')}</button>
+                              <button onClick={saveEditMsg} style={{ background: ORANGE, border: 'none', borderRadius: 12, padding: '4px 12px', fontFamily: 'var(--font-body)', fontSize: 12, color: '#fff', cursor: 'pointer' }}>{tl('save')}</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => { if (item.mine) setSelectedMsgId(prev => prev === item.id ? null : item.id); }}
+                            style={{ maxWidth: '72vw', borderRadius: 18, borderBottomRightRadius: item.mine ? 4 : 18, borderBottomLeftRadius: item.mine ? 18 : 4, padding: '10px 14px', backgroundColor: item.mine ? ORANGE : '#F2F2F2', cursor: item.mine ? 'pointer' : 'default' }}>
+                            <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: item.mine ? '#fff' : '#111', lineHeight: '20px' }}>{item.text}</span>
+                          </div>
+                        )}
+                        {isLastInGroup && !isEditing && (
+                          <div style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: '#AAAAAA', marginTop: 3, paddingLeft: item.mine ? 0 : 4, paddingRight: item.mine ? 4 : 0, textAlign: item.mine ? 'right' : 'left' }}>
+                            {item.edited && <span style={{ marginRight: 4 }}>{tl('edited_label')}</span>}
+                            {item.time}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );

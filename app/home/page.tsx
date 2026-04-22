@@ -290,7 +290,14 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
             </div>
             <div className="pc-discipline">{post.author?.discipline}</div>
           </div>
-          <span className="pc-timeago">{post.timeAgo}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+            <span className="pc-timeago">{post.timeAgo}</span>
+            {post.createdAt && (
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: '#BBBBBB' }}>
+                {new Date(post.createdAt).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
+              </span>
+            )}
+          </div>
           {!isOwn && !isFollowingAuthor && post.currentUserId && onFollowAuthor && (
             <button onClick={async () => {
               if (!post.currentUserId || !post.userId) return;
@@ -526,6 +533,10 @@ export default function HomePage() {
   const [dbPosts, setDbPosts] = useState<any[]>([]);
   const [groupPosts, setGroupPosts] = useState<any[]>([]);
   const [stories, setStories] = useState<UserStoryGroup[]>([]);
+  const [feedPage, setFeedPage] = useState(0);
+  const [hasMorePosts, setHasMorePosts] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 30;
 
   const [storyVisible, setStoryVisible] = useState(false);
   const [activeStoryIndex, setActiveStoryIndex] = useState(0);
@@ -582,37 +593,16 @@ export default function HomePage() {
   const CACHE_KEY = 'jes_feed_v1';
   const CACHE_TTL = 5 * 60 * 1000; // 5 minuti
 
-  const loadDbPosts = useCallback(async () => {
-    // Mostra cache subito se fresca (< 5 min)
-    try {
-      const raw = sessionStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const { ts, data } = JSON.parse(raw);
-        if (Date.now() - ts < CACHE_TTL) setDbPosts(data);
-      }
-    } catch {}
-
-    const { data: posts, error } = await supabase
-      .from('posts').select('*').order('created_at', { ascending: false }).limit(50);
-    if (error || !posts || posts.length === 0) return;
-
+  const mapPosts = useCallback(async (posts: any[], dbUserId: string | null, append: boolean) => {
     const postIds = posts.map((p: any) => p.id);
     const userIds = [...new Set(posts.map((p: any) => p.user_id).filter(Boolean))];
-    const [{ data: usersData }, { data: tagsData }, { data: likesData }, { data: commentsData }, authResult] =
+    const [{ data: usersData }, { data: tagsData }, { data: likesData }, { data: commentsData }] =
       await Promise.all([
         supabase.from('users').select('id, username, name, avatar_url, discipline, role').in('id', userIds),
         supabase.from('post_tags').select('post_id, tag').in('post_id', postIds),
         supabase.from('likes').select('post_id, user_id').in('post_id', postIds),
         supabase.from('comments').select('id, post_id').in('post_id', postIds),
-        supabase.auth.getUser(),
       ]);
-
-    let dbUserId: string | null = null;
-    if (authResult.data.user) {
-      const { data: u } = await supabase.from('users').select('id').eq('auth_id', authResult.data.user.id).single();
-      dbUserId = u?.id ?? null;
-    }
-
     const userMap: Record<string, any> = {};
     (usersData || []).forEach((u: any) => { userMap[u.id] = u; });
     const tagsByPost: Record<string, string[]> = {};
@@ -621,7 +611,6 @@ export default function HomePage() {
     (likesData || []).forEach((l: any) => { if (!likesByPost[l.post_id]) likesByPost[l.post_id] = []; likesByPost[l.post_id].push(l.user_id); });
     const commentsByPost: Record<string, number> = {};
     (commentsData || []).forEach((c: any) => { commentsByPost[c.post_id] = (commentsByPost[c.post_id] || 0) + 1; });
-
     const mapped = posts.map((p: any) => {
       const u = userMap[p.user_id] || {};
       const imageUrls: string[] = Array.isArray(p.image_urls) && p.image_urls.length > 0
@@ -638,13 +627,62 @@ export default function HomePage() {
         currentUserId: dbUserId,
         caption: p.caption || '',
         timeAgo: fmtTime(p.created_at),
+        createdAt: p.created_at,
         tags: tagsByPost[p.id] || [],
         groupName: p.group_name || undefined,
       };
     });
-    setDbPosts(mapped);
-    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: mapped })); } catch {}
+    if (append) setDbPosts(prev => [...prev, ...mapped]);
+    else { setDbPosts(mapped); try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data: mapped })); } catch {} }
   }, []);
+
+  const loadDbPosts = useCallback(async () => {
+    // Mostra cache subito se fresca (< 5 min)
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const { ts, data } = JSON.parse(raw);
+        if (Date.now() - ts < CACHE_TTL) setDbPosts(data);
+      }
+    } catch {}
+
+    const { data: posts, error } = await supabase
+      .from('posts').select('*').order('created_at', { ascending: false }).range(0, PAGE_SIZE - 1);
+    if (error || !posts || posts.length === 0) return;
+    setHasMorePosts(posts.length === PAGE_SIZE);
+    setFeedPage(1);
+
+    const authResult = await supabase.auth.getUser();
+    let dbUserId: string | null = null;
+    if (authResult.data.user) {
+      const { data: u } = await supabase.from('users').select('id').eq('auth_id', authResult.data.user.id).single();
+      dbUserId = u?.id ?? null;
+    }
+    await mapPosts(posts, dbUserId, false);
+  }, [mapPosts]);
+
+  const loadMorePosts = useCallback(async () => {
+    if (loadingMore || !hasMorePosts) return;
+    setLoadingMore(true);
+    const authResult = await supabase.auth.getUser();
+    let dbUserId: string | null = null;
+    if (authResult.data.user) {
+      const { data: u } = await supabase.from('users').select('id').eq('auth_id', authResult.data.user.id).single();
+      dbUserId = u?.id ?? null;
+    }
+    const from = feedPage * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+    const { data: posts, error } = await supabase
+      .from('posts').select('*').order('created_at', { ascending: false }).range(from, to);
+    if (!error && posts && posts.length > 0) {
+      await mapPosts(posts, dbUserId, true);
+      setFeedPage(prev => prev + 1);
+      setHasMorePosts(posts.length === PAGE_SIZE);
+    } else {
+      setHasMorePosts(false);
+    }
+    setLoadingMore(false);
+  }, [feedPage, hasMorePosts, loadingMore, mapPosts]);
 
   const loadStories = useCallback(async () => {
     const now = new Date().toISOString();
@@ -732,8 +770,9 @@ export default function HomePage() {
 
       {/* Feed */}
       <div className="feed-scroll" ref={feedScrollRef} onScroll={e => {
-        const y = (e.target as HTMLDivElement).scrollTop;
-        setShowScrollTop(y > 300);
+        const el = e.target as HTMLDivElement;
+        setShowScrollTop(el.scrollTop > 300);
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 400) loadMorePosts();
       }}>
         {/* Stories */}
         <div className="stories-section">
@@ -781,6 +820,9 @@ export default function HomePage() {
             />
           );
         })}
+        {loadingMore && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '16px 0' }}><div className="spin" /></div>
+        )}
       </div>
 
       {/* Scroll-to-top */}

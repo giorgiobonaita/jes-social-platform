@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import AvatarImg from './AvatarImg';
 import AdminPanelModal from './AdminPanelModal';
 import { useLang, LANGUAGES } from '@/lib/i18n';
+import { COUNTRIES, countryFlag } from '@/lib/countries';
 
 const ORANGE = '#F07B1D';
 const JES_OFFICIAL_USERNAME = 'jes_official';
@@ -83,10 +84,13 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
   const [listsLoaded, setListsLoaded]       = useState(false);
 
   // Edit profile
-  const [editName, setEditName]         = useState('');
-  const [editUsername, setEditUsername] = useState('');
-  const [editBio, setEditBio]           = useState('');
-  const [editPhone, setEditPhone]       = useState('');
+  const [editName, setEditName]               = useState('');
+  const [editUsername, setEditUsername]       = useState('');
+  const [editBio, setEditBio]                 = useState('');
+  const [editPhone, setEditPhone]             = useState('');
+  const [editNationality, setEditNationality] = useState('');
+  const [showNatList, setShowNatList]         = useState(false);
+  const [natFilter, setNatFilter]             = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Notifications settings (UI only)
@@ -112,10 +116,10 @@ if (me) {
       const userId = targetUserId ?? dbMyId;
       if (!userId) return;
 
-      const { data } = await supabase.from('users').select('id, name, username, bio, avatar_url, discipline, role, phone').eq('id', userId).single();
+      const { data } = await supabase.from('users').select('id, name, username, bio, avatar_url, discipline, role, phone, nationality').eq('id', userId).single();
       if (!data) return;
       setProfile(data);
-      if (isOwnProfile) { setEditName(data.name || ''); setEditUsername(data.username || ''); setEditBio(data.bio || ''); setEditPhone(data.phone || ''); }
+      if (isOwnProfile) { setEditName(data.name || ''); setEditUsername(data.username || ''); setEditBio(data.bio || ''); setEditPhone(data.phone || ''); setEditNationality(data.nationality || ''); }
 
       const { data: posts } = await supabase.from('posts').select('id, image_url, image_urls').eq('user_id', data.id).order('created_at', { ascending: false }).limit(30);
       if (posts) {
@@ -237,7 +241,7 @@ if (me) {
   const saveProfile = async () => {
     if (!profile || savingProfile) return;
     setSavingProfile(true);
-    const { error } = await supabase.from('users').update({ name: editName.trim(), username: editUsername.trim().replace('@', ''), bio: editBio.trim(), phone: editPhone.trim() || null }).eq('id', profile.id);
+    const { error } = await supabase.from('users').update({ name: editName.trim(), username: editUsername.trim().replace('@', ''), bio: editBio.trim(), phone: editPhone.trim() || null, nationality: editNationality || null }).eq('id', profile.id);
     setSavingProfile(false);
     if (error) { alert(error.message); return; }
     await loadProfile();
@@ -304,6 +308,48 @@ if (me) {
               {t('phone_edit_label')} <span style={{ fontFamily: 'var(--font-body)', fontWeight: 400, fontSize: 12, color: '#AAA', textTransform: 'none', letterSpacing: 0 }}>({t('optional_label')})</span>
             </label>
             <input type="tel" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder={t('phone_placeholder')} maxLength={20} style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: 'none', borderBottom: '1.5px solid #EEE', paddingBottom: 10, paddingTop: 10, outline: 'none', background: 'transparent', boxSizing: 'border-box' } as any} />
+          </div>
+
+          {/* Nationality picker */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#888', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>
+              {t('nationality_label')}
+              {!editNationality && <span style={{ marginLeft: 6, fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 11, color: ORANGE, textTransform: 'none', letterSpacing: 0 }}>*</span>}
+            </label>
+            <button type="button" onClick={() => { setShowNatList(p => !p); setNatFilter(''); }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'transparent', border: 'none', borderBottom: `1.5px solid ${editNationality ? ORANGE : '#EEE'}`, paddingBottom: 10, paddingTop: 10, cursor: 'pointer' }}>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: editNationality ? '#111' : '#AAAAAA', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {editNationality ? <><span style={{ fontSize: 22 }}>{countryFlag(editNationality)}</span> {editNationality}</> : t('nationality_placeholder')}
+              </span>
+              <svg width="16" height="16" fill="none" stroke="#AAAAAA" strokeWidth="2" viewBox="0 0 24 24">
+                {showNatList ? <polyline points="18 15 12 9 6 15"/> : <polyline points="6 9 12 15 18 9"/>}
+              </svg>
+            </button>
+            {showNatList && (
+              <div style={{ backgroundColor: '#fff', borderRadius: 14, border: '1.5px solid #F0F0F0', boxShadow: '0 4px 20px rgba(0,0,0,0.10)', overflow: 'hidden', maxHeight: 240, marginTop: 6 }}>
+                <div style={{ padding: '8px 12px', borderBottom: '1px solid #F5F5F5' }}>
+                  <input
+                    autoFocus
+                    placeholder={t('nationality_search')}
+                    value={natFilter}
+                    onChange={e => setNatFilter(e.target.value)}
+                    style={{ width: '100%', fontFamily: 'var(--font-body)', fontSize: 14, color: '#111', border: 'none', outline: 'none', background: 'transparent' }}
+                  />
+                </div>
+                <div style={{ overflowY: 'auto', maxHeight: 190 }}>
+                  {COUNTRIES.filter(c => c.name.toLowerCase().includes(natFilter.toLowerCase()) || c.native.toLowerCase().includes(natFilter.toLowerCase())).map(c => (
+                    <div key={c.name} onClick={() => { setEditNationality(c.name); setShowNatList(false); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', cursor: 'pointer', backgroundColor: editNationality === c.name ? '#FFF5EE' : 'transparent', borderBottom: '1px solid #F8F8F8' }}>
+                      <span style={{ fontSize: 22 }}>{c.flag}</span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: editNationality === c.name ? ORANGE : '#111', fontWeight: editNationality === c.name ? 700 : 400 }}>
+                        {c.name}{c.native !== c.name ? <span style={{ color: '#AAAAAA', fontWeight: 400 }}> — {c.native}</span> : null}
+                      </span>
+                      {editNationality === c.name && <svg style={{ marginLeft: 'auto', flexShrink: 0 }} width="16" height="16" fill="none" stroke={ORANGE} strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -516,11 +562,23 @@ if (me) {
                 )}
               </p>
             ) : null}
-            {profile.discipline ? (
-              <div style={{ marginTop: 10 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+              {profile.discipline && (
                 <span style={{ background: '#FFF0E6', borderRadius: 20, padding: '5px 12px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: ORANGE }}>{profile.discipline}</span>
+              )}
+              {profile.nationality && (
+                <span style={{ background: '#F5F5F5', borderRadius: 20, padding: '5px 12px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#444', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ fontSize: 16 }}>{countryFlag(profile.nationality)}</span>
+                  {profile.nationality}
+                </span>
+              )}
+            </div>
+            {isOwnProfile && !profile.nationality && (
+              <div onClick={() => setShowEditProfile(true)} style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, background: '#FFF5EE', borderRadius: 12, padding: '9px 14px', cursor: 'pointer', border: `1px dashed ${ORANGE}` }}>
+                <span style={{ fontSize: 20 }}>🌍</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: ORANGE, fontWeight: 600 }}>{t('nationality_add_prompt')}</span>
               </div>
-            ) : null}
+            )}
           </div>
 
           {/* Action buttons */}

@@ -88,7 +88,7 @@ export default function LegalClient() {
           <p><strong>{it ? '1.2 Contenuti pubblicati' : '1.2 Published content'}</strong></p>
           <ul>
             <li>{it ? 'Post: immagini (fino a 10), didascalie, livello di visibilità, gruppi, tag, hashtag' : 'Posts: images (up to 10), captions, visibility level, groups, tags, hashtags'}</li>
-            <li>{it ? 'Storie: immagini effimere (eliminate dopo 24 ore), link e menzioni' : 'Stories: ephemeral images (deleted after 24 hours), links and mentions'}</li>
+            <li>{it ? 'Storie: immagini effimere (eliminate dopo 30 giorni), link e menzioni' : 'Stories: ephemeral images (deleted after 30 days), links and mentions'}</li>
             <li>{it ? 'Commenti, risposte ai sondaggi, voti' : 'Comments, poll answers, votes'}</li>
             <li>{it ? 'Post nei gruppi/community' : 'Posts in groups/communities'}</li>
             <li>{it ? 'Messaggi diretti (non analizzati automaticamente da noi)' : 'Direct messages (not automatically analysed by us)'}</li>
@@ -175,7 +175,7 @@ export default function LegalClient() {
         <div className={s.docSection}>
           <h2><span className={s.num}>5</span> {it ? 'Periodo di conservazione' : 'Retention period'}</h2>
           <ul>
-            <li><strong>{it ? 'Storie:' : 'Stories:'}</strong> {it ? 'eliminate automaticamente 24 ore dopo la pubblicazione' : 'automatically deleted 24 hours after publication'}</li>
+            <li><strong>{it ? 'Storie:' : 'Stories:'}</strong> {it ? 'eliminate automaticamente 30 giorni dopo la pubblicazione' : 'automatically deleted 30 days after publication'}</li>
             <li><strong>{it ? 'Contenuti e account attivi:' : 'Content and active accounts:'}</strong> {it ? 'conservati per la durata del rapporto contrattuale' : 'retained for the duration of the contractual relationship'}</li>
             <li><strong>{it ? 'Account eliminati su richiesta:' : 'Accounts deleted on request:'}</strong> {it ? 'rimossi entro 30 giorni, fatti salvi gli obblighi legali di conservazione' : 'removed within 30 days, subject to legal retention obligations'}</li>
             <li><strong>{it ? 'Messaggi diretti:' : 'Direct messages:'}</strong> {it ? 'conservati finché almeno un partecipante mantiene un account attivo' : 'retained while at least one participant keeps an active account'}</li>

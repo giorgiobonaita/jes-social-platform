@@ -3,7 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { containsBlacklistedWord } from '@/lib/blacklist';
 import AvatarImg from './AvatarImg';
-import { useLang } from '@/lib/i18n';
+import { useLang, T } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -15,17 +15,27 @@ interface Comment {
 interface Props {
   visible: boolean; onClose: () => void;
   postId: string | null; postAuthorId?: string | null;
+  isAdmin?: boolean;
 }
 
-export default function CommentsModal({ visible, onClose, postId, postAuthorId }: Props) {
-  const { t } = useLang();
+export default function CommentsModal({ visible, onClose, postId, postAuthorId, isAdmin }: Props) {
+  const { t, lang } = useLang();
+  const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
+
   const [comments, setComments]               = useState<Comment[]>([]);
   const [inputText, setInputText]             = useState('');
   const [loading, setLoading]                 = useState(false);
   const [currentAvatar, setCurrentAvatar]     = useState<string | null>(null);
   const [currentDbUserId, setCurrentDbUserId] = useState<string | null>(null);
   const [currentUsername, setCurrentUsername] = useState('');
-  const listRef  = useRef<HTMLDivElement>(null);
+
+  // edit / delete state
+  const [selectedId, setSelectedId]   = useState<string | null>(null);
+  const [editingId, setEditingId]     = useState<string | null>(null);
+  const [editText, setEditText]       = useState('');
+
+  const listRef   = useRef<HTMLDivElement>(null);
+  const editRef   = useRef<HTMLTextAreaElement>(null);
 
   const formatTimeAgo = useCallback((isoDate: string): string => {
     const diff = Date.now() - new Date(isoDate).getTime();
@@ -53,6 +63,8 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
   useEffect(() => {
     if (!postId || !visible) return;
     setLoading(true);
+    setSelectedId(null);
+    setEditingId(null);
     (async () => {
       try {
         const { data: rows, error } = await supabase
@@ -107,10 +119,40 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
     }
   };
 
+  const handleBubbleClick = (item: Comment) => {
+    const canAct = item.userId === currentDbUserId || isAdmin || postAuthorId === currentDbUserId;
+    if (!canAct) return;
+    setSelectedId(prev => prev === item.id ? null : item.id);
+    setEditingId(null);
+  };
+
+  const startEdit = (item: Comment) => {
+    setEditingId(item.id);
+    setEditText(item.text);
+    setSelectedId(null);
+    setTimeout(() => editRef.current?.focus(), 80);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !editText.trim()) return;
+    const blocked = await containsBlacklistedWord(editText.trim());
+    if (blocked) { alert(`${t('word_not_allowed')}: "${blocked}".`); return; }
+    await supabase.from('comments').update({ text: editText.trim() }).eq('id', editingId);
+    setComments(prev => prev.map(c => c.id === editingId ? { ...c, text: editText.trim() } : c));
+    setEditingId(null);
+  };
+
+  const deleteComment = async (id: string) => {
+    if (!confirm(tl('delete_comment_confirm'))) return;
+    await supabase.from('comments').delete().eq('id', id);
+    setComments(prev => prev.filter(c => c.id !== id));
+    setSelectedId(null);
+  };
+
   if (!visible) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay" onClick={() => { onClose(); setSelectedId(null); setEditingId(null); }}>
       <div className="modal-sheet"
         style={{ height: '75dvh', display: 'flex', flexDirection: 'column', padding: 0, borderRadius: '24px 24px 0 0' }}
         onClick={e => e.stopPropagation()}>
@@ -124,7 +166,8 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
         </div>
 
         {/* Comment list */}
-        <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: 12, backgroundColor: '#F7F7F7' }}>
+        <div ref={listRef} style={{ flex: 1, overflowY: 'auto', padding: 12, backgroundColor: '#F7F7F7' }}
+          onClick={() => { setSelectedId(null); setEditingId(null); }}>
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 40 }}><div className="spin" /></div>
           ) : comments.length === 0 ? (
@@ -136,11 +179,15 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
           ) : (
             comments.map((item, index) => {
               const mine = item.userId === currentDbUserId;
+              const canAct = mine || isAdmin || postAuthorId === currentDbUserId;
               const prev = comments[index - 1];
               const showAvatar = !mine && (!prev || prev.userId !== item.userId);
               const showName   = !mine && (!prev || prev.userId !== item.userId);
+              const isSelected = selectedId === item.id;
+              const isEditing  = editingId === item.id;
               return (
-                <div key={item.id} style={{ display: 'flex', flexDirection: 'row', marginBottom: 4, alignItems: 'flex-end', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                <div key={item.id} style={{ display: 'flex', flexDirection: 'row', marginBottom: 4, alignItems: 'flex-end', justifyContent: mine ? 'flex-end' : 'flex-start' }}
+                  onClick={e => { e.stopPropagation(); if (canAct) handleBubbleClick(item); }}>
                   {!mine && (
                     <div style={{ marginRight: 6, marginBottom: 2, alignSelf: 'flex-end' }}>
                       {showAvatar ? <AvatarImg uri={item.avatarUrl} size={32} seed={item.username} /> : <div style={{ width: 32 }} />}
@@ -150,9 +197,47 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
                     {showName && (
                       <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#888', marginBottom: 3, marginLeft: 4 }}>{item.username}</span>
                     )}
-                    <div style={{ borderRadius: 18, borderBottomRightRadius: mine ? 4 : 18, borderBottomLeftRadius: mine ? 18 : 4, paddingLeft: 14, paddingRight: 14, paddingTop: 9, paddingBottom: 9, backgroundColor: mine ? ORANGE : '#fff', boxShadow: mine ? 'none' : '0 1px 3px rgba(0,0,0,0.05)' }}>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: mine ? '#fff' : '#111', lineHeight: '20px' }}>{item.text}</span>
-                    </div>
+
+                    {/* Action bar */}
+                    {isSelected && !isEditing && (
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 4, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                        {mine && (
+                          <button onClick={e => { e.stopPropagation(); startEdit(item); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', border: '1px solid #EEE', borderRadius: 20, padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#111', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            {tl('edit_msg')}
+                          </button>
+                        )}
+                        <button onClick={e => { e.stopPropagation(); deleteComment(item.id); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', border: '1px solid #FFD0D0', borderRadius: 20, padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#E53935', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                          {tl('delete_msg')}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Bubble or inline edit */}
+                    {isEditing ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }} onClick={e => e.stopPropagation()}>
+                        <textarea
+                          ref={editRef}
+                          value={editText}
+                          onChange={e => setEditText(e.target.value)}
+                          rows={2}
+                          maxLength={500}
+                          style={{ width: '100%', borderRadius: 14, border: `1.5px solid ${ORANGE}`, padding: '8px 12px', fontFamily: 'var(--font-body)', fontSize: 14, color: '#111', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
+                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') setEditingId(null); }}
+                        />
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          <button onClick={() => setEditingId(null)} style={{ background: 'none', border: '1px solid #EEE', borderRadius: 20, padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>{t('cancel')}</button>
+                          <button onClick={saveEdit} style={{ background: ORANGE, border: 'none', borderRadius: 20, padding: '4px 14px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: '#fff' }}>{t('save')}</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ borderRadius: 18, borderBottomRightRadius: mine ? 4 : 18, borderBottomLeftRadius: mine ? 18 : 4, paddingLeft: 14, paddingRight: 14, paddingTop: 9, paddingBottom: 9, backgroundColor: mine ? ORANGE : '#fff', boxShadow: mine ? 'none' : '0 1px 3px rgba(0,0,0,0.05)', cursor: canAct ? 'pointer' : 'default' }}>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: mine ? '#fff' : '#111', lineHeight: '20px' }}>{item.text}</span>
+                      </div>
+                    )}
                     <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: '#AAAAAA', marginTop: 3, marginLeft: mine ? 0 : 4, marginRight: mine ? 4 : 0, textAlign: mine ? 'right' : 'left' }}>{item.timeAgo}</span>
                   </div>
                 </div>
