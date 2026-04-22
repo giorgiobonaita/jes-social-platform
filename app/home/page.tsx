@@ -832,31 +832,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Sponsor section */}
-        <div style={{ padding: '10px 16px 12px', borderBottom: '1px solid #F5F5F5' }}>
-          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 11, color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: 10 }}>{t('adv_sponsored')}</span>
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-            {[
-              { name: 'GB Studio', sub: 'Studio Immobiliare', url: 'https://www.gbsrl-studioimmobiliare.it/', color: '#1A1A2E' },
-              { name: 'GES Company', sub: 'gescompany.it', url: 'https://gescompany.it/', color: '#0F3460' },
-              { name: 'Mercury', sub: 'Auctions', url: 'https://www.mercury-auctions.com/it_it/index/', color: '#533483' },
-              { name: 'GNG Agency', sub: 'mogideag74@gmail.com', url: 'mailto:mogideag74@gmail.com', color: '#E94560' },
-            ].map(s => (
-              <a key={s.name} href={s.url} target={s.url.startsWith('mailto') ? undefined : '_blank'} rel="noopener noreferrer"
-                style={{ flexShrink: 0, width: 130, borderRadius: 16, overflow: 'hidden', textDecoration: 'none', display: 'block', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
-                <div style={{ backgroundColor: s.color, padding: '18px 12px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 15, color: '#fff', textAlign: 'center', lineHeight: 1.2 }}>{s.name}</span>
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>{s.sub}</span>
-                </div>
-                <div style={{ backgroundColor: '#fff', padding: '7px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-                  <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: ORANGE }}>{s.url.startsWith('mailto') ? 'Contatta' : 'Visita'}</span>
-                  <svg width="10" height="10" fill="none" stroke={ORANGE} strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-
         {/* Posts */}
         {feedData.length === 0 && (
           <div className="spinner" style={{ marginTop: 60 }}><div className="spin" /></div>

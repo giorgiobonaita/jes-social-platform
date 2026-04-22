@@ -10,15 +10,15 @@ const PARTNER_ADV = [
   { img: '/adv-gb1.png',  url: 'https://www.gbsrl-studioimmobiliare.it/', label: 'GB Studio Immobiliare' },
   { img: '/adv-gb2.png',  url: 'https://www.gbsrl-studioimmobiliare.it/', label: 'GB Studio Immobiliare' },
   { img: '/adv-gb3.png',  url: 'https://www.gbsrl-studioimmobiliare.it/', label: 'GB Studio Immobiliare' },
-  { img: '/adv-gng1.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
-  { img: '/adv-gng2.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
-  { img: '/adv-gng3.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
   { img: '/adv-ges1.png', url: 'https://gescompany.it/',                  label: 'GES Company' },
   { img: '/adv-ges2.png', url: 'https://gescompany.it/',                  label: 'GES Company' },
   { img: '/adv-ges3.png', url: 'https://gescompany.it/',                  label: 'GES Company' },
   { img: '/adv-mer1.png', url: 'https://www.mercury-auctions.com/it_it/index/', label: 'Mercury Auctions' },
   { img: '/adv-mer2.png', url: 'https://www.mercury-auctions.com/it_it/index/', label: 'Mercury Auctions' },
   { img: '/adv-mer3.png', url: 'https://www.mercury-auctions.com/it_it/index/', label: 'Mercury Auctions' },
+  { img: '/adv-gng1.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
+  { img: '/adv-gng2.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
+  { img: '/adv-gng3.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
 ];
 
 export interface Group {
