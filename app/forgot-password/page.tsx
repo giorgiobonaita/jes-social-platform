@@ -15,9 +15,7 @@ export default function ForgotPasswordPage() {
   const handleReset = async () => {
     if (!email || loading || sent) return;
     setLoading(true);
-    const redirectTo = typeof window !== 'undefined'
-      ? `${window.location.origin}/reset-password`
-      : '/reset-password';
+    const redirectTo = 'https://jesocial.com/reset-password';
     const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     if (err) { setError(t('fp_error_prefix') + err.message); } else { setSent(true); }
     setLoading(false);
