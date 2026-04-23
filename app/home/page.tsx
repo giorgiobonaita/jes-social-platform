@@ -361,7 +361,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
               <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             </button>
             <button className="pc-action-btn" onClick={async () => {
-              const shareUrl = `${window.location.origin}/post/${post.id}`;
+              const shareUrl = `${window.location.origin}/post?id=${post.id}`;
               if (navigator.share) {
                 try {
                   await navigator.share({ title: `Post di @${post.author?.username} su JES`, url: shareUrl });
