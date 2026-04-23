@@ -32,13 +32,13 @@ jobs:
         run: |
           xcodebuild \
             -resolvePackageDependencies \
-            -workspace ios/App/App.xcworkspace \
+            -project ios/App/App.xcodeproj \
             -scheme App
 
       - name: Build Xcode (unsigned)
         run: |
           xcodebuild \
-            -workspace ios/App/App.xcworkspace \
+            -project ios/App/App.xcodeproj \
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
