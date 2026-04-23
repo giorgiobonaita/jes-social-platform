@@ -129,9 +129,9 @@ export default function SignupPage() {
           </div>
           <span className="checkbox-label">
             {t('accept_terms')}{' '}
-            <Link href="/legal/termini" target="_blank" onClick={e => e.stopPropagation()}>{t('terms_service')}</Link>
+            <a href="https://jesocial.com/legal/termini" target="_blank" rel="noopener noreferrer" onClick={e => { e.stopPropagation(); window.open('https://jesocial.com/legal/termini', '_system'); e.preventDefault(); }}>{t('terms_service')}</a>
             {' '}{t('and_the')}{' '}
-            <Link href="/legal/privacy" target="_blank" onClick={e => e.stopPropagation()}>{t('terms_privacy')}</Link>
+            <a href="https://jesocial.com/legal/privacy" target="_blank" rel="noopener noreferrer" onClick={e => { e.stopPropagation(); window.open('https://jesocial.com/legal/privacy', '_system'); e.preventDefault(); }}>{t('terms_privacy')}</a>
           </span>
         </label>
 

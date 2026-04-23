@@ -408,7 +408,7 @@ if (me) {
                     if (item.id === 's1') { setShowSettings(false); setTimeout(() => setShowEditProfile(true), 200); }
                     else if (item.id === 's2') { setSettingsScreen('notifiche'); }
                     else if (item.id === 's5') { window.location.href = 'mailto:jes.socialdelleemozioni@gmail.com'; }
-                    else if (item.id === 's6') { window.open('/legal/termini', '_blank'); }
+                    else if (item.id === 's6') { window.open('https://jesocial.com/legal/termini', '_system'); }
                   }}>
                   <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>{item.icon}</div>
                   <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>

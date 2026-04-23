@@ -49,10 +49,10 @@ export default function LoginPage() {
       <p className="terms-text">
         {t('terms_text').split(t('terms_service')).map((part, i, arr) =>
           i < arr.length - 1
-            ? <span key={i}>{part}<a href="/termini.html" target="_blank">{t('terms_service')}</a></span>
+            ? <span key={i}>{part}<a href="https://jesocial.com/legal/termini" onClick={e => { window.open('https://jesocial.com/legal/termini', '_system'); e.preventDefault(); }}>{t('terms_service')}</a></span>
             : <span key={i}>{part.split(t('terms_privacy')).map((p2, j, arr2) =>
                 j < arr2.length - 1
-                  ? <span key={j}>{p2}<a href="/privacy.html" target="_blank">{t('terms_privacy')}</a></span>
+                  ? <span key={j}>{p2}<a href="https://jesocial.com/legal/privacy" onClick={e => { window.open('https://jesocial.com/legal/privacy', '_system'); e.preventDefault(); }}>{t('terms_privacy')}</a></span>
                   : <span key={j}>{p2}</span>
               )}</span>
         )}
