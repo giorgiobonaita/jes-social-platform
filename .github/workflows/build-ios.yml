@@ -28,10 +28,12 @@ jobs:
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
-      - name: Install CocoaPods
+      - name: Resolve Swift packages
         run: |
-          cd ios/App
-          pod install
+          xcodebuild \
+            -resolvePackageDependencies \
+            -workspace ios/App/App.xcworkspace \
+            -scheme App
 
       - name: Build Xcode (unsigned)
         run: |
@@ -40,10 +42,10 @@ jobs:
             -scheme App \
             -configuration Release \
             -sdk iphoneos \
+            -destination generic/platform=iOS \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
-            ONLY_ACTIVE_ARCH=NO \
             -derivedDataPath ios/build \
             build
 
@@ -51,9 +53,7 @@ jobs:
         run: |
           mkdir -p ios/Payload
           cp -r ios/build/Build/Products/Release-iphoneos/App.app ios/Payload/App.app
-          cd ios
-          zip -r JES-unsigned.ipa Payload
-          rm -rf Payload
+          cd ios && zip -r JES-unsigned.ipa Payload && rm -rf Payload
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
