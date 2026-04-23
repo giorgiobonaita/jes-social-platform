@@ -64,7 +64,7 @@ export default function LegalClient() {
               GB Studio S.r.l. — {it ? 'gestore della piattaforma JES' : 'operator of the JES platform'}<br />
               P.IVA / C.F.: 03160850164<br />
               {it ? 'Email: ' : 'Email: '}
-              <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>
+              <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
             </p>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function LegalClient() {
           <ul>
             <li><strong>{it ? 'Esecuzione del contratto (Art. 6(1)(b)):' : 'Performance of a contract (Art. 6(1)(b)):'}</strong> {it ? 'dati di registrazione e contenuti necessari all\'erogazione del servizio' : 'registration data and content necessary to provide the service'}</li>
             <li><strong>{it ? 'Interesse legittimo (Art. 6(1)(f)):' : 'Legitimate interest (Art. 6(1)(f)):'}</strong> {it ? 'sicurezza della piattaforma, analisi statistiche aggregate anonimizzate' : 'platform security, anonymised aggregate statistical analysis'}</li>
-            <li><strong>{it ? 'Consenso (Art. 6(1)(a)):' : 'Consent (Art. 6(1)(a)):'}</strong> {it ? 'comunicazioni promozionali (campo accepts_promotions) — revocabile in qualsiasi momento scrivendo a ' : 'promotional communications (accepts_promotions field) — revocable at any time by writing to '}<a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a></li>
+            <li><strong>{it ? 'Consenso (Art. 6(1)(a)):' : 'Consent (Art. 6(1)(a)):'}</strong> {it ? 'comunicazioni promozionali (campo accepts_promotions) — revocabile in qualsiasi momento scrivendo a ' : 'promotional communications (accepts_promotions field) — revocable at any time by writing to '}<a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a></li>
             <li><strong>{it ? 'Obbligo legale (Art. 6(1)(c)):' : 'Legal obligation (Art. 6(1)(c)):'}</strong> {it ? 'conservazione richiesta dalla normativa applicabile' : 'retention required by applicable law'}</li>
           </ul>
           <div className={s.infoBox} style={{ marginTop: 20 }}>
@@ -201,7 +201,7 @@ export default function LegalClient() {
           </ul>
           <p>
             {it ? 'Per esercitare i tuoi diritti, scrivi a ' : 'To exercise your rights, write to '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>.{' '}
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>.{' '}
             {it ? 'Risponderemo entro ' : 'We will respond within '}<strong>30 {it ? 'giorni' : 'days'}</strong>.
           </p>
         </div>
@@ -246,7 +246,7 @@ export default function LegalClient() {
           <p>
             {it ? 'JES è riservato alle persone di età pari o superiore a ' : 'JES is reserved for persons aged '}<strong>16 {it ? 'anni' : 'or over'}</strong>.{' '}
             {it ? 'Non raccogliamo consapevolmente dati di minori di 16 anni. Se ne venissimo a conoscenza, elimineremo immediatamente l\'account e tutti i dati associati. Segnalazioni a ' : 'We do not knowingly collect data from minors under 16. If we become aware of such data, we will immediately delete the account and all associated data. Reports to '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>.
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>.
           </p>
         </div>
 
@@ -266,7 +266,7 @@ export default function LegalClient() {
         <div className={s.docSection}>
           <h2><span className={s.num}>11</span> {it ? 'Contatti e diritto di reclamo' : 'Contact and right to lodge a complaint'}</h2>
           <ul>
-            <li>{it ? 'Email: ' : 'Email: '}<a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a></li>
+            <li>{it ? 'Email: ' : 'Email: '}<a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a></li>
             <li>{it ? 'Sito web: ' : 'Website: '}<Link href="/" className={s.linkOrange}>jessocial.com</Link></li>
           </ul>
           <p>
@@ -328,7 +328,7 @@ export default function LegalClient() {
           </ul>
           <p>
             {it ? 'In caso di accesso non autorizzato, notificaci immediatamente a ' : 'In the event of unauthorised access, notify us immediately at '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
             {it ? '. JES non è responsabile dei danni derivanti dalla mancata notifica tempestiva.' : '. JES is not responsible for damages arising from failure to notify in a timely manner.'}
           </p>
         </div>
@@ -378,7 +378,7 @@ export default function LegalClient() {
           </ul>
           <p>
             {it ? 'Per contestare un provvedimento di sospensione, invia una comunicazione motivata a ' : 'To appeal a suspension, send a reasoned communication to '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>{' '}
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>{' '}
             {it ? 'entro 30 giorni dalla notifica. JES risponderà entro 30 giorni lavorativi.' : 'within 30 days of notification. JES will respond within 30 working days.'}
           </p>
         </div>
@@ -415,7 +415,7 @@ export default function LegalClient() {
           <p>{it ? 'JES può inviare comunicazioni promozionali, newsletter e aggiornamenti esclusivamente agli utenti che hanno espresso il consenso esplicito durante la registrazione selezionando l\'apposita opzione ("Accetto di ricevere promozioni e novità da JES").' : 'JES may send promotional communications, newsletters and Platform updates exclusively to users who have given explicit consent during registration by selecting the relevant option ("I agree to receive promotions and news from JES").'}</p>
           <p>
             {it ? 'Il consenso è opzionale e non condiziona l\'accesso al servizio. Puoi revocarlo in qualsiasi momento inviando una richiesta a ' : 'Consent is entirely optional and does not affect access to the service. You may withdraw it at any time by sending a request to '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>.
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>.
           </p>
         </div>
 
@@ -453,7 +453,7 @@ export default function LegalClient() {
           <h2><span className={s.num}>13</span> {it ? '13. Eliminazione dell\'account' : '13. Account Deletion'}</h2>
           <p>
             {it ? 'Puoi richiedere l\'eliminazione del tuo account in qualsiasi momento dalle impostazioni della Piattaforma oppure inviando richiesta scritta a ' : 'You may request deletion of your account at any time from the Platform settings or by sending a written request to '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
             {it ? '. L\'eliminazione è irreversibile: post, commenti, messaggi e dati di profilo saranno rimossi entro 30 giorni dalla richiesta.' : '. Deletion is irreversible: posts, comments, messages and profile data will be removed within 30 days of the request.'}
           </p>
         </div>
@@ -485,7 +485,7 @@ export default function LegalClient() {
           <p>{it ? 'Per qualsiasi richiesta relativa ai presenti Termini, alla Privacy o al supporto:' : 'For any enquiry regarding these Terms, Privacy or support:'}</p>
           <ul>
             <li><strong>GB Studio S.r.l.</strong> — P.IVA 03160850164</li>
-            <li>{it ? 'Email: ' : 'Email: '}<a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a></li>
+            <li>{it ? 'Email: ' : 'Email: '}<a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a></li>
             <li>{it ? 'Sito web: ' : 'Website: '}<Link href="/" className={s.linkOrange}>jessocial.com</Link></li>
           </ul>
         </div>
