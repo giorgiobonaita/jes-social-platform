@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://jesocial.com'),
+  metadataBase: new URL('https://jessocial.com'),
   title: "JES — Il Social delle Emozioni",
   description: "JES è il social network dedicato agli artisti e ai creativi di tutto il mondo.",
   icons: { icon: "/logo.png", apple: "/logo.png" },
