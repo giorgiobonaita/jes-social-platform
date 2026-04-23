@@ -238,7 +238,7 @@ export default function TerminiClient() {
           </ul>
           <p>
             {c.s2p}{' '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
             {c.s2p2}
           </p>
         </div>
@@ -289,7 +289,7 @@ export default function TerminiClient() {
           <p>{c.s5p2}</p>
           <p>
             {c.s5p3}{' '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>{' '}
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>{' '}
             {c.s5p3b}
           </p>
         </div>
@@ -318,7 +318,7 @@ export default function TerminiClient() {
           <p>{c.s8p1}</p>
           <p>
             {c.s8p2}{' '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
             {c.s8p2b}
           </p>
         </div>
@@ -358,7 +358,7 @@ export default function TerminiClient() {
           <h2><span className={s.num}>12</span> {c.s12}</h2>
           <p>
             {c.s12p1}{' '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
             {c.s12p1b}
           </p>
           <p>{c.s12p2}</p>
@@ -379,7 +379,7 @@ export default function TerminiClient() {
           <ul>
             <li>
               {c.s14email}{' '}
-              <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>
+              <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
             </li>
             <li>{c.s14site} <strong>jessocial.com</strong></li>
           </ul>
@@ -392,7 +392,7 @@ export default function TerminiClient() {
         <ul className={s.footerLinks}>
           <li><Link href="/legal/privacy">{c.footerPrivacy}</Link></li>
           <li><Link href="/legal/termini">{c.footerTerms}</Link></li>
-          <li><a href="mailto:jes.socialdelleemozioni@gmail.com">{c.footerContact}</a></li>
+          <li><a href="mailto:jes.socialdellemozioni@gmail.com">{c.footerContact}</a></li>
         </ul>
         <span className={s.footerCopy}>© 2026 JES — Il Social delle Emozioni</span>
       </footer>

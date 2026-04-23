@@ -25,8 +25,8 @@ export default function PrivacyClient() {
             <p>
               <strong>Data Controller: JES — Il Social delle Emozioni.</strong><br />
               For any privacy-related request:{' '}
-              <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>
-                jes.socialdelleemozioni@gmail.com
+              <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>
+                jes.socialdellemozioni@gmail.com
               </a>
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function PrivacyClient() {
           <ul>
             <li><strong>Performance of a contract (Art. 6(1)(b)):</strong> registration data and content necessary to provide the service</li>
             <li><strong>Legitimate interest (Art. 6(1)(f)):</strong> platform security, anonymised aggregate statistical analysis</li>
-            <li><strong>Consent (Art. 6(1)(a)):</strong> promotional communications (<em>accepts_promotions</em> field) — revocable at any time by writing to <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a></li>
+            <li><strong>Consent (Art. 6(1)(a)):</strong> promotional communications (<em>accepts_promotions</em> field) — revocable at any time by writing to <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a></li>
             <li><strong>Legal obligation (Art. 6(1)(c)):</strong> retention required by applicable law</li>
           </ul>
         </div>
@@ -152,7 +152,7 @@ export default function PrivacyClient() {
           </ul>
           <p>
             To exercise your rights, write to{' '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>.{' '}
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>.{' '}
             We will respond within <strong>30 days</strong>.
           </p>
         </div>
@@ -192,7 +192,7 @@ export default function PrivacyClient() {
             JES is reserved for persons aged <strong>16 or over</strong>. We do not knowingly collect data from minors under 16.
             If we become aware of such data, we will immediately delete the account and all associated data.
             Reports to:{' '}
-            <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a>.
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>.
           </p>
         </div>
 
@@ -211,7 +211,7 @@ export default function PrivacyClient() {
         <div className={s.docSection}>
           <h2><span className={s.num}>11</span> Contact and right to lodge a complaint</h2>
           <ul>
-            <li>Email: <a href="mailto:jes.socialdelleemozioni@gmail.com" className={s.linkOrange}>jes.socialdelleemozioni@gmail.com</a></li>
+            <li>Email: <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a></li>
             <li>Website: <strong>jessocial.com</strong></li>
           </ul>
           <p>
@@ -227,7 +227,7 @@ export default function PrivacyClient() {
         <ul className={s.footerLinks}>
           <li><Link href="/legal/privacy">Privacy</Link></li>
           <li><Link href="/legal/termini">Terms</Link></li>
-          <li><a href="mailto:jes.socialdelleemozioni@gmail.com">Contact</a></li>
+          <li><a href="mailto:jes.socialdellemozioni@gmail.com">Contact</a></li>
         </ul>
         <span className={s.footerCopy}>© 2026 JES — Il Social delle Emozioni</span>
       </footer>
