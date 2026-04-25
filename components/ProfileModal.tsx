@@ -589,7 +589,7 @@ if (me) {
                 <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>Modifica profilo</span>
               </button>
               <button onClick={async () => {
-                const shareUrl = `${window.location.origin}/profile/${profile.username}`;
+                const shareUrl = `https://jessocial.com/profile/${profile.username}`;
                 const shareData = { title: `Profilo di @${profile.username} su JES`, url: shareUrl };
                 if (navigator.share) {
                   try { await navigator.share(shareData); } catch {}
