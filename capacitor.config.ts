@@ -10,7 +10,8 @@ const config: CapacitorConfig = {
     },
   },
   server: {
-    androidScheme: 'https',
+    url: 'https://jessocial.com',
+    cleartext: false,
   },
 };
 

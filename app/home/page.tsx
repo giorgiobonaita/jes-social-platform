@@ -377,22 +377,10 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
               <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             </button>
             <button className="pc-action-btn" onClick={async () => {
-              const shareUrl = `https://jessocial.com/post?id=${post.id}`;
+              const shareUrl = `https://jessocial.com/post/${post.id}`;
               if (navigator.share) {
                 try {
-                  const imgUrl = post.imageUrls?.[0] || post.imageUrl || null;
-                  if (imgUrl && navigator.canShare) {
-                    try {
-                      const resp = await fetch(imgUrl);
-                      const blob = await resp.blob();
-                      const file = new File([blob], 'post.jpg', { type: blob.type });
-                      if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({ title: `Post di @${post.author?.username} su JES`, text: post.caption || '', files: [file], url: shareUrl });
-                        return;
-                      }
-                    } catch {}
-                  }
-                  await navigator.share({ title: `Post di @${post.author?.username} su JES`, text: post.caption || '', url: shareUrl });
+                  await navigator.share({ title: `Post di @${post.author?.username} su JES`, url: shareUrl });
                   return;
                 } catch (e: any) {
                   if (e?.name === 'AbortError') return;
