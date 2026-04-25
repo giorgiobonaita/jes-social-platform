@@ -16,7 +16,7 @@ interface Props {
   onUserPress?: (userId: string) => void;
 }
 
-type AdminTab = 'users' | 'reports' | 'blacklist';
+type AdminTab = 'users' | 'reports' | 'blacklist' | 'arc';
 
 export default function AdminPanelModal({ visible, onClose, onUserPress }: Props) {
   const [tab, setTab]         = useState<AdminTab>('users');
@@ -118,10 +118,10 @@ export default function AdminPanelModal({ visible, onClose, onUserPress }: Props
 
       {/* Tab bar */}
       <div style={{ display: 'flex', borderBottom: '1px solid #F0F0F0' }}>
-        {(['users', 'reports', 'blacklist'] as AdminTab[]).map(t => (
+        {(['users', 'reports', 'blacklist', 'arc'] as AdminTab[]).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ flex: 1, padding: '11px 0', background: 'none', border: 'none', borderBottom: `2px solid ${tab === t ? ORANGE : 'transparent'}`, cursor: 'pointer' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: tab === t ? ORANGE : '#888' }}>
-              {t === 'users' ? 'Utenti' : t === 'reports' ? 'Segnalazioni' : 'Blacklist'}
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: tab === t ? ORANGE : '#888' }}>
+              {t === 'users' ? 'Utenti' : t === 'reports' ? 'Segnalaz.' : t === 'blacklist' ? 'Blacklist' : 'JES ARC'}
             </span>
           </button>
         ))}
@@ -231,6 +231,51 @@ export default function AdminPanelModal({ visible, onClose, onUserPress }: Props
             ))}
           </div>
         </>
+      )}
+
+      {/* ── TAB JES ARC ── */}
+      {tab === 'arc' && (
+        <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888', marginBottom: 4 }}>
+            Invia comunicazione JES ARC agli utenti per categoria. Cliccando apri la mail precompilata.
+          </p>
+
+          {/* Artisti */}
+          <div style={{ background: '#FEF0E9', borderRadius: 16, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: ORANGE, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg>
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#111' }}>JES ARC Artisti</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>Artisti, Pro Artisti, Studenti</div>
+              </div>
+            </div>
+            <button
+              onClick={() => window.location.href = 'mailto:jes.socialdellemozioni@gmail.com?subject=JES ARC Artisti&body=Ciao, sono interessato al servizio JES ARC per Artisti.'}
+              style={{ width: '100%', background: ORANGE, color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Contatta Artisti →
+            </button>
+          </div>
+
+          {/* Aziende */}
+          <div style={{ background: '#F0F5FE', borderRadius: 16, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#111' }}>JES ARC Aziende</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>Gallerie, Mostre, Società</div>
+              </div>
+            </div>
+            <button
+              onClick={() => window.location.href = 'mailto:jes.socialdellemozioni@gmail.com?subject=JES ARC Aziende&body=Ciao, sono interessato al servizio JES ARC per Aziende e Gallerie.'}
+              style={{ width: '100%', background: '#3B82F6', color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Contatta Aziende →
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

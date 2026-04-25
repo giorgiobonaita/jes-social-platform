@@ -61,13 +61,17 @@ function formatTimeAgo(isoDate: string, nowLabel: string, minSuffix: string, hSu
   return `${Math.floor(h / 24)} ${dSuffix}`;
 }
 
-function buildFeed(posts: any[], viewerUsername?: string | null): any[] {
+const ARTIST_TYPES = ['hobby_artist', 'pro_artist', 'student'];
+const AZIENDE_TYPES = ['gallery'];
+
+function buildFeed(posts: any[], viewerUsername?: string | null, userType?: string | null): any[] {
   const feed: any[] = [];
   const isMercury = viewerUsername === 'giuseppemercury';
   const advList = isMercury
     ? shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...ADV_MER])
     : shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER]);
   let advIdx = 0;
+  let arcInserted = false;
   const nextAdv = () => {
     const sp = advList[advIdx % advList.length];
     advIdx++;
@@ -75,7 +79,19 @@ function buildFeed(posts: any[], viewerUsername?: string | null): any[] {
   };
   for (let i = 0; i < posts.length; i++) {
     feed.push(posts[i]);
-    if ((i + 1) % 4 === 0) feed.push(nextAdv());
+    if ((i + 1) % 4 === 0) {
+      feed.push(nextAdv());
+      // Inserisce JES ARC ADV dopo la seconda ADV normale
+      if (!arcInserted && advIdx === 2) {
+        if (userType && ARTIST_TYPES.includes(userType)) {
+          feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'artisti' });
+          arcInserted = true;
+        } else if (userType && AZIENDE_TYPES.includes(userType)) {
+          feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'aziende' });
+          arcInserted = true;
+        }
+      }
+    }
   }
   return feed;
 }
@@ -553,6 +569,71 @@ function AdvCard({ imageUrl, url }: { imageUrl: string; url: string }) {
   );
 }
 
+// ── JES ARC ADV Card ─────────────────────────────────────────────────────────
+function AdvArcCard({ arcType, onScopri }: { arcType: 'artisti' | 'aziende'; onScopri: () => void }) {
+  const { t } = useLang();
+  const img = arcType === 'artisti' ? '/adv-arc-artisti.png' : '/adv-arc-aziende.png';
+  return (
+    <div className="adv-card">
+      <div style={{ display: 'flex' }}>
+        <div className="adv-badge">
+          <svg width="11" height="11" fill="none" stroke="#888" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span className="adv-badge-text">{t('adv_sponsored')}</span>
+        </div>
+      </div>
+      <img className="adv-img" src={img} alt="JES ARC" loading="lazy" />
+      <div className="adv-footer">
+        <div className="adv-link-btn" style={{ cursor: 'pointer' }} onClick={onScopri}>
+          <span className="adv-link-text">Scopri di più</span>
+          <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── JES ARC Modal ─────────────────────────────────────────────────────────────
+function ArcModal({ arcType, onClose }: { arcType: 'artisti' | 'aziende'; onClose: () => void }) {
+  const isArtisti = arcType === 'artisti';
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.4)' }} onClick={onClose}>
+      <div style={{ background: '#fff', borderRadius: '24px 24px 0 0', padding: '32px 24px 48px', width: '100%', maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+        <div style={{ width: 40, height: 4, background: '#EEE', borderRadius: 2, margin: '0 auto 24px' }} />
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 20, background: '#FEF0E9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <svg width="32" height="32" fill="none" stroke={ORANGE} strokeWidth="1.8" viewBox="0 0 24 24">
+              {isArtisti
+                ? <><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></>
+                : <><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></>
+              }
+            </svg>
+          </div>
+          <h2 style={{ fontFamily: 'var(--font-heading)', fontSize: 22, color: '#111', marginBottom: 8 }}>
+            JES ARC {isArtisti ? 'Artisti' : 'Aziende'}
+          </h2>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: '#666', lineHeight: 1.6, marginBottom: 8 }}>
+            {isArtisti
+              ? 'Un consulente JES ti aiuta gratuitamente a valorizzare la tua arte e far crescere il tuo profilo.'
+              : 'Un consulente JES ti supporta gratuitamente nella promozione della tua azienda o galleria sulla piattaforma.'}
+          </p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#AAA', marginBottom: 28 }}>
+            Scrivi una mail — ti risponderemo al più presto.
+          </p>
+        </div>
+        <button
+          onClick={() => { window.location.href = 'mailto:jes.socialdellemozioni@gmail.com'; }}
+          style={{ width: '100%', background: ORANGE, color: '#fff', border: 'none', borderRadius: 16, padding: '16px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Contatta
+        </button>
+        <button onClick={onClose} style={{ width: '100%', background: 'transparent', border: 'none', color: '#AAA', fontFamily: 'var(--font-body)', fontSize: 14, marginTop: 12, cursor: 'pointer', padding: 8 }}>
+          Chiudi
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Home Screen ───────────────────────────────────────────────────────────────
 export default function HomePage() {
   const router = useRouter();
@@ -564,6 +645,8 @@ export default function HomePage() {
   const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
   const [myUsername, setMyUsername] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userType, setUserType] = useState<string | null>(null);
+  const [arcModalType, setArcModalType] = useState<'artisti' | 'aziende' | null>(null);
   const [hasUnread, setHasUnread] = useState(false);
 
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
@@ -608,18 +691,19 @@ export default function HomePage() {
   useEffect(() => { const t = setTimeout(() => setShowSplash(false), 1200); return () => clearTimeout(t); }, []);
 
   const allPosts = useMemo(() => [...groupPosts, ...dbPosts], [groupPosts, dbPosts]);
-  const feedData = useMemo(() => buildFeed(allPosts, myUsername), [allPosts, myUsername]);
+  const feedData = useMemo(() => buildFeed(allPosts, myUsername, userType), [allPosts, myUsername, userType]);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/'); return; }
-      const { data } = await supabase.from('users').select('id, avatar_url, role, username').eq('auth_id', user.id).single();
+      const { data } = await supabase.from('users').select('id, avatar_url, role, username, user_type').eq('auth_id', user.id).single();
       if (data) {
         setCurrentUserId(data.id);
         setCurrentUserAvatar(data.avatar_url || null);
         setIsAdmin(data.role === 'admin');
         setMyUsername(data.username || null);
+        setUserType(data.user_type || null);
         supabase.from('follows').select('followed_id').eq('follower_id', data.id).then(({ data: rows }) => {
           if (rows) setFollowingIds(prev => new Set([...prev, ...rows.map((r: any) => r.followed_id)]));
         });
@@ -838,6 +922,7 @@ export default function HomePage() {
         )}
         {feedData.map(item => {
           if (item.type === 'adv') return <AdvCard key={item.id} imageUrl={item.imageUrl} url={item.url} />;
+          if (item.type === 'adv_arc') return <AdvArcCard key={item.id} arcType={item.arcType} onScopri={() => setArcModalType(item.arcType)} />;
           if (item.type === 'poll') return (
             <FeedPoll
               key={item.id}
@@ -896,6 +981,7 @@ export default function HomePage() {
 
       {/* Modals */}
       <ImageViewerModal imageUrl={imageViewerUrl} visible={imageViewerVisible} onClose={() => { setImageViewerVisible(false); setImageViewerUrl(null); }} />
+      {arcModalType && <ArcModal arcType={arcModalType} onClose={() => setArcModalType(null)} />}
       <StoryViewer
         groups={stories}
         initialGroupIndex={activeStoryIndex}

@@ -56,7 +56,7 @@ export default function OnboardingRolePage() {
         const { data: dbUser } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
         if (dbUser) {
           const role = ROLES.find(r => r.id === selectedId);
-          await supabase.from('users').update({ discipline: role?.title ?? '' }).eq('id', dbUser.id);
+          await supabase.from('users').update({ discipline: role?.title ?? '', user_type: selectedId }).eq('id', dbUser.id);
         }
       }
     } catch {}
