@@ -2,6 +2,8 @@ import { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import PostClient from './PostClient';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: { id: string };
 }

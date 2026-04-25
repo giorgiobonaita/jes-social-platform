@@ -2,10 +2,7 @@ import { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { redirect } from 'next/navigation';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const dynamic = 'force-dynamic';
 
 interface Props {
   params: { username: string };
@@ -13,17 +10,23 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = params;
+  const defaultMeta: Metadata = { title: 'JES — Il Social delle Emozioni' };
   try {
-    const { data: user } = await supabaseAdmin
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data: user } = await supabase
       .from('users')
       .select('name, username, bio, avatar_url, discipline')
       .eq('username', username)
       .single();
 
-    if (!user) return { title: 'JES Social' };
+    if (!user) return defaultMeta;
 
     const title = `${user.name} (@${user.username}) su JES Social`;
     const description = user.bio || user.discipline || 'Scopri il profilo su JES Social';
+    const ogImage = user.avatar_url || 'https://jessocial.com/logo.png';
 
     return {
       title,
@@ -33,22 +36,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description,
         url: `https://jessocial.com/profile/${username}`,
         siteName: 'JES Social',
-        ...(user.avatar_url ? { images: [{ url: user.avatar_url, width: 400, height: 400 }] } : {}),
+        images: [{ url: ogImage, width: 400, height: 400 }],
         type: 'profile',
       },
       twitter: {
-        card: user.avatar_url ? 'summary' : 'summary',
+        card: 'summary',
         title,
         description,
-        ...(user.avatar_url ? { images: [user.avatar_url] } : {}),
+        images: [ogImage],
       },
     };
   } catch {
-    return { title: 'JES Social' };
+    return defaultMeta;
   }
 }
 
 export default function ProfilePage({ params }: Props) {
-  // Redirect all'app home — il profilo si apre come modal nell'app
   redirect(`/?profile=${params.username}`);
 }
