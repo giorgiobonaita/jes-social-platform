@@ -11,7 +11,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = params;
   const defaultMeta: Metadata = {
-    title: 'JES — Il Social delle Emozioni',
+    title: `JES Post ${id.slice(0, 8)}`,
     openGraph: {
       title: 'JES — Il Social delle Emozioni',
       images: [{ url: 'https://jessocial.com/logo.png' }],
