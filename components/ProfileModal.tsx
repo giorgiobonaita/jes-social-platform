@@ -774,7 +774,7 @@ if (me) {
                   }
                 </div>
                 <button className="pc-action-btn" onClick={async () => {
-                  const shareUrl = `${window.location.origin}/post?id=${selectedPostId}`;
+                  const shareUrl = `https://jessocial.com/post?id=${selectedPostId}`;
                   if (navigator.share) { try { await navigator.share({ title: `Post su JES`, url: shareUrl }); return; } catch {} }
                   try { await navigator.clipboard.writeText(shareUrl); } catch {}
                   alert(t('profile_link_copied_short'));
