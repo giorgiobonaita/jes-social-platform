@@ -16,15 +16,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const { data: post } = await supabaseAdmin
       .from('posts')
-      .select('caption, image_url, image_urls, users(name, username)')
+      .select('caption, image_url, image_urls, user_id')
       .eq('id', id)
       .single();
 
-    if (!post) return { title: 'JES Social' };
+    if (!post) return {};
 
-    const author = (post as any).users;
-    const imageUrl = (post as any).image_urls?.[0] || (post as any).image_url || null;
-    const title = author ? `${author.name} su JES Social` : 'JES Social';
+    let authorName = 'JES Social';
+    if ((post as any).user_id) {
+      const { data: user } = await supabaseAdmin
+        .from('users')
+        .select('name, username')
+        .eq('id', (post as any).user_id)
+        .single();
+      if (user) authorName = `${user.name} su JES Social`;
+    }
+
+    const imageUrl: string | null =
+      ((post as any).image_urls as string[] | null)?.[0] ||
+      (post as any).image_url ||
+      null;
+
+    const title = authorName;
     const description = (post as any).caption || 'Scopri questo post su JES Social';
 
     return {
@@ -35,18 +48,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description,
         url: `https://jessocial.com/post/${id}`,
         siteName: 'JES Social',
-        ...(imageUrl ? { images: [{ url: imageUrl, width: 1200, height: 630 }] } : {}),
+        images: imageUrl
+          ? [{ url: imageUrl, width: 1200, height: 630 }]
+          : [{ url: '/logo.png', width: 512, height: 512 }],
         type: 'article',
       },
       twitter: {
-        card: imageUrl ? 'summary_large_image' : 'summary',
+        card: 'summary_large_image',
         title,
         description,
-        ...(imageUrl ? { images: [imageUrl] } : {}),
+        images: imageUrl ? [imageUrl] : ['/logo.png'],
       },
     };
   } catch {
-    return { title: 'JES Social' };
+    return {};
   }
 }
 
