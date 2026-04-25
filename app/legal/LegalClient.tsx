@@ -150,6 +150,7 @@ export default function LegalClient() {
             <li><strong>{it ? 'Comunicazioni di servizio:' : 'Service communications:'}</strong> {it ? 'email transazionali (reset password, conferma account, avvisi di sicurezza)' : 'transactional emails (password reset, account confirmation, security alerts)'}</li>
             <li><strong>{it ? 'Comunicazioni promozionali:' : 'Promotional communications:'}</strong> {it ? 'newsletter e novità inviate solo agli utenti che hanno dato consenso esplicito tramite accepts_promotions' : 'newsletters and news sent only to users who gave explicit consent via accepts_promotions'}</li>
             <li><strong>{it ? 'Contatto diretto:' : 'Direct contact:'}</strong> {it ? 'utilizzo di telefono e/o email se forniti dall\'utente' : 'use of phone and/or email if provided by the user'}</li>
+            <li><strong>JES ARC:</strong> {it ? 'il ruolo scelto durante la registrazione (artista, azienda, galleria, ecc.) viene utilizzato esclusivamente per mostrare contenuti pubblicitari personalizzati JES ARC pertinenti alla categoria dell\'utente. Il dato non viene condiviso con terzi.' : 'the role chosen during registration (artist, company, gallery, etc.) is used solely to display relevant JES ARC personalised advertising content for the user\'s category. This data is not shared with third parties.'}</li>
           </ul>
         </div>
 
@@ -406,6 +407,13 @@ export default function LegalClient() {
           <h2><span className={s.num}>8</span> {it ? '8. Contenuti sponsorizzati e link a siti terzi' : '8. Sponsored Content & Third-Party Links'}</h2>
           <p>{it ? 'Il feed di JES può includere post sponsorizzati di partner selezionati (GB Studio, GNG Agency, GES Company, Mercury Auctions), chiaramente identificati come tali. JES non è responsabile dei prodotti, servizi o contenuti dei siti di terzi raggiungibili tramite tali link.' : 'The JES feed may include sponsored posts from selected partners (GB Studio, GNG Agency, GES Company, Mercury Auctions), clearly identified as such. JES is not responsible for the products, services or content of third-party sites accessible via such links.'}</p>
           <p>{it ? 'I link presenti nelle biografie e nei post degli utenti sono rilevati automaticamente. JES non verifica né garantisce l\'accuratezza o la liceità dei contenuti di siti web esterni.' : 'Links in user bios and posts are detected automatically. JES does not verify or guarantee the accuracy or legality of external website content.'}</p>
+          <p style={{ marginTop: 12, padding: '12px 16px', background: '#FEF0E9', borderRadius: 12, borderLeft: '3px solid #F07B1D' }}>
+            <strong>{it ? 'JES ARC — Pubblicità personalizzata per categoria' : 'JES ARC — Category-based personalised advertising'}</strong><br />
+            {it
+              ? 'In base al ruolo scelto durante la registrazione, gli utenti possono visualizzare contenuti pubblicitari JES ARC dedicati: "JES ARC Artisti" riservato ad artisti, artisti professionisti e studenti; "JES ARC Aziende" riservato a gallerie e aziende. Tali contenuti sono chiaramente identificati come sponsorizzati e includono un pulsante "Scopri di più" che consente all\'utente di richiedere gratuitamente la consulenza di un esperto JES scrivendo a '
+              : 'Based on the role chosen during registration, users may see dedicated JES ARC advertising content: "JES ARC Artisti" reserved for artists, professional artists and students; "JES ARC Aziende" reserved for galleries and companies. Such content is clearly marked as sponsored and includes a "Scopri di più" button allowing the user to request a free consultation from a JES expert by writing to '}
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>.
+          </p>
         </div>
 
         <div className={s.dividerLine} />
