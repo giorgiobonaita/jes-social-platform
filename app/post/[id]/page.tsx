@@ -5,23 +5,23 @@ import PostClient from './PostClient';
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = params;
-  const defaultMeta: Metadata = {
-    title: `JES Post ${id.slice(0, 8)}`,
-    openGraph: {
-      title: 'JES — Il Social delle Emozioni',
-      images: [{ url: 'https://jessocial.com/logo.png' }],
-    },
-  };
+const DEFAULT_META: Metadata = {
+  title: 'JES — Il Social delle Emozioni',
+  openGraph: {
+    title: 'JES — Il Social delle Emozioni',
+    images: [{ url: 'https://jessocial.com/logo.png' }],
+  },
+};
 
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
+    const { id } = await params;
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseKey) return defaultMeta;
+    if (!supabaseUrl || !supabaseKey) return DEFAULT_META;
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       .eq('id', id)
       .single();
 
-    if (!post) return defaultMeta;
+    if (!post) return DEFAULT_META;
 
     let authorName = 'JES Social';
     const { data: user } = await supabase
@@ -68,11 +68,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         images: [ogImage],
       },
     };
-  } catch (e) {
-    return defaultMeta;
+  } catch {
+    return DEFAULT_META;
   }
 }
 
-export default function PostPage({ params }: Props) {
-  return <PostClient id={params.id} />;
+export default async function PostPage({ params }: Props) {
+  const { id } = await params;
+  return <PostClient id={id} />;
 }
