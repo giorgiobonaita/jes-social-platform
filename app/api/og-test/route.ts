@@ -7,14 +7,33 @@ export async function GET(req: NextRequest) {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return NextResponse.json({ error: 'missing env vars', url: !!url, key: !!key });
+  if (!url || !key) return NextResponse.json({ error: 'missing env vars' });
 
   const supabase = createClient(url, key);
-  const { data, error } = await supabase
+
+  const { data: post, error: postError } = await supabase
     .from('posts')
-    .select('id, caption, image_url, image_urls, user_id')
+    .select('caption, image_url, image_urls, user_id')
     .eq('id', id)
     .single();
 
-  return NextResponse.json({ data, error });
+  if (!post) return NextResponse.json({ error: 'post not found', postError });
+
+  const { data: user } = await supabase
+    .from('users')
+    .select('name, username')
+    .eq('id', (post as any).user_id)
+    .single();
+
+  const imageUrl =
+    ((post as any).image_urls as string[] | null)?.[0] ||
+    (post as any).image_url ||
+    null;
+
+  return NextResponse.json({
+    og_title: user ? `${user.name} su JES Social` : 'JES Social',
+    og_description: (post as any).caption || '',
+    og_image: imageUrl,
+    og_url: `https://jessocial.com/post/${id}`,
+  });
 }
