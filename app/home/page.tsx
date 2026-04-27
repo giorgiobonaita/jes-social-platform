@@ -892,6 +892,8 @@ export default function HomePage() {
 
   const loadStories = useCallback(async () => {
     const now = new Date().toISOString();
+    // Pulizia storie scadute
+    supabase.from('stories').delete().lt('expires_at', now).then(() => {});
     const { data, error } = await supabase.from('stories').select('*').gt('expires_at', now).order('created_at', { ascending: false }).limit(50);
     if (error || !data || data.length === 0) return;
     const userIds = [...new Set(data.map((s: any) => s.user_id).filter(Boolean))];
