@@ -65,6 +65,19 @@ function formatTimeAgo(isoDate: string, nowLabel: string, minSuffix: string, hSu
 const ARTIST_TYPES = ['hobby_artist', 'pro_artist', 'student'];
 const AZIENDE_TYPES = ['gallery'];
 
+const SEEN_KEY = 'jes_seen_posts';
+const MAX_SEEN = 300;
+
+function getSeenIds(): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); } catch { return new Set(); }
+}
+function markSeen(id: string) {
+  try {
+    const arr = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]');
+    if (!arr.includes(id)) { arr.push(id); if (arr.length > MAX_SEEN) arr.splice(0, arr.length - MAX_SEEN); localStorage.setItem(SEEN_KEY, JSON.stringify(arr)); }
+  } catch {}
+}
+
 function scorePosts(posts: any[], categoryScores: Record<string, number>, interests: string[]): any[] {
   return posts.map(p => {
     const cat = p.group_name || '';
@@ -84,19 +97,22 @@ function buildFeed(
   let orderedPosts = [...posts];
 
   if (algoActive && categoryScores && interests) {
+    const seenIds = typeof window !== 'undefined' ? getSeenIds() : new Set<string>();
     const scored = scorePosts(posts, categoryScores, interests);
-    const relevant = scored.filter(p => p._score > 0).sort((a, b) => b._score - a._score);
-    const rest = shuffleArray(scored.filter(p => p._score === 0));
-    // Mix: ogni 4 post rilevanti inserisce 1 casuale
+    const unseen = scored.filter(p => !seenIds.has(p.id));
+    const seen = scored.filter(p => seenIds.has(p.id));
+    const relevantUnseen = unseen.filter(p => p._score > 0).sort((a, b) => b._score - a._score);
+    const restUnseen = shuffleArray(unseen.filter(p => p._score === 0));
+    // Mix: ogni 4 rilevanti inserisce 1 casuale non visto
     orderedPosts = [];
     let ri = 0;
-    for (let i = 0; i < relevant.length; i++) {
-      orderedPosts.push(relevant[i]);
-      if ((i + 1) % 4 === 0 && ri < rest.length) {
-        orderedPosts.push(rest[ri++]);
-      }
+    for (let i = 0; i < relevantUnseen.length; i++) {
+      orderedPosts.push(relevantUnseen[i]);
+      if ((i + 1) % 4 === 0 && ri < restUnseen.length) orderedPosts.push(restUnseen[ri++]);
     }
-    orderedPosts.push(...rest.slice(ri));
+    orderedPosts.push(...restUnseen.slice(ri));
+    // Post già visti in fondo
+    orderedPosts.push(...seen.sort((a, b) => b._score - a._score));
   }
 
   const feed: any[] = [];
@@ -241,6 +257,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
   useEffect(() => {
     if (viewedRef.current || !post.id) return;
     viewedRef.current = true;
+    markSeen(post.id);
     supabase.rpc('increment_post_views', { pid: post.id }).then(() => {
       setViewsCount((v: number) => v + 1);
     });
