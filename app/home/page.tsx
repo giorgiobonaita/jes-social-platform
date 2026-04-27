@@ -16,6 +16,7 @@ import NotificationsModal from '@/components/NotificationsModal';
 import ProfileModal from '@/components/ProfileModal';
 import ChatModal from '@/components/ChatModal';
 import GroupsModal from '@/components/GroupsModal';
+import InterestsModal from '@/components/InterestsModal';
 import AvatarImg from '@/components/AvatarImg';
 
 const ORANGE = '#F07B1D';
@@ -64,7 +65,40 @@ function formatTimeAgo(isoDate: string, nowLabel: string, minSuffix: string, hSu
 const ARTIST_TYPES = ['hobby_artist', 'pro_artist', 'student'];
 const AZIENDE_TYPES = ['gallery'];
 
-function buildFeed(posts: any[], viewerUsername?: string | null, userType?: string | null): any[] {
+function scorePosts(posts: any[], categoryScores: Record<string, number>, interests: string[]): any[] {
+  return posts.map(p => {
+    const cat = p.group_name || '';
+    const score = (categoryScores[cat] || 0) + (interests.includes(cat) ? 10 : 0);
+    return { ...p, _score: score };
+  });
+}
+
+function buildFeed(
+  posts: any[],
+  viewerUsername?: string | null,
+  userType?: string | null,
+  categoryScores?: Record<string, number> | null,
+  interests?: string[] | null,
+  algoActive?: boolean,
+): any[] {
+  let orderedPosts = [...posts];
+
+  if (algoActive && categoryScores && interests) {
+    const scored = scorePosts(posts, categoryScores, interests);
+    const relevant = scored.filter(p => p._score > 0).sort((a, b) => b._score - a._score);
+    const rest = shuffleArray(scored.filter(p => p._score === 0));
+    // Mix: ogni 4 post rilevanti inserisce 1 casuale
+    orderedPosts = [];
+    let ri = 0;
+    for (let i = 0; i < relevant.length; i++) {
+      orderedPosts.push(relevant[i]);
+      if ((i + 1) % 4 === 0 && ri < rest.length) {
+        orderedPosts.push(rest[ri++]);
+      }
+    }
+    orderedPosts.push(...rest.slice(ri));
+  }
+
   const feed: any[] = [];
   const isMercury = viewerUsername === 'giuseppemercury';
   const advList = isMercury
@@ -77,11 +111,10 @@ function buildFeed(posts: any[], viewerUsername?: string | null, userType?: stri
     advIdx++;
     return { type: 'adv', id: `adv_${advIdx}_${Date.now()}`, imageUrl: sp.imageUrl, url: sp.url };
   };
-  for (let i = 0; i < posts.length; i++) {
-    feed.push(posts[i]);
+  for (let i = 0; i < orderedPosts.length; i++) {
+    feed.push(orderedPosts[i]);
     if ((i + 1) % 4 === 0) {
       feed.push(nextAdv());
-      // Inserisce JES ARC ADV dopo la seconda ADV normale
       if (!arcInserted && advIdx === 2) {
         if (userType && ARTIST_TYPES.includes(userType)) {
           feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'artisti' });
@@ -172,13 +205,14 @@ function ReportSheet({ postId, currentUserId, reportedUserId, onDone }: { postId
 }
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onShareToast }: {
+function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onShareToast, onLiked }: {
   post: any; currentUserAvatar?: string | null;
   onComment: () => void; onUserPress: (id: string) => void;
   onDelete: () => void; isAdmin: boolean;
   onImagePress: (url: string) => void;
   isFollowingAuthor?: boolean; onFollowAuthor?: (userId: string) => void;
   onShareToast?: () => void;
+  onLiked?: (groupName: string) => void;
 }) {
   const { t } = useLang();
   const [liked, setLiked] = useState(post.isLiked);
@@ -236,6 +270,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
     } else {
       setLiked(true); setLikesCount((p: number) => p + 1);
       await supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId });
+      if (post.groupName) onLiked?.(post.groupName);
       if (post.userId && post.userId !== post.currentUserId) {
         supabase.from('notifications').insert({ user_id: post.userId, actor_id: post.currentUserId, type: 'like', post_id: post.id }).then(() => {});
       }
@@ -648,6 +683,20 @@ export default function HomePage() {
   const [userType, setUserType] = useState<string | null>(null);
   const [arcModalType, setArcModalType] = useState<'artisti' | 'aziende' | null>(null);
   const [hasUnread, setHasUnread] = useState(false);
+  const [showInterests, setShowInterests] = useState(false);
+  const [myDbId, setMyDbId] = useState<string | null>(null);
+  const [categoryScores, setCategoryScores] = useState<Record<string, number> | null>(null);
+  const [interests, setInterests] = useState<string[] | null>(null);
+  const [algoActive, setAlgoActive] = useState(false);
+
+  const handleLiked = useCallback((groupName: string) => {
+    if (!myDbId || !groupName) return;
+    setCategoryScores(prev => {
+      const updated = { ...(prev || {}), [groupName]: ((prev || {})[groupName] || 0) + 1 };
+      supabase.from('users').update({ category_scores: updated }).eq('id', myDbId);
+      return updated;
+    });
+  }, [myDbId]);
 
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const feedScrollRef = useRef<HTMLDivElement>(null);
@@ -691,19 +740,29 @@ export default function HomePage() {
   useEffect(() => { const t = setTimeout(() => setShowSplash(false), 1200); return () => clearTimeout(t); }, []);
 
   const allPosts = useMemo(() => [...groupPosts, ...dbPosts], [groupPosts, dbPosts]);
-  const feedData = useMemo(() => buildFeed(allPosts, myUsername, userType), [allPosts, myUsername, userType]);
+  const feedData = useMemo(() => buildFeed(allPosts, myUsername, userType, categoryScores, interests, algoActive), [allPosts, myUsername, userType, categoryScores, interests, algoActive]);
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace('/'); return; }
-      const { data } = await supabase.from('users').select('id, avatar_url, role, username, user_type').eq('auth_id', user.id).single();
+      const { data } = await supabase.from('users').select('id, avatar_url, role, username, user_type, category_scores, categories, interests_set').eq('auth_id', user.id).single();
       if (data) {
         setCurrentUserId(data.id);
+        setMyDbId(data.id);
         setCurrentUserAvatar(data.avatar_url || null);
         setIsAdmin(data.role === 'admin');
         setMyUsername(data.username || null);
         setUserType(data.user_type || null);
+        setCategoryScores(data.category_scores || null);
+        setInterests(data.categories || null);
+
+        // Controlla se algoritmo attivo (>500 utenti)
+        const { count: userCount } = await supabase.from('users').select('id', { count: 'exact', head: true });
+        const algo = (userCount || 0) > 500;
+        setAlgoActive(algo);
+        if (algo && !data.interests_set) setShowInterests(true);
+
         supabase.from('follows').select('followed_id').eq('follower_id', data.id).then(({ data: rows }) => {
           if (rows) setFollowingIds(prev => new Set([...prev, ...rows.map((r: any) => r.followed_id)]));
         });
@@ -948,6 +1007,7 @@ export default function HomePage() {
               isFollowingAuthor={item.userId ? followingIds.has(item.userId) : false}
               onFollowAuthor={(uid) => setFollowingIds(prev => new Set([...prev, uid]))}
               onShareToast={() => showToast(t('share_toast'))}
+              onLiked={handleLiked}
             />
           );
         })}
@@ -982,6 +1042,17 @@ export default function HomePage() {
       {/* Modals */}
       <ImageViewerModal imageUrl={imageViewerUrl} visible={imageViewerVisible} onClose={() => { setImageViewerVisible(false); setImageViewerUrl(null); }} />
       {arcModalType && <ArcModal arcType={arcModalType} onClose={() => setArcModalType(null)} />}
+      {showInterests && myDbId && (
+        <InterestsModal
+          userId={myDbId}
+          onDone={() => {
+            setShowInterests(false);
+            supabase.from('users').select('category_scores, categories').eq('id', myDbId).single().then(({ data }) => {
+              if (data) { setCategoryScores(data.category_scores || null); setInterests(data.categories || null); }
+            });
+          }}
+        />
+      )}
       <StoryViewer
         groups={stories}
         initialGroupIndex={activeStoryIndex}
