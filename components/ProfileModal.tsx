@@ -211,11 +211,12 @@ if (me) {
     if (isFollowing) {
       setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1));
       const { error } = await supabase.from('follows').delete().eq('follower_id', myDbId).eq('followed_id', profile.id);
-      if (error) { setIsFollowing(true); setFollowersCount(c => c + 1); }
+      if (error) { setIsFollowing(true); setFollowersCount(c => c + 1); } else { setListsLoaded(false); }
     } else {
       setIsFollowing(true); setFollowersCount(c => c + 1);
       const { error } = await supabase.from('follows').insert({ follower_id: myDbId, followed_id: profile.id });
       if (error) { setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
+      setListsLoaded(false);
       await supabase.from('notifications').insert({ user_id: profile.id, sender_id: myDbId, type: 'follow' });
     }
   };
