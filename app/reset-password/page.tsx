@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useLang } from '@/lib/i18n';
@@ -11,6 +11,24 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [ready, setReady] = useState(false);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    // Supabase invia il token nell'URL hash — aspettiamo che venga rilevato
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setReady(true);
+      }
+    });
+
+    // Controlla se c'è già una sessione attiva (utente già autenticato via link)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setReady(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleUpdate = async () => {
     if (loading) return;
@@ -20,8 +38,31 @@ export default function ResetPasswordPage() {
     const { error: err } = await supabase.auth.updateUser({ password });
     setLoading(false);
     if (err) { setError(err.message); }
-    else { router.replace('/home'); }
+    else { setDone(true); setTimeout(() => router.replace('/home'), 2000); }
   };
+
+  if (!ready) return (
+    <div className="shell form-page" style={{ justifyContent: 'center', alignItems: 'center' }}>
+      <div className="spin" />
+      <p style={{ fontFamily: 'var(--font-body)', color: '#888', marginTop: 16, fontSize: 14 }}>
+        Verifica del link in corso…
+      </p>
+    </div>
+  );
+
+  if (done) return (
+    <div className="shell form-page" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '0 32px' }}>
+      <svg width="56" height="56" fill="none" stroke="#34C759" strokeWidth="2" viewBox="0 0 24 24" style={{ marginBottom: 16 }}>
+        <circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/>
+      </svg>
+      <h2 style={{ fontFamily: 'Poppins, sans-serif', fontWeight: 800, fontSize: 22, color: '#111', marginBottom: 8 }}>
+        Password aggiornata!
+      </h2>
+      <p style={{ fontFamily: 'var(--font-body)', color: '#666', fontSize: 15 }}>
+        Stai per essere reindirizzato…
+      </p>
+    </div>
+  );
 
   return (
     <div className="shell form-page">
