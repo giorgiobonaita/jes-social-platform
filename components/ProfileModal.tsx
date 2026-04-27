@@ -214,7 +214,8 @@ if (me) {
       if (error) { setIsFollowing(true); setFollowersCount(c => c + 1); }
     } else {
       setIsFollowing(true); setFollowersCount(c => c + 1);
-      await supabase.from('follows').insert({ follower_id: myDbId, followed_id: profile.id });
+      const { error } = await supabase.from('follows').insert({ follower_id: myDbId, followed_id: profile.id });
+      if (error) { setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
       await supabase.from('notifications').insert({ user_id: profile.id, sender_id: myDbId, type: 'follow' });
     }
   };
