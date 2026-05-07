@@ -23,6 +23,7 @@ import * as Linking from 'expo-linking';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase, JES_OFFICIAL_USERNAME } from '../lib/supabase';
+import { t, useLang, LANGS } from '../lib/i18n';
 import AdminPanelModal from './AdminPanelModal';
 const JES_ICON = require('../assets/images/icon.png');
 import SinglePostModal from './SinglePostModal';
@@ -72,11 +73,11 @@ function parseLinks(text: string): Array<{ text: string; isUrl: boolean }> {
 }
 
 // ─── VOCI IMPOSTAZIONI ───────────────────────────────────────────────────────
-const SETTINGS: { id: string; icon: string; label: string; danger?: boolean }[] = [
-  { id: 's1', icon: 'person-outline',        label: 'Modifica profilo' },
-  { id: 's2', icon: 'notifications-outline', label: 'Notifiche' },
-  { id: 's5', icon: 'help-circle-outline',   label: 'Assistenza' },
-  { id: 's6', icon: 'document-text-outline', label: 'Terms & Privacy' },
+const SETTINGS = () => [
+  { id: 's1', icon: 'person-outline',        label: t('edit_profile') },
+  { id: 's2', icon: 'notifications-outline', label: t('settings_notif') },
+  { id: 's5', icon: 'help-circle-outline',   label: t('settings_support') },
+  { id: 's6', icon: 'document-text-outline', label: t('settings_terms') },
 ];
 
 interface ProfileModalProps {
@@ -92,6 +93,7 @@ type TabType = 'posts' | 'followers' | 'seguiti';
 
 export default function ProfileModal({ visible, onClose, targetUserId, onMessagePress, onRequestViewUser, onPostAsJes }: ProfileModalProps) {
   const isOwnProfile = !targetUserId;
+  const [currentLang, changeLang] = useLang();
   const [activeTab, setActiveTab] = useState<TabType>('posts');
   const [showSettings, setShowSettings] = useState(false);
   const [settingsScreen, setSettingsScreen] = useState<null | 'notifiche' | 'privacy' | 'aspetto'>(null);
@@ -140,7 +142,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
     if (!profile) return;
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Accesso necessario', 'Consenti l\'accesso alla galleria nelle impostazioni.');
+      Alert.alert(t('gallery_permission_title'), t('gallery_permission_msg'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -171,7 +173,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await loadProfile();
     } catch (e: any) {
-      Alert.alert('Errore', e.message || 'Impossibile caricare la foto.');
+      Alert.alert(t('error_title'), e.message || t('error_upload_photo'));
     } finally {
       setUploadingAvatar(false);
     }
@@ -355,10 +357,10 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
             <Ionicons name="chevron-back" size={26} color="#111" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {settingsScreen === 'notifiche' ? 'Notifiche'
-              : settingsScreen === 'aspetto' ? 'Aspetto'
-              : showSettings ? 'Impostazioni'
-              : isOwnProfile ? 'Profilo' : (profile?.username ? `@${profile.username}` : 'Profilo')}
+            {settingsScreen === 'notifiche' ? t('tab_notif')
+              : settingsScreen === 'aspetto' ? t('tab_appearance')
+              : showSettings ? t('tab_settings')
+              : isOwnProfile ? t('tab_profile') : (profile?.username ? `@${profile.username}` : t('tab_profile'))}
           </Text>
           {isOwnProfile && !settingsScreen && (
             <TouchableOpacity
@@ -375,7 +377,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               activeOpacity={0.85}
             >
               <Text style={[styles.followHeaderBtnText, isFollowing && styles.followHeaderBtnTextActive]}>
-                {isFollowing ? 'Segue' : 'Segui'}
+                {isFollowing ? t('following_btn') : t('follow_btn')}
               </Text>
             </TouchableOpacity>
           )}
@@ -385,13 +387,13 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
         {showSettings && settingsScreen === 'notifiche' ? (
           /* ── NOTIFICHE ── */
           <ScrollView contentContainerStyle={styles.settingsList}>
-            <Text style={styles.subSectionLabel}>PUSH NOTIFICATION</Text>
+            <Text style={styles.subSectionLabel}>{t('push_header')}</Text>
             {[
-              { label: 'Like e commenti', value: notifLike, setter: setNotifLike },
-              { label: 'Nuovi follower', value: notifFollower, setter: setNotifFollower },
-              { label: 'Messaggi diretti', value: notifMessaggi, setter: setNotifMessaggi },
-              { label: 'Storie', value: notifStorie, setter: setNotifStorie },
-              { label: 'Menzioni', value: notifMenzioni, setter: setNotifMenzioni },
+              { label: t('push_likes'), value: notifLike, setter: setNotifLike },
+              { label: t('push_followers'), value: notifFollower, setter: setNotifFollower },
+              { label: t('push_dms'), value: notifMessaggi, setter: setNotifMessaggi },
+              { label: t('push_stories'), value: notifStorie, setter: setNotifStorie },
+              { label: t('push_mentions'), value: notifMenzioni, setter: setNotifMenzioni },
             ].map(row => (
               <View key={row.label} style={styles.toggleRow}>
                 <Text style={styles.toggleLabel}>{row.label}</Text>
@@ -408,11 +410,11 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
         ) : showSettings && settingsScreen === 'aspetto' ? (
           /* ── ASPETTO ── */
           <ScrollView contentContainerStyle={styles.settingsList}>
-            <Text style={styles.subSectionLabel}>TEMA</Text>
+            <Text style={styles.subSectionLabel}>{t('theme_header')}</Text>
             {([
-              { key: 'chiaro', label: 'Tema chiaro', icon: 'sunny-outline' },
-              { key: 'scuro',  label: 'Tema scuro',  icon: 'moon-outline' },
-              { key: 'sistema', label: 'Segui sistema', icon: 'phone-portrait-outline' },
+              { key: 'chiaro', label: t('theme_light'), icon: 'sunny-outline' },
+              { key: 'scuro',  label: t('theme_dark'),  icon: 'moon-outline' },
+              { key: 'sistema', label: t('theme_system'), icon: 'phone-portrait-outline' },
             ] as { key: 'chiaro' | 'scuro' | 'sistema'; label: string; icon: string }[]).map(opt => (
               <TouchableOpacity
                 key={opt.key}
@@ -432,7 +434,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
         ) : showSettings ? (
           /* ── LISTA IMPOSTAZIONI ── */
           <ScrollView contentContainerStyle={styles.settingsList}>
-            {SETTINGS.map(item => (
+            {SETTINGS().map(item => (
               <TouchableOpacity
                 key={item.id}
                 style={styles.settingRow}
@@ -454,10 +456,24 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                 )}
               </TouchableOpacity>
             ))}
+            {/* LINGUA */}
+            <Text style={[styles.subSectionLabel, { marginTop: 24 }]}>LINGUA / LANGUAGE</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 4, marginBottom: 8 }}>
+              {LANGS.map(l => (
+                <TouchableOpacity
+                  key={l.code}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); changeLang(l.code); }}
+                  style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1.5, borderColor: currentLang === l.code ? ORANGE : '#E0E0E0', backgroundColor: currentLang === l.code ? '#FFF5EC' : '#fff' }}
+                >
+                  <Text style={{ fontFamily: 'PlusJakartaSans_600SemiBold', fontSize: 13, color: currentLang === l.code ? ORANGE : '#555' }}>{l.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             {/* ESCI e ADMIN PANEL in fondo */}
             {myRole === 'admin' && (
               <>
-                <Text style={[styles.subSectionLabel, { marginTop: 24 }]}>SEZIONE ADMIN</Text>
+                <Text style={[styles.subSectionLabel, { marginTop: 24 }]}>{t('admin_section')}</Text>
                 <TouchableOpacity
                   style={styles.settingRow}
                   activeOpacity={0.7}
@@ -466,7 +482,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                   <View style={styles.settingIconWrap}>
                     <Ionicons name="shield-checkmark" size={20} color={ORANGE} />
                   </View>
-                  <Text style={styles.settingLabel}>Pannello Admin</Text>
+                  <Text style={styles.settingLabel}>{t('admin_panel')}</Text>
                   <Ionicons name="chevron-forward" size={18} color="#CCC" />
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -486,7 +502,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                   <View style={styles.settingIconWrap}>
                     <Ionicons name="star" size={20} color={ORANGE} />
                   </View>
-                  <Text style={styles.settingLabel}>Profilo ufficiale JES</Text>
+                  <Text style={styles.settingLabel}>{t('official_profile')}</Text>
                   <Ionicons name="chevron-forward" size={18} color="#CCC" />
                 </TouchableOpacity>
               </>
@@ -497,12 +513,12 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               activeOpacity={0.7}
               onPress={() => {
                 Alert.alert(
-                  'Esci dall\'account',
-                  'Sei sicuro di voler uscire?',
+                  t('logout'),
+                  t('logout_confirm'),
                   [
-                    { text: 'Annulla', style: 'cancel' },
+                    { text: t('cancel'), style: 'cancel' },
                     {
-                      text: 'Esci',
+                      text: t('logout_btn'),
                       style: 'destructive',
                       onPress: async () => {
                         await supabase.auth.signOut();
@@ -517,7 +533,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               <View style={[styles.settingIconWrap, styles.settingIconDanger]}>
                 <Ionicons name="log-out-outline" size={20} color="#FF3B30" />
               </View>
-              <Text style={[styles.settingLabel, styles.settingLabelDanger]}>Esci</Text>
+              <Text style={[styles.settingLabel, styles.settingLabelDanger]}>{t('logout_btn')}</Text>
             </TouchableOpacity>
 
             {/* CANCELLA ACCOUNT */}
@@ -526,12 +542,12 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               activeOpacity={0.7}
               onPress={() => {
                 Alert.alert(
-                  'Elimina account',
-                  'Sei assolutamente sicuro di voler cancellare il tuo account e tutti i tuoi dati? Questa azione è IRREVERSIBILE.',
+                  t('delete_account'),
+                  t('delete_account_confirm'),
                   [
-                    { text: 'Annulla', style: 'cancel' },
+                    { text: t('cancel'), style: 'cancel' },
                     {
-                      text: 'Elimina definitivamente',
+                      text: t('delete_permanently'),
                       style: 'destructive',
                       onPress: async () => {
                         if (!profile?.id) return;
@@ -551,7 +567,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               <View style={[styles.settingIconWrap, styles.settingIconDanger]}>
                 <Ionicons name="trash-bin-outline" size={20} color="#FF3B30" />
               </View>
-              <Text style={[styles.settingLabel, styles.settingLabelDanger]}>Elimina Account</Text>
+              <Text style={[styles.settingLabel, styles.settingLabelDanger]}>{t('delete_account')}</Text>
             </TouchableOpacity>
           </ScrollView>
         ) : (
@@ -609,22 +625,22 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                 <View style={styles.statsRow}>
                   <View style={styles.statBlock}>
                     <Text style={[styles.statNum, { fontSize: 17 }]}>{gridPosts.length}</Text>
-                    <Text style={styles.statLabel}>Post</Text>
+                    <Text style={styles.statLabel}>{t('stat_posts')}</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statBlock}>
                     <Text style={[styles.statNum, { fontSize: 17 }]}>{formatNum(totalViews)}</Text>
-                    <Text style={styles.statLabel}>Visual</Text>
+                    <Text style={styles.statLabel}>{t('stat_visual')}</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statBlock}>
                     <Text style={[styles.statNum, { fontSize: 17 }]}>{formatNum(displayFollowers)}</Text>
-                    <Text style={styles.statLabel}>Follower</Text>
+                    <Text style={styles.statLabel}>{t('stat_followers')}</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statBlock}>
                     <Text style={[styles.statNum, { fontSize: 17 }]}>{followingCount}</Text>
-                    <Text style={styles.statLabel}>Seguiti</Text>
+                    <Text style={styles.statLabel}>{t('stat_following')}</Text>
                   </View>
                 </View>
               </View>
@@ -633,7 +649,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                 <View style={styles.likesStatRow}>
                   <Ionicons name="heart" size={18} color={ORANGE} />
                   <Text style={styles.likesStatNum}>{formatNum(totalLikes)}</Text>
-                  <Text style={styles.likesStatLabel}>like totali</Text>
+                  <Text style={styles.likesStatLabel}>{t('stat_likes')}</Text>
                 </View>
               </View>
               );
@@ -642,7 +658,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
             {/* Nome + bio */}
             <View style={styles.infoSection}>
               <View style={styles.nameRow}>
-                <Text style={styles.name}>{profile?.name || 'Utente'}</Text>
+                <Text style={styles.name}>{profile?.name || t('user_fallback')}</Text>
                 {profile?.username === JES_OFFICIAL_USERNAME && (
                   <Ionicons name="checkmark-circle" size={20} color={ORANGE} style={{ marginLeft: 6 }} />
                 )}
@@ -686,14 +702,14 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                   }}
                 >
                   <Ionicons name="create-outline" size={16} color="#111" />
-                  <Text style={styles.editBtnText}>Modifica profilo</Text>
+                  <Text style={styles.editBtnText}>{t('edit_profile')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.shareBtn}
                   activeOpacity={0.85}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    Alert.alert('Condividi profilo', `jes.app/@${profile?.username || ''}`, [{ text: 'OK' }]);
+                    Alert.alert(t('share_profile'), `jes.app/@${profile?.username || ''}`, [{ text: 'OK' }]);
                   }}
                 >
                   <Ionicons name="share-social-outline" size={18} color="#111" />
@@ -713,7 +729,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                   }}
                 >
                   <Ionicons name="paper-plane-outline" size={16} color="#111" />
-                  <Text style={styles.editBtnText}>Scrivi messaggio</Text>
+                  <Text style={styles.editBtnText}>{t('send_message')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -726,15 +742,15 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                   activeOpacity={0.85}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    Alert.alert('Pubblica come JES', 'Cosa vuoi pubblicare?', [
-                      { text: 'Post', onPress: () => onPostAsJes?.(profile.id, 'post') },
-                      { text: 'Storia', onPress: () => onPostAsJes?.(profile.id, 'story') },
-                      { text: 'Annulla', style: 'cancel' },
+                    Alert.alert(t('publish_as_jes'), t('publish_as_jes_choose'), [
+                      { text: t('publish_post'), onPress: () => onPostAsJes?.(profile.id, 'post') },
+                      { text: t('publish_story'), onPress: () => onPostAsJes?.(profile.id, 'story') },
+                      { text: t('cancel'), style: 'cancel' },
                     ]);
                   }}
                 >
                   <Ionicons name="add-circle-outline" size={16} color={ORANGE} />
-                  <Text style={[styles.editBtnText, { color: ORANGE }]}>Pubblica come JES</Text>
+                  <Text style={[styles.editBtnText, { color: ORANGE }]}>{t('publish_as_jes')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -774,7 +790,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               gridPosts.length === 0 ? (
                 <View style={styles.emptyTab}>
                   <Ionicons name="images-outline" size={48} color="#DDD" />
-                  <Text style={styles.emptyText}>Nessun post ancora</Text>
+                  <Text style={styles.emptyText}>{t('no_posts_yet')}</Text>
                 </View>
               ) : (
                 <View style={styles.grid}>
@@ -799,7 +815,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               ) : (activeTab === 'followers' ? followersList : followingList).length === 0 ? (
                 <View style={styles.emptyTab}>
                   <Ionicons name="people-outline" size={48} color="#DDD" />
-                  <Text style={styles.emptyText}>{activeTab === 'followers' ? 'Nessun follower ancora' : 'Non segue ancora nessuno'}</Text>
+                  <Text style={styles.emptyText}>{activeTab === 'followers' ? t('no_followers_yet') : t('not_following_anyone')}</Text>
                 </View>
               ) : (
                 <View>
@@ -847,9 +863,9 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity onPress={() => setShowEditProfile(false)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                <Text style={styles.editCancelText}>Annulla</Text>
+                <Text style={styles.editCancelText}>{t('cancel')}</Text>
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Modifica profilo</Text>
+              <Text style={styles.headerTitle}>{t('edit_profile')}</Text>
               <TouchableOpacity
                 onPress={async () => {
                   if (!profile || savingProfile) return;
@@ -860,7 +876,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
                     .eq('id', profile.id);
                   setSavingProfile(false);
                   if (error) {
-                    Alert.alert('Errore', error.message);
+                    Alert.alert(t('error_title'), error.message);
                   } else {
                     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     await loadProfile();
@@ -870,7 +886,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
               >
                 {savingProfile
                   ? <ActivityIndicator color={ORANGE} />
-                  : <Text style={styles.editSaveText}>Salva</Text>
+                  : <Text style={styles.editSaveText}>{t('save')}</Text>
                 }
               </TouchableOpacity>
             </View>
@@ -899,24 +915,24 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
 
               {/* Nome */}
               <View style={styles.editField}>
-                <Text style={styles.editFieldLabel}>Nome completo</Text>
+                <Text style={styles.editFieldLabel}>{t('full_name')}</Text>
                 <TextInput
                   style={styles.editInput}
                   value={editName}
                   onChangeText={setEditName}
-                  placeholder="Il tuo nome"
+                  placeholder={t('name_placeholder')}
                   placeholderTextColor="#CCC"
                 />
               </View>
 
               {/* Username */}
               <View style={styles.editField}>
-                <Text style={styles.editFieldLabel}>Username</Text>
+                <Text style={styles.editFieldLabel}>{t('username_label')}</Text>
                 <TextInput
                   style={styles.editInput}
                   value={editUsername}
                   onChangeText={setEditUsername}
-                  placeholder="@username"
+                  placeholder={t('username_placeholder')}
                   placeholderTextColor="#CCC"
                   autoCapitalize="none"
                 />
@@ -924,12 +940,12 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
 
               {/* Bio */}
               <View style={styles.editField}>
-                <Text style={styles.editFieldLabel}>Bio</Text>
+                <Text style={styles.editFieldLabel}>{t('bio_label')}</Text>
                 <TextInput
                   style={[styles.editInput, styles.editInputMulti]}
                   value={editBio}
                   onChangeText={setEditBio}
-                  placeholder="Raccontati in poche parole..."
+                  placeholder={t('bio_placeholder')}
                   placeholderTextColor="#CCC"
                   multiline
                   numberOfLines={3}
@@ -939,12 +955,12 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
 
               {/* Telefono (opzionale) */}
               <View style={styles.editField}>
-                <Text style={styles.editFieldLabel}>Telefono <Text style={{ fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12, color: '#AAA' }}>(opzionale)</Text></Text>
+                <Text style={styles.editFieldLabel}>Telefono <Text style={{ fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12, color: '#AAA' }}>{t('optional')}</Text></Text>
                 <TextInput
                   style={styles.editInput}
                   value={editPhone}
                   onChangeText={setEditPhone}
-                  placeholder="+39 000 000 0000"
+                  placeholder={t('phone_placeholder')}
                   placeholderTextColor="#CCC"
                   keyboardType="phone-pad"
                   maxLength={20}

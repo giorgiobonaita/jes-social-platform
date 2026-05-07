@@ -4,6 +4,7 @@ import {
   StatusBar, Pressable, Image, ScrollView, Dimensions, Linking, Alert, Animated,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { t } from '../lib/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -30,12 +31,12 @@ const ORANGE = '#F07B1D';
 function formatTimeAgo(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'Adesso';
-  if (m < 60) return `${m} min fa`;
+  if (m < 1)  return t('time_now');
+  if (m < 60) return `${m} ${t('time_min_ago')}`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ore fa`;
+  if (h < 24) return `${h} ${t('time_hour_ago')}`;
   const d = Math.floor(h / 24);
-  return `${d} g fa`;
+  return `${d} ${t('time_day_ago')}`;
 }
 
 // ─── TIPO STORIA ──────────────────────────────────────────────────────────────
@@ -343,8 +344,8 @@ export default function HomeFeedScreen() {
         pollQuestion: p.poll_question,
         pollOptions: p.poll_options,
         author: {
-          name:       u.name       || 'Utente',
-          username:   u.username   || 'utente',
+          name:       u.name       || t('user_fallback'),
+          username:   u.username   || t('username_fallback'),
           avatarUrl:  u.avatar_url || FALLBACK_AVATAR,
           discipline: u.discipline || '',
           role:       u.role       || null,
@@ -389,8 +390,8 @@ export default function HomeFeedScreen() {
         const u = userMap[s.user_id] || {};
         groupMap[s.user_id] = {
           userId:   s.user_id,
-          username: u.username  || 'utente',
-          name:     u.name      || 'Utente',
+          username: u.username  || t('username_fallback'),
+          name:     u.name      || t('user_fallback'),
           avatarUrl: u.avatar_url || FALLBACK,
           stories:  [],
         };
@@ -420,7 +421,7 @@ export default function HomeFeedScreen() {
     <View>
       {/* ── SEGUITI ── */}
       <View style={storyStyles.sectionBlock}>
-        <Text style={storyStyles.sectionLabel}>Seguiti</Text>
+        <Text style={storyStyles.sectionLabel}>{t('followed')}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -429,7 +430,7 @@ export default function HomeFeedScreen() {
           {/* Crea storia: avatarUrl=null finché non caricato → StoryRing mostra placeholder locale */}
           <StoryRing
             id="create"
-            username="La tua storia"
+            username={t('your_story')}
             avatarUrl={currentUserAvatar}
             isCustom={true}
             onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setCreateStoryVisible(true); }}
@@ -524,12 +525,12 @@ export default function HomeFeedScreen() {
               >
                 <View style={styles.advSponBadge}>
                   <Ionicons name="megaphone-outline" size={11} color="#888" style={{ marginRight: 4 }} />
-                  <Text style={styles.advSponText}>SPONSORIZZATO</Text>
+                  <Text style={styles.advSponText}>{t('sponsored')}</Text>
                 </View>
                 <Image source={item.imageSource} style={styles.advImage} resizeMode="contain" />
                 <View style={styles.advFooter}>
                   <View style={styles.advLinkBtn}>
-                    <Text style={styles.advLinkText}>Visita il link</Text>
+                    <Text style={styles.advLinkText}>{t('visit_link')}</Text>
                     <Ionicons name="arrow-forward" size={14} color="#fff" />
                   </View>
                 </View>

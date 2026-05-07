@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import { t } from '../lib/i18n';
 import AvatarImg from './AvatarImg';
 
 type NotifType = 'like' | 'comment' | 'follow' | 'mention';
@@ -29,21 +30,21 @@ interface Notification {
 function formatTimeAgo(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return 'ora';
-  if (m < 60) return `${m} min fa`;
+  if (m < 1)  return t('time_now');
+  if (m < 60) return `${m} ${t('time_min_ago')}`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} ore fa`;
+  if (h < 24) return `${h} ${t('time_hour_ago')}`;
   const d = Math.floor(h / 24);
-  if (d === 1) return 'Ieri';
-  return `${d} giorni fa`;
+  if (d === 1) return t('time_yesterday');
+  return `${d} ${t('time_days_ago')}`;
 }
 
 function notifText(type: NotifType): string {
   switch (type) {
-    case 'like':    return 'ha messo Mi piace alla tua opera';
-    case 'comment': return 'ha commentato il tuo post';
-    case 'follow':  return 'ha iniziato a seguirti';
-    case 'mention': return 'ti ha menzionato in un commento';
+    case 'like':    return t('notif_liked');
+    case 'comment': return t('notif_commented');
+    case 'follow':  return t('notif_followed');
+    case 'mention': return t('notif_mentioned');
   }
 }
 
@@ -94,7 +95,7 @@ export default function NotificationsModal({ visible, onClose }: NotificationsMo
       return {
         id:        n.id,
         type:      n.type as NotifType,
-        username:  sender.username || 'utente',
+        username:  sender.username || t('username_fallback'),
         avatarUrl: sender.avatar_url || null,
         text:      notifText(n.type as NotifType),
         timeAgo:   n.created_at ? formatTimeAgo(n.created_at) : '',
@@ -174,7 +175,7 @@ export default function NotificationsModal({ visible, onClose }: NotificationsMo
       <SafeAreaView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Notifiche</Text>
+          <Text style={styles.headerTitle}>{t('notif_title')}</Text>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Ionicons name="close" size={24} color="#555" />
           </TouchableOpacity>
@@ -190,7 +191,7 @@ export default function NotificationsModal({ visible, onClose }: NotificationsMo
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
-              <Text style={styles.emptyText}>Nessuna notifica</Text>
+              <Text style={styles.emptyText}>{t('notif_empty')}</Text>
             </View>
           }
         />

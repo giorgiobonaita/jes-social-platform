@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import GroupDetail, { Group } from './GroupDetailModal';
 import { supabase } from '../lib/supabase';
+import { t } from '../lib/i18n';
 
 const ORANGE = '#F07B1D';
 
@@ -21,7 +22,7 @@ interface Props {
 }
 
 const OFFICIAL_GROUPS = [
-  'Pittura', 'Scultura', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
+  'Pittura', 'Scultura', 'Moda e Fashion', 'Antiquariato', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
   'Design', 'Architettura', 'Archeologia', 'Storia', 'Recitazione e Danza',
   'Musica', 'Fumettistica', 'Arte di Strada', 'Partner'
 ];
@@ -100,7 +101,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
       if (missing.length > 0) {
         const toInsert = missing.map(name => ({
           name,
-          description: `Gruppo ufficiale JES per ${name}`,
+          description: `${t('groups_official_prefix')} ${name}`,
           is_private: false,
           created_by: dbUserId,
         }));
@@ -157,7 +158,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
     if (!newName.trim() || !myId) return;
     const { data: g, error } = await supabase.from('groups').insert({
       name:        newName.trim(),
-      description: newDesc.trim() || 'Nuovo gruppo.',
+      description: newDesc.trim() || t('groups_default_desc'),
       is_private:  false,
       created_by:  myId,
     }).select('id, name, description, cover_url, is_private').single();
@@ -193,7 +194,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
           <Image source={{ uri: item.coverUrl }} style={styles.cardCover} resizeMode="cover" />
           <View style={[styles.cardBadge, item.isPrivate ? styles.badgePrivate : styles.badgePublic]}>
             <Ionicons name={item.isPrivate ? 'lock-closed' : 'globe'} size={11} color="#fff" />
-            <Text style={styles.cardBadgeText}>{item.isPrivate ? 'Privato' : 'Pubblico'}</Text>
+            <Text style={styles.cardBadgeText}>{item.isPrivate ? t('groups_private') : t('groups_public')}</Text>
           </View>
         </View>
         <View style={styles.cardBody}>
@@ -210,11 +211,11 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
           <View style={styles.cardFooter}>
             <View style={styles.cardMeta}>
               <Ionicons name="people-outline" size={13} color="#888" />
-              <Text style={styles.cardMetaText}>{item.members.toLocaleString()} membri</Text>
+              <Text style={styles.cardMetaText}>{item.members.toLocaleString()} {t('groups_members')}</Text>
               {joined && (
                 <View style={styles.memberPill}>
                   <Ionicons name="checkmark-circle" size={12} color="#34C759" />
-                  <Text style={styles.memberPillText}>Membro</Text>
+                  <Text style={styles.memberPillText}>{t('groups_member')}</Text>
                 </View>
               )}
             </View>
@@ -225,7 +226,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Text style={[styles.joinBtnText, joined && styles.joinBtnTextJoined]}>
-                {joined ? '✓ Iscritto' : 'Iscriviti'}
+                {joined ? t('groups_joined') : t('groups_join')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -250,14 +251,14 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
               <TouchableOpacity onPress={handleClose} style={styles.headerBtn} activeOpacity={0.7}>
                 <Ionicons name="close" size={26} color="#111" />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Gruppi</Text>
+              <Text style={styles.headerTitle}>{t('groups_title')}</Text>
               <TouchableOpacity
                 style={styles.createBtn}
                 onPress={() => setScreen('create')}
                 activeOpacity={0.85}
               >
                 <Ionicons name="add" size={18} color="#fff" />
-                <Text style={styles.createBtnText}>Crea</Text>
+                <Text style={styles.createBtnText}>{t('groups_create')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -266,7 +267,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
               <Ionicons name="search-outline" size={18} color="#AAA" />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Cerca gruppi..."
+                placeholder={t('groups_search')}
                 placeholderTextColor="#CCC"
                 value={search}
                 onChangeText={setSearch}
@@ -291,7 +292,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
               ListEmptyComponent={
                 <View style={styles.emptyWrap}>
                   <Ionicons name="search-outline" size={40} color="#DDD" />
-                  <Text style={styles.emptyText}>Nessun gruppo trovato</Text>
+                  <Text style={styles.emptyText}>{t('groups_not_found')}</Text>
                 </View>
               }
             />
@@ -321,7 +322,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
               <TouchableOpacity onPress={() => setScreen('list')} style={styles.headerBtn} activeOpacity={0.7}>
                 <Ionicons name="arrow-back" size={24} color="#111" />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Nuovo gruppo</Text>
+              <Text style={styles.headerTitle}>{t('groups_new')}</Text>
               <View style={{ width: 60 }} />
             </View>
 
@@ -332,10 +333,10 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
               keyboardShouldPersistTaps="handled"
               ListHeaderComponent={
                 <View style={styles.formWrap}>
-                  <Text style={styles.formLabel}>Nome del gruppo <Text style={styles.req}>*</Text></Text>
+                  <Text style={styles.formLabel}>{t('groups_name_label')} <Text style={styles.req}>*</Text></Text>
                   <TextInput
                     style={styles.formInput}
-                    placeholder="Es. Acquarellisti Milano"
+                    placeholder={t('groups_name_placeholder')}
                     placeholderTextColor="#CCC"
                     value={newName}
                     onChangeText={setNewName}
@@ -343,10 +344,10 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
                     autoFocus
                   />
 
-                  <Text style={styles.formLabel}>Descrizione</Text>
+                  <Text style={styles.formLabel}>{t('groups_desc_label')}</Text>
                   <TextInput
                     style={[styles.formInput, { minHeight: 90, textAlignVertical: 'top' }]}
-                    placeholder="Di cosa parla il gruppo?"
+                    placeholder={t('groups_desc_placeholder')}
                     placeholderTextColor="#CCC"
                     value={newDesc}
                     onChangeText={setNewDesc}
@@ -361,7 +362,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
                     onPress={handleCreate}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.confirmBtnText}>Crea gruppo</Text>
+                    <Text style={styles.confirmBtnText}>{t('groups_create_btn')}</Text>
                   </TouchableOpacity>
                 </View>
               }
