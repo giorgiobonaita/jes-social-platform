@@ -42,6 +42,11 @@ const ADV_MER = [
   { imageUrl: '/adv-mer2.png', url: 'https://www.mercury-auctions.com/it_it/index/' },
   { imageUrl: '/adv-mer3.png', url: 'https://www.mercury-auctions.com/it_it/index/' },
 ];
+const ADV_SPIDI = [
+  { imageUrl: '/adv-spidi1.png', url: 'https://www.facebook.com/profile.php?id=100077487938941' },
+  { imageUrl: '/adv-spidi2.png', url: 'https://www.facebook.com/profile.php?id=100077487938941' },
+  { imageUrl: '/adv-spidi3.png', url: 'https://www.facebook.com/profile.php?id=100077487938941' },
+];
 
 function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -117,11 +122,15 @@ function buildFeed(
 
   const feed: any[] = [];
   const isMercury = viewerUsername === 'giuseppemercury';
+  const now = new Date();
+  const spidiBoost = now >= new Date('2026-05-07') && now < new Date('2026-05-10');
+  const spidiPool = spidiBoost ? [...ADV_SPIDI, ...ADV_SPIDI, ...ADV_SPIDI, ...ADV_SPIDI] : [...ADV_SPIDI, ...ADV_SPIDI];
   const advList = isMercury
-    ? shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...ADV_MER])
-    : shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER]);
+    ? shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...ADV_MER, ...spidiPool])
+    : shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...spidiPool]);
   let advIdx = 0;
   let arcInserted = false;
+  const spidiRandom = ADV_SPIDI[Math.floor(Math.random() * ADV_SPIDI.length)];
   const nextAdv = () => {
     const sp = advList[advIdx % advList.length];
     advIdx++;
@@ -130,7 +139,12 @@ function buildFeed(
   for (let i = 0; i < orderedPosts.length; i++) {
     feed.push(orderedPosts[i]);
     if ((i + 1) % 4 === 0) {
-      feed.push(nextAdv());
+      if (spidiBoost && advIdx === 0) {
+        advIdx++;
+        feed.push({ type: 'adv', id: `adv_spidi_first_${Date.now()}`, imageUrl: spidiRandom.imageUrl, url: spidiRandom.url });
+      } else {
+        feed.push(nextAdv());
+      }
       if (!arcInserted && advIdx === 2) {
         if (userType && ARTIST_TYPES.includes(userType)) {
           feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'artisti' });
