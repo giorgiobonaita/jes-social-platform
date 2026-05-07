@@ -180,7 +180,6 @@ if (me) {
     const postRes = await supabase.from('posts').select('id, caption, image_url, image_urls, created_at, user_id, users(name, username, avatar_url)').eq('id', postId).single();
     const commentsRes = await supabase.from('comments').select('id, text, created_at, user_id, users(name, username, avatar_url)').eq('post_id', postId).order('created_at', { ascending: true }).limit(30);
     const likesRes = await supabase.from('likes').select('user_id').eq('post_id', postId);
-    console.log('[openPost] likes:', likesRes.data, 'error:', likesRes.error, 'postId:', postId);
     const likes = likesRes.data || [];
     const uid = myDbId || currentDbId;
     setSelectedPostLikes(likes.length);
@@ -414,7 +413,7 @@ if (me) {
                   }}>
                   <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>{item.icon}</div>
                   <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>
-                    {item.id === 's1' ? t('edit_profile') : item.id === 's2' ? t('notifications') : item.id === 's5' ? t('support') : item.label}
+                    {item.id === 's1' ? t('edit_profile') : item.id === 's2' ? t('notifications') : item.id === 's5' ? t('support') : t('terms_service') + ' & ' + t('terms_privacy')}
                   </span>
                   <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                 </div>
@@ -588,7 +587,7 @@ if (me) {
             <div style={{ display: 'flex', gap: 8, padding: '0 20px 16px' }}>
               <button onClick={() => setShowEditProfile(true)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, border: '1.5px solid #E0E0E0', padding: '10px 0', background: 'none', cursor: 'pointer' }}>
                 <svg width="16" height="16" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>Modifica profilo</span>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>{t('edit_profile')}</span>
               </button>
               <button onClick={async () => {
                 const shareUrl = `https://jessocial.com/profile/${profile.username}`;

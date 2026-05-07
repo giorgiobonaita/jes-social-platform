@@ -4,6 +4,27 @@ import { supabase } from '@/lib/supabase';
 import AvatarImg from './AvatarImg';
 import { useLang, T } from '@/lib/i18n';
 
+const OFFICIAL_GROUPS = [
+  'Pittura', 'Scultura', 'Moda e Fashion', 'Antiquariato', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
+  'Design', 'Architettura', 'Archeologia', 'Storia', 'Recitazione e Danza',
+  'Musica', 'Fumettistica', 'Arte di Strada', 'Partner', 'Sponsor',
+];
+const OFFICIAL_GROUP_KEYS: Record<string, string> = {
+  'Pittura': 'cat_painting', 'Scultura': 'cat_sculpture', 'Moda e Fashion': 'cat_fashion',
+  'Fotografia': 'cat_photography', 'Design': 'cat_graphic', 'Musica': 'grp_music',
+  'Letteratura': 'grp_literature', 'Cucina Chef': 'grp_cooking', 'Tattoo': 'grp_tattoo',
+  'Architettura': 'grp_architecture', 'Archeologia': 'grp_archaeology', 'Storia': 'grp_history',
+  'Recitazione e Danza': 'grp_performing', 'Fumettistica': 'grp_comics',
+  'Arte di Strada': 'cat_street', 'Partner': 'grp_partner', 'Sponsor': 'cat_sponsor',
+  'Antiquariato': 'grp_antiques',
+};
+function getGroupDescription(name: string, description: string, t: (k: string) => string): string {
+  if (!OFFICIAL_GROUPS.includes(name)) return description;
+  const key = OFFICIAL_GROUP_KEYS[name];
+  if (!key) return description;
+  return `${t('groups_official_prefix')} ${t(key)}`;
+}
+
 const ORANGE = '#F07B1D';
 
 const PARTNER_ADV = [
@@ -331,7 +352,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
             <span style={{ fontFamily: 'var(--font-body)', fontWeight: localJoined ? 600 : 700, fontSize: 14, color: localJoined ? '#888' : '#fff' }}>{localJoined ? t('groups_leave') : t('groups_join')}</span>
           </button>
         </div>
-        <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#666', lineHeight: '21px' }}>{group.description}</span>
+        <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: '#666', lineHeight: '21px' }}>{getGroupDescription(group.name, group.description, t)}</span>
       </div>
 
       {/* Separator */}

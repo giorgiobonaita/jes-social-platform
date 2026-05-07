@@ -18,7 +18,6 @@ import ChatModal from '@/components/ChatModal';
 import GroupsModal from '@/components/GroupsModal';
 import InterestsModal from '@/components/InterestsModal';
 import AvatarImg from '@/components/AvatarImg';
-
 const ORANGE = '#F07B1D';
 const GNG_MAIL = 'mailto:mogideag74@gmail.com';
 
@@ -235,12 +234,12 @@ function ReportSheet({ postId, currentUserId, reportedUserId, onDone }: { postId
 }
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onShareToast, onLiked }: {
+function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onUnfollowAuthor, onShareToast, onLiked }: {
   post: any; currentUserAvatar?: string | null;
   onComment: () => void; onUserPress: (id: string) => void;
   onDelete: () => void; isAdmin: boolean;
   onImagePress: (url: string) => void;
-  isFollowingAuthor?: boolean; onFollowAuthor?: (userId: string) => void;
+  isFollowingAuthor?: boolean; onFollowAuthor?: (userId: string) => void; onUnfollowAuthor?: (userId: string) => void;
   onShareToast?: () => void;
   onLiked?: (groupName: string) => void;
 }) {
@@ -395,7 +394,8 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
             <button onClick={async () => {
               if (!post.currentUserId || !post.userId) return;
               onFollowAuthor(post.userId);
-              await supabase.from('follows').insert({ follower_id: post.currentUserId, followed_id: post.userId });
+              const { error } = await supabase.from('follows').insert({ follower_id: post.currentUserId, followed_id: post.userId });
+              if (error) { console.error('follow insert error:', error); onUnfollowAuthor?.(post.userId); }
             }} style={{ background: 'none', border: `1.5px solid ${ORANGE}`, borderRadius: 20, padding: '3px 10px', cursor: 'pointer', marginRight: 4 }}>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: ORANGE }}>{t('post_follow_btn')}</span>
             </button>
@@ -729,7 +729,21 @@ export default function HomePage() {
     });
   }, [myDbId]);
 
+  const FOLLOW_KEY = 'jes_following_ids';
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(FOLLOW_KEY);
+      if (stored) setFollowingIds(new Set(JSON.parse(stored)));
+    } catch {}
+  }, []);
+  const updateFollowingIds = useCallback((updater: (prev: Set<string>) => Set<string>) => {
+    setFollowingIds(prev => {
+      const next = updater(prev);
+      try { localStorage.setItem(FOLLOW_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }, []);
   const feedScrollRef = useRef<HTMLDivElement>(null);
 
   const [dbPosts, setDbPosts] = useState<any[]>([]);
@@ -794,9 +808,6 @@ export default function HomePage() {
         setAlgoActive(algo);
         if (algo && !data.interests_set) setShowInterests(true);
 
-        supabase.from('follows').select('followed_id').eq('follower_id', data.id).then(({ data: rows }) => {
-          if (rows) setFollowingIds(prev => new Set([...prev, ...rows.map((r: any) => r.followed_id)]));
-        });
         const { count } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', data.id).eq('read', false);
         setHasUnread((count || 0) > 0);
       }
@@ -878,8 +889,12 @@ export default function HomePage() {
       const { data: u } = await supabase.from('users').select('id').eq('auth_id', authResult.data.user.id).single();
       dbUserId = u?.id ?? null;
     }
+    if (dbUserId) {
+      const { data: followRows } = await supabase.from('follows').select('followed_id').eq('follower_id', dbUserId);
+      if (followRows) updateFollowingIds(() => new Set(followRows.map((r: any) => r.followed_id)));
+    }
     await mapPosts(posts, dbUserId, false);
-  }, [mapPosts]);
+  }, [mapPosts, updateFollowingIds]);
 
   const loadMorePosts = useCallback(async () => {
     if (loadingMore || !hasMorePosts) return;
@@ -1038,7 +1053,8 @@ export default function HomePage() {
               isAdmin={isAdmin}
               onImagePress={(url) => { setImageViewerUrl(url); setImageViewerVisible(true); }}
               isFollowingAuthor={item.userId ? followingIds.has(item.userId) : false}
-              onFollowAuthor={(uid) => setFollowingIds(prev => new Set([...prev, uid]))}
+              onFollowAuthor={(uid) => updateFollowingIds(prev => new Set([...prev, uid]))}
+              onUnfollowAuthor={(uid) => updateFollowingIds(prev => { const s = new Set(prev); s.delete(uid); return s; })}
               onShareToast={() => showToast(t('share_toast'))}
               onLiked={handleLiked}
             />

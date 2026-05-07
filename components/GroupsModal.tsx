@@ -16,10 +16,28 @@ interface Props {
 }
 
 const OFFICIAL_GROUPS = [
-  'Pittura', 'Scultura', 'Moda e Fashion', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
+  'Pittura', 'Scultura', 'Moda e Fashion', 'Antiquariato', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
   'Design', 'Architettura', 'Archeologia', 'Storia', 'Recitazione e Danza',
   'Musica', 'Fumettistica', 'Arte di Strada', 'Partner', 'Sponsor',
 ];
+
+const OFFICIAL_GROUP_KEYS: Record<string, string> = {
+  'Pittura': 'cat_painting', 'Scultura': 'cat_sculpture', 'Moda e Fashion': 'cat_fashion',
+  'Fotografia': 'cat_photography', 'Design': 'cat_graphic', 'Musica': 'grp_music',
+  'Letteratura': 'grp_literature', 'Cucina Chef': 'grp_cooking', 'Tattoo': 'grp_tattoo',
+  'Architettura': 'grp_architecture', 'Archeologia': 'grp_archaeology', 'Storia': 'grp_history',
+  'Recitazione e Danza': 'grp_performing', 'Fumettistica': 'grp_comics',
+  'Arte di Strada': 'cat_street', 'Partner': 'grp_partner', 'Sponsor': 'cat_sponsor',
+  'Antiquariato': 'grp_antiques',
+};
+
+// Returns translated description for official groups, or the original description
+function getGroupDescription(name: string, description: string, t: (k: string) => string): string {
+  if (!OFFICIAL_GROUPS.includes(name)) return description;
+  const key = OFFICIAL_GROUP_KEYS[name];
+  if (!key) return description;
+  return `${t('groups_official_prefix')} ${t(key)}`;
+}
 
 export default function GroupsModal({ visible, onClose, onPostPublished, initialGroupId }: Props) {
   const { t } = useLang();
@@ -83,7 +101,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
       const missing = OFFICIAL_GROUPS.filter(name => !loadedGroups.some((g: any) => g.name === name));
       if (missing.length > 0) {
         await supabase.from('groups').insert(missing.map(name => ({
-          name, description: `Gruppo ufficiale JES per ${name}`, is_private: false, created_by: dbUserId,
+          name, description: `Official JES group — ${name}`, is_private: false, created_by: dbUserId,
         })));
       }
     }
@@ -115,7 +133,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
   const handleCreate = async () => {
     if (!newName.trim() || !myId) return;
     const { data: g, error } = await supabase.from('groups').insert({
-      name: newName.trim(), description: newDesc.trim() || 'Nuovo gruppo.',
+      name: newName.trim(), description: newDesc.trim() || t('groups_default_desc'),
       is_private: false, created_by: myId,
     }).select('id, name, description, cover_url, is_private').single();
     if (error || !g) return;
@@ -204,10 +222,10 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
                     <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                         {official && <svg width="13" height="13" fill={ORANGE} viewBox="0 0 24 24"><path d="M12 2l-3.09 6.26L2 9.27l5 4.87-1.18 6.88L12 17.77l6.18 3.25L16.99 14.14 22 9.27l-6.91-1.01L12 2z"/></svg>}
-                        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 17, color: '#111' }}>{item.name}</span>
+                        <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 17, color: '#111' }}>{OFFICIAL_GROUP_KEYS[item.name] ? t(OFFICIAL_GROUP_KEYS[item.name]) : item.name}</span>
                         {official && <svg width="16" height="16" fill={ORANGE} viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>}
                       </div>
-                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#777', lineHeight: '19px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.description}</span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#777', lineHeight: '19px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{getGroupDescription(item.name, item.description, t)}</span>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
                           <svg width="13" height="13" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
@@ -261,7 +279,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
             </label>
             <input
               style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', border: '1.5px solid #E8E8E8', borderRadius: 14, padding: '13px 16px', outline: 'none', backgroundColor: '#fff' }}
-              placeholder="Es. Acquarellisti Milano"
+              placeholder={t('groups_name_placeholder')}
               value={newName}
               onChange={e => setNewName(e.target.value)}
               maxLength={50}
