@@ -42,24 +42,31 @@ function formatTimeAgo(isoDate: string): string {
 
 
 const ADV_IMAGES = {
-  adv1:  require('../assets/images/adv1.png'),
-  adv2:  require('../assets/images/adv2.png'),
-  adv3:  require('../assets/images/adv3.png'),
-  gng1:  require('../assets/images/adv-gng1.png'),
-  gng2:  require('../assets/images/adv-gng2.png'),
-  gng3:  require('../assets/images/adv-gng3.png'),
+  adv1:   require('../assets/images/adv1.png'),
+  adv2:   require('../assets/images/adv2.png'),
+  adv3:   require('../assets/images/adv3.png'),
+  gng1:   require('../assets/images/adv-gng1.png'),
+  gng2:   require('../assets/images/adv-gng2.png'),
+  gng3:   require('../assets/images/adv-gng3.png'),
+  spidi1: require('../assets/images/adv-spidi1.png'),
+  spidi2: require('../assets/images/adv-spidi2.png'),
+  spidi3: require('../assets/images/adv-spidi3.png'),
 };
 
 const GNG_MAIL = 'mailto:mogildeag74@gmail.com';
+const SPIDI_URL = 'https://www.facebook.com/profile.php?id=100077487938941';
 const MERCURY_USERNAME = 'giuseppemercury';
 
 const ADV_SPONSORS = [
-  { imageSource: ADV_IMAGES.adv1, url: 'https://www.gbsrl-studioimmobiliare.it/' },
-  { imageSource: ADV_IMAGES.adv2, url: 'https://gescompany.it/' },
-  { imageSource: ADV_IMAGES.adv3, url: 'https://www.mercury-auctions.com/it_it/index/' },
-  { imageSource: ADV_IMAGES.gng1, url: GNG_MAIL },
-  { imageSource: ADV_IMAGES.gng2, url: GNG_MAIL },
-  { imageSource: ADV_IMAGES.gng3, url: GNG_MAIL },
+  { imageSource: ADV_IMAGES.adv1,   url: 'https://www.gbsrl-studioimmobiliare.it/' },
+  { imageSource: ADV_IMAGES.adv2,   url: 'https://gescompany.it/' },
+  { imageSource: ADV_IMAGES.adv3,   url: 'https://www.mercury-auctions.com/it_it/index/' },
+  { imageSource: ADV_IMAGES.gng1,   url: GNG_MAIL },
+  { imageSource: ADV_IMAGES.gng2,   url: GNG_MAIL },
+  { imageSource: ADV_IMAGES.gng3,   url: GNG_MAIL },
+  { imageSource: ADV_IMAGES.spidi1, url: SPIDI_URL },
+  { imageSource: ADV_IMAGES.spidi2, url: SPIDI_URL },
+  { imageSource: ADV_IMAGES.spidi3, url: SPIDI_URL },
 ];
 
 // @giuseppemercury posts pinned at every 4-post mark (slot 4, 8, 12…).
