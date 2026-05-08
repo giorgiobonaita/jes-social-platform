@@ -164,8 +164,8 @@ interface UserStoryGroup {
 }
 
 // ── Story Ring ──────────────────────────────────────────────────────────────────
-function StoryRing({ id, username, avatarUrl, isCustom, hasUnwatched, onPress }: {
-  id: string; username: string; avatarUrl?: string | null;
+function StoryRing({ id, username, seed, avatarUrl, isCustom, hasUnwatched, onPress }: {
+  id: string; username: string; seed?: string; avatarUrl?: string | null;
   isCustom?: boolean; hasUnwatched?: boolean; onPress: () => void;
 }) {
   return (
@@ -173,7 +173,7 @@ function StoryRing({ id, username, avatarUrl, isCustom, hasUnwatched, onPress }:
       <div style={{ position: 'relative' }}>
         <div className={`story-ring-border${(!hasUnwatched && !isCustom) ? ' no-story' : ''}`}>
           <div className="story-ring-inner">
-            <AvatarImg uri={avatarUrl} size={56} seed={username} style={{ borderRadius: '12px', width: '100%', height: '100%' }} />
+            <AvatarImg uri={avatarUrl} size={56} seed={seed ?? username} style={{ borderRadius: '12px', width: '100%', height: '100%' }} />
           </div>
         </div>
         {isCustom && (
@@ -234,8 +234,8 @@ function ReportSheet({ postId, currentUserId, reportedUserId, onDone }: { postId
 }
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onUnfollowAuthor, onShareToast, onLiked }: {
-  post: any; currentUserAvatar?: string | null;
+function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onUnfollowAuthor, onShareToast, onLiked }: {
+  post: any; currentUserAvatar?: string | null; currentUsername?: string | null;
   onComment: () => void; onUserPress: (id: string) => void;
   onDelete: () => void; isAdmin: boolean;
   onImagePress: (url: string) => void;
@@ -521,7 +521,7 @@ function PostCard({ post, currentUserAvatar, onComment, onUserPress, onDelete, i
         {/* Quick comment bar */}
         <div className="pc-quick-comment" onClick={onComment}>
           <div className="pc-quick-avatar">
-            <AvatarImg uri={currentUserAvatar} size={28} seed="tu" style={{ borderRadius: '50%' }} />
+            <AvatarImg uri={currentUserAvatar} size={28} seed={currentUsername ?? 'tu'} style={{ borderRadius: '50%' }} />
           </div>
           <div className="pc-quick-input">
             <span className="pc-quick-placeholder">{t('add_comment')}</span>
@@ -1015,7 +1015,7 @@ export default function HomePage() {
         <div className="stories-section">
           <p className="stories-label">{t('following')}</p>
           <div className="stories-row">
-            <StoryRing id="create" username={t('story_your')} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />
+            <StoryRing id="create" username={t('story_your')} seed={myUsername ?? undefined} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />
             {stories.map((g, idx) => (
               <StoryRing key={g.userId} id={g.userId} username={g.username} avatarUrl={g.avatarUrl} hasUnwatched
                 onPress={() => { setActiveStoryIndex(idx); setStoryVisible(true); }} />
@@ -1047,6 +1047,7 @@ export default function HomePage() {
             <PostCard
               key={item.id} post={item}
               currentUserAvatar={currentUserAvatar}
+              currentUsername={myUsername}
               onComment={() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); }}
               onUserPress={(uid) => { setProfileTargetUserId(uid); setProfileVisible(true); }}
               onDelete={() => setDbPosts(prev => prev.filter(p => p.id !== item.id))}
