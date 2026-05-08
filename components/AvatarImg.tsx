@@ -1,8 +1,5 @@
 'use client';
-/**
- * AvatarImg — immagine profilo con fallback colorato a gradiente con iniziale.
- * Versione web: usa CSS gradient al posto di expo-linear-gradient.
- */
+import { useState } from 'react';
 
 const GRADIENTS: [string, string][] = [
   ['#F07B1D', '#FF9A3D'],
@@ -40,6 +37,7 @@ interface Props {
 }
 
 export default function AvatarImg({ uri, size, seed, borderRadius, style, className }: Props) {
+  const [imgFailed, setImgFailed] = useState(false);
   const r = borderRadius ?? size / 2;
   const baseStyle: React.CSSProperties = {
     width: size,
@@ -49,13 +47,14 @@ export default function AvatarImg({ uri, size, seed, borderRadius, style, classN
     ...style,
   };
 
-  if (uri) {
+  if (uri && uri.trim() !== '' && !imgFailed) {
     return (
       <img
         src={uri}
         alt={seed || 'avatar'}
         style={{ ...baseStyle, objectFit: 'cover', display: 'block' }}
         className={className}
+        onError={() => setImgFailed(true)}
       />
     );
   }
