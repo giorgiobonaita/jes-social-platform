@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const GRADIENTS: [string, string][] = [
   ['#F07B1D', '#FF9A3D'],
@@ -38,6 +38,7 @@ interface Props {
 
 export default function AvatarImg({ uri, size, seed, borderRadius, style, className }: Props) {
   const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => { setImgFailed(false); }, [uri]);
   const r = borderRadius ?? size / 2;
   const baseStyle: React.CSSProperties = {
     width: size,
