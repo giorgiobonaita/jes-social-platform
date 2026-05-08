@@ -164,8 +164,8 @@ interface UserStoryGroup {
 }
 
 // ── Story Ring ──────────────────────────────────────────────────────────────────
-function StoryRing({ id, username, seed, avatarUrl, isCustom, hasUnwatched, onPress }: {
-  id: string; username: string; seed?: string; avatarUrl?: string | null;
+function StoryRing({ id, username, label, seed, avatarUrl, isCustom, hasUnwatched, onPress }: {
+  id: string; username: string; label?: string; seed?: string; avatarUrl?: string | null;
   isCustom?: boolean; hasUnwatched?: boolean; onPress: () => void;
 }) {
   return (
@@ -173,7 +173,7 @@ function StoryRing({ id, username, seed, avatarUrl, isCustom, hasUnwatched, onPr
       <div style={{ position: 'relative' }}>
         <div className={`story-ring-border${(!hasUnwatched && !isCustom) ? ' no-story' : ''}`}>
           <div className="story-ring-inner">
-            <AvatarImg uri={avatarUrl} size={56} seed={seed ?? username} style={{ borderRadius: '12px', width: '100%', height: '100%' }} />
+            <AvatarImg uri={avatarUrl} size={56} seed={seed} style={{ borderRadius: '12px', width: '100%', height: '100%' }} />
           </div>
         </div>
         {isCustom && (
@@ -182,7 +182,7 @@ function StoryRing({ id, username, seed, avatarUrl, isCustom, hasUnwatched, onPr
           </div>
         )}
       </div>
-      <span className="story-ring-label">{username}</span>
+      <span className="story-ring-label">{label ?? username}</span>
     </div>
   );
 }
@@ -921,8 +921,16 @@ export default function HomePage() {
 
   const loadStories = useCallback(async () => {
     const now = new Date().toISOString();
-    // Pulizia storie scadute
     supabase.from('stories').delete().lt('expires_at', now).then(() => {});
+
+    // Aggiorna avatar current user con query diretta by id (più affidabile)
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      const { data: meData } = await supabase.from('users').select('id, username, avatar_url').eq('auth_id', authUser.id).single();
+      if (meData?.avatar_url) setCurrentUserAvatar(meData.avatar_url);
+      if (meData?.username) setMyUsername(meData.username);
+    }
+
     const { data, error } = await supabase.from('stories').select('*').gt('expires_at', now).order('created_at', { ascending: false }).limit(50);
     if (error || !data || data.length === 0) return;
     const userIds = [...new Set(data.map((s: any) => s.user_id).filter(Boolean))];
@@ -1015,7 +1023,7 @@ export default function HomePage() {
         <div className="stories-section">
           <p className="stories-label">{t('following')}</p>
           <div className="stories-row">
-            <StoryRing id="create" username={t('story_your')} seed={myUsername ?? undefined} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />
+            <StoryRing id="create" username={myUsername ?? ''} label={t('story_your')} seed={myUsername ?? undefined} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />
             {stories.map((g, idx) => (
               <StoryRing key={g.userId} id={g.userId} username={g.username} avatarUrl={g.avatarUrl} hasUnwatched
                 onPress={() => { setActiveStoryIndex(idx); setStoryVisible(true); }} />
