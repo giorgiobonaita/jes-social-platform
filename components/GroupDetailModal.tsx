@@ -40,6 +40,9 @@ const PARTNER_ADV = [
   { img: '/adv-gng1.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
   { img: '/adv-gng2.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
   { img: '/adv-gng3.png', url: 'mailto:mogideag74@gmail.com',             label: 'G.N.G Agency' },
+  { img: '/adv-spidi1.png', url: 'https://www.facebook.com/profile.php?id=100077487938941', label: 'Sponsor Spidi' },
+  { img: '/adv-spidi2.png', url: 'https://www.facebook.com/profile.php?id=100077487938941', label: 'Sponsor Spidi' },
+  { img: '/adv-spidi3.png', url: 'https://www.facebook.com/profile.php?id=100077487938941', label: 'Sponsor Spidi' },
 ];
 
 export interface Group {
@@ -49,6 +52,7 @@ export interface Group {
   members: number;
   coverUrl: string;
   isPrivate?: boolean;
+  createdBy?: string | null;
 }
 
 interface Post {
@@ -201,6 +205,8 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
   const [loading, setLoading]               = useState(false);
   const [myId, setMyId]                     = useState<string | null>(null);
   const [myAvatar, setMyAvatar]             = useState<string | null>(null);
+  const [myRole, setMyRole]                 = useState<string | null>(null);
+  const [creatorName, setCreatorName]       = useState<string | null>(null);
   const [coverUrl, setCoverUrl]             = useState<string>(group.coverUrl || '');
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -211,10 +217,15 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from('users').select('id, avatar_url').eq('auth_id', user.id).single();
-      if (data) { setMyId(data.id); setMyAvatar(data.avatar_url); }
+      const { data } = await supabase.from('users').select('id, avatar_url, role').eq('auth_id', user.id).single();
+      if (data) { setMyId(data.id); setMyAvatar(data.avatar_url); setMyRole(data.role ?? null); }
+
+      if (group.createdBy && !OFFICIAL_GROUPS.includes(group.name)) {
+        const { data: creator } = await supabase.from('users').select('name, username').eq('id', group.createdBy).single();
+        if (creator) setCreatorName(creator.name || creator.username || null);
+      }
     })();
-  }, []);
+  }, [group.createdBy, group.name]);
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -313,7 +324,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
           <svg width="12" height="12" fill="white" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
           <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: '#fff' }}>{t('groups_public')}</span>
         </div>
-        {localJoined && (
+        {(myId && (myId === group.createdBy || myRole === 'admin')) && (
           <button onClick={() => coverInputRef.current?.click()}
             style={{ position: 'absolute', bottom: 14, left: 14, display: 'flex', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.52)', border: 'none', borderRadius: 14, padding: '7px 12px', cursor: 'pointer' }}>
             {uploadingCover
@@ -332,7 +343,10 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
       <div style={{ backgroundColor: '#fff', padding: '18px 18px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 22, color: '#111', display: 'block', marginBottom: 6 }}>{group.name}</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 22, color: '#111', display: 'block', marginBottom: creatorName ? 2 : 6 }}>{group.name}</span>
+            {creatorName && (
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888', display: 'block', marginBottom: 6 }}>{t('grp_created_by')} {creatorName}</span>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <svg width="14" height="14" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
               <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>{group.members.toLocaleString()} {t('groups_members')}</span>

@@ -84,6 +84,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
     let loadedGroups: Group[] = grps.map((g: any) => ({
       id: g.id, name: g.name || '', description: g.description || '',
       members: memberCounts[g.id] || 0, coverUrl: g.cover_url || '', isPrivate: g.is_private || false,
+      createdBy: g.created_by || null,
     }));
 
     loadedGroups.sort((a, b) => {

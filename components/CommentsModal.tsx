@@ -9,7 +9,7 @@ const ORANGE = '#F07B1D';
 
 interface Comment {
   id: string; username: string; avatarUrl: string | null;
-  text: string; timeAgo: string; userId: string;
+  text: string; timeAgo: string; userId: string; parentId: string | null;
 }
 
 interface Props {
@@ -29,13 +29,15 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
   const [currentDbUserId, setCurrentDbUserId] = useState<string | null>(null);
   const [currentUsername, setCurrentUsername] = useState('');
 
-  // edit / delete state
-  const [selectedId, setSelectedId]   = useState<string | null>(null);
-  const [editingId, setEditingId]     = useState<string | null>(null);
-  const [editText, setEditText]       = useState('');
+  // edit / delete / reply state
+  const [selectedId, setSelectedId]     = useState<string | null>(null);
+  const [editingId, setEditingId]       = useState<string | null>(null);
+  const [editText, setEditText]         = useState('');
+  const [replyingTo, setReplyingTo]     = useState<{ id: string; username: string } | null>(null);
 
-  const listRef   = useRef<HTMLDivElement>(null);
-  const editRef   = useRef<HTMLTextAreaElement>(null);
+  const listRef    = useRef<HTMLDivElement>(null);
+  const editRef    = useRef<HTMLTextAreaElement>(null);
+  const inputRef   = useRef<HTMLTextAreaElement>(null);
 
   const formatTimeAgo = useCallback((isoDate: string): string => {
     const diff = Date.now() - new Date(isoDate).getTime();
@@ -68,8 +70,8 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
     (async () => {
       try {
         const { data: rows, error } = await supabase
-          .from('comments').select('id, text, created_at, user_id')
-          .eq('post_id', postId).order('created_at', { ascending: true }).limit(80);
+          .from('comments').select('id, text, created_at, user_id, parent_id')
+          .eq('post_id', postId).order('created_at', { ascending: true }).limit(200);
         if (error || !rows) return;
         const userIds = [...new Set(rows.map((c: any) => c.user_id).filter(Boolean))];
         const userMap: Record<string, any> = {};
@@ -81,6 +83,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
           id: c.id, username: userMap[c.user_id]?.username || t('role_user_title'),
           avatarUrl: userMap[c.user_id]?.avatar_url ?? null,
           text: c.text || '', timeAgo: formatTimeAgo(c.created_at), userId: c.user_id,
+          parentId: c.parent_id ?? null,
         })));
       } finally { setLoading(false); scrollToBottom(); }
     })();
@@ -96,7 +99,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
           const c = payload.new as any;
           if (c.user_id === currentDbUserId) return;
           const { data: u } = await supabase.from('users').select('username, avatar_url').eq('id', c.user_id).single();
-          setComments(prev => [...prev, { id: c.id, username: u?.username || t('role_user_title'), avatarUrl: u?.avatar_url ?? null, text: c.text || '', timeAgo: t('notif_now'), userId: c.user_id }]);
+          setComments(prev => [...prev, { id: c.id, username: u?.username || t('role_user_title'), avatarUrl: u?.avatar_url ?? null, text: c.text || '', timeAgo: t('notif_now'), userId: c.user_id, parentId: c.parent_id ?? null }]);
           scrollToBottom();
         })
       .subscribe();
@@ -108,11 +111,13 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
     if (!text || !postId || !currentDbUserId) return;
     const blocked = await containsBlacklistedWord(text);
     if (blocked) { alert(`${t('word_not_allowed')}: "${blocked}".`); return; }
+    const parentId = replyingTo?.id ?? null;
     setInputText('');
+    setReplyingTo(null);
     const tempId = `temp_${Date.now()}`;
-    setComments(prev => [...prev, { id: tempId, username: currentUsername, avatarUrl: currentAvatar, text, timeAgo: t('notif_now'), userId: currentDbUserId }]);
+    setComments(prev => [...prev, { id: tempId, username: currentUsername, avatarUrl: currentAvatar, text, timeAgo: t('notif_now'), userId: currentDbUserId, parentId }]);
     scrollToBottom();
-    const { error } = await supabase.from('comments').insert({ post_id: postId, user_id: currentDbUserId, text });
+    const { error } = await supabase.from('comments').insert({ post_id: postId, user_id: currentDbUserId, text, parent_id: parentId });
     if (error) { setComments(prev => prev.filter(c => c.id !== tempId)); return; }
     if (postAuthorId && postAuthorId !== currentDbUserId) {
       supabase.from('notifications').insert({ user_id: postAuthorId, actor_id: currentDbUserId, type: 'comment', post_id: postId }).then(() => {});
@@ -176,29 +181,36 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#111' }}>{t('no_comments')}</span>
               <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#AAAAAA' }}>{t('no_comments_sub')}</span>
             </div>
-          ) : (
-            comments.map((item, index) => {
+          ) : (() => {
+            const topLevel = comments.filter(c => !c.parentId);
+            const repliesMap: Record<string, Comment[]> = {};
+            comments.filter(c => c.parentId).forEach(c => {
+              if (!repliesMap[c.parentId!]) repliesMap[c.parentId!] = [];
+              repliesMap[c.parentId!].push(c);
+            });
+
+            const commentById: Record<string, Comment> = {};
+            comments.forEach(c => { commentById[c.id] = c; });
+
+            const renderBubble = (item: Comment, isReply = false) => {
+              const parentUsername = isReply && item.parentId ? commentById[item.parentId]?.username : null;
               const mine = item.userId === currentDbUserId;
               const canAct = mine || isAdmin || postAuthorId === currentDbUserId;
-              const prev = comments[index - 1];
-              const showAvatar = !mine && (!prev || prev.userId !== item.userId);
-              const showName   = !mine && (!prev || prev.userId !== item.userId);
               const isSelected = selectedId === item.id;
               const isEditing  = editingId === item.id;
               return (
-                <div key={item.id} style={{ display: 'flex', flexDirection: 'row', marginBottom: 4, alignItems: 'flex-end', justifyContent: mine ? 'flex-end' : 'flex-start' }}
+                <div key={item.id} style={{ display: 'flex', flexDirection: 'row', marginBottom: isReply ? 2 : 4, alignItems: 'flex-end', justifyContent: mine ? 'flex-end' : 'flex-start', marginLeft: isReply ? 38 : 0 }}
                   onClick={e => { e.stopPropagation(); if (canAct) handleBubbleClick(item); }}>
                   {!mine && (
                     <div style={{ marginRight: 6, marginBottom: 2, alignSelf: 'flex-end' }}>
-                      {showAvatar ? <AvatarImg uri={item.avatarUrl} size={32} seed={item.username} /> : <div style={{ width: 32 }} />}
+                      <AvatarImg uri={item.avatarUrl} size={isReply ? 26 : 32} seed={item.username} />
                     </div>
                   )}
                   <div style={{ maxWidth: '72%', display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
-                    {showName && (
-                      <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#888', marginBottom: 3, marginLeft: 4 }}>{item.username}</span>
+                    {!mine && (
+                      <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: isReply ? 10 : 11, color: '#888', marginBottom: 2, marginLeft: 4 }}>{item.username}</span>
                     )}
-
-                    {/* Action bar */}
+                    {/* Action bar — modifica/elimina al click */}
                     {isSelected && !isEditing && (
                       <div style={{ display: 'flex', gap: 6, marginBottom: 4, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
                         {mine && (
@@ -208,50 +220,81 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
                             {tl('edit_msg')}
                           </button>
                         )}
-                        <button onClick={e => { e.stopPropagation(); deleteComment(item.id); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', border: '1px solid #FFD0D0', borderRadius: 20, padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#E53935', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
-                          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                          {tl('delete_msg')}
-                        </button>
+                        {canAct && (
+                          <button onClick={e => { e.stopPropagation(); deleteComment(item.id); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#fff', border: '1px solid #FFD0D0', borderRadius: 20, padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 12, color: '#E53935', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                            {tl('delete_msg')}
+                          </button>
+                        )}
                       </div>
                     )}
-
-                    {/* Bubble or inline edit */}
                     {isEditing ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }} onClick={e => e.stopPropagation()}>
-                        <textarea
-                          ref={editRef}
-                          value={editText}
-                          onChange={e => setEditText(e.target.value)}
-                          rows={2}
-                          maxLength={500}
+                        <textarea ref={editRef} value={editText} onChange={e => setEditText(e.target.value)} rows={2} maxLength={500}
                           style={{ width: '100%', borderRadius: 14, border: `1.5px solid ${ORANGE}`, padding: '8px 12px', fontFamily: 'var(--font-body)', fontSize: 14, color: '#111', outline: 'none', resize: 'none', boxSizing: 'border-box' }}
-                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') setEditingId(null); }}
-                        />
+                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(); } if (e.key === 'Escape') setEditingId(null); }} />
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                           <button onClick={() => setEditingId(null)} style={{ background: 'none', border: '1px solid #EEE', borderRadius: 20, padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>{t('cancel')}</button>
                           <button onClick={saveEdit} style={{ background: ORANGE, border: 'none', borderRadius: 20, padding: '4px 14px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: '#fff' }}>{t('save')}</button>
                         </div>
                       </div>
                     ) : (
-                      <div style={{ borderRadius: 18, borderBottomRightRadius: mine ? 4 : 18, borderBottomLeftRadius: mine ? 18 : 4, paddingLeft: 14, paddingRight: 14, paddingTop: 9, paddingBottom: 9, backgroundColor: mine ? ORANGE : '#fff', boxShadow: mine ? 'none' : '0 1px 3px rgba(0,0,0,0.05)', cursor: canAct ? 'pointer' : 'default' }}>
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: mine ? '#fff' : '#111', lineHeight: '20px' }}>{item.text}</span>
+                      <div style={{ borderRadius: 18, borderBottomRightRadius: mine ? 4 : 18, borderBottomLeftRadius: mine ? 18 : 4, paddingLeft: isReply ? 11 : 14, paddingRight: isReply ? 11 : 14, paddingTop: isReply ? 7 : 9, paddingBottom: isReply ? 7 : 9, backgroundColor: mine ? ORANGE : '#fff', boxShadow: mine ? 'none' : '0 1px 3px rgba(0,0,0,0.05)', cursor: 'pointer' }}>
+                        {parentUsername && (
+                          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: mine ? 'rgba(255,255,255,0.85)' : ORANGE, marginRight: 4 }}>@{parentUsername}</span>
+                        )}
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: isReply ? 13 : 14, color: mine ? '#fff' : '#111', lineHeight: '20px' }}>{item.text}</span>
                       </div>
                     )}
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: '#AAAAAA', marginTop: 3, marginLeft: mine ? 0 : 4, marginRight: mine ? 4 : 0, textAlign: mine ? 'right' : 'left' }}>{item.timeAgo}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: 10, color: '#AAAAAA', marginLeft: mine ? 0 : 4, marginRight: mine ? 4 : 0 }}>{item.timeAgo}</span>
+                      {!isEditing && (
+                        <button onClick={e => { e.stopPropagation(); setReplyingTo({ id: item.parentId ?? item.id, username: item.username }); setSelectedId(null); setTimeout(() => inputRef.current?.focus(), 80); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                          <svg width="11" height="11" fill="none" stroke={ORANGE} strokeWidth="2.2" viewBox="0 0 24 24"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+                          <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: ORANGE }}>{t('comment_reply')}</span>
+                        </button>
+                      )}
+                      {canAct && !isEditing && (
+                        <button onClick={e => { e.stopPropagation(); handleBubbleClick(item); }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                          <svg width="13" height="13" fill="none" stroke="#BBBBBB" strokeWidth="2" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
-            })
-          )}
+            };
+
+            return topLevel.map(item => (
+              <div key={item.id}>
+                {renderBubble(item, false)}
+                {(repliesMap[item.id] || []).map(reply => renderBubble(reply, true))}
+              </div>
+            ));
+          })()}
         </div>
 
+        {/* Reply indicator */}
+        {replyingTo && (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', backgroundColor: '#FFF8F2', borderTop: '1px solid #FFE0C0' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: ORANGE }}>
+              {t('comment_replying_to')} <strong>@{replyingTo.username}</strong>
+            </span>
+            <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, color: '#AAA' }}>
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        )}
         {/* Input bar */}
         <div style={{ display: 'flex', alignItems: 'flex-end', padding: '10px 12px 16px', gap: 8, borderTop: '1px solid #EFEFEF', backgroundColor: '#fff' }}>
           <AvatarImg uri={currentAvatar} size={34} seed={currentUsername} />
           <textarea
+            ref={inputRef}
             style={{ flex: 1, backgroundColor: '#F5F5F5', borderRadius: 22, padding: '9px 14px', fontFamily: 'var(--font-body)', fontSize: 14, color: '#111', border: 'none', outline: 'none', resize: 'none', maxHeight: 100, lineHeight: '20px' }}
-            placeholder={t('write_comment')}
+            placeholder={replyingTo ? `${t('comment_replying_to')} @${replyingTo.username}...` : t('write_comment')}
             value={inputText}
             onChange={e => setInputText(e.target.value)}
             rows={1}

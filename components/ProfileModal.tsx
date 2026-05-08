@@ -82,6 +82,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
   const [followersList, setFollowersList]   = useState<any[]>([]);
   const [followingList, setFollowingList]   = useState<any[]>([]);
   const [listsLoaded, setListsLoaded]       = useState(false);
+  const [listFollowingIds, setListFollowingIds] = useState<Set<string>>(new Set());
 
   // Edit profile
   const [editName, setEditName]               = useState('');
@@ -150,24 +151,65 @@ if (me) {
     } finally { setLoading(false); }
   }, [targetUserId, isOwnProfile]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (visible) { setListsLoaded(false); setSavedLoaded(false); setSavedPosts([]); setActiveTab('posts'); setFollowListVisible(null); loadProfile(); } }, [visible, targetUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (visible) { setIsFollowing(false); setListsLoaded(false); setListFollowingIds(new Set()); setSavedLoaded(false); setSavedPosts([]); setActiveTab('posts'); setFollowListVisible(null); loadProfile(); } }, [visible, targetUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadFollowersFollowing = useCallback(async () => {
     if (listsLoaded || !profile) return;
     setListsLoaded(true);
+    // Fetch uid fresh to avoid stale closure
+    let uid: string | null = myDbId || currentDbId;
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
+        uid = me?.id ?? null;
+        if (me?.id) { setMyDbId(me.id); setCurrentDbId(me.id); }
+      }
+    }
     const [{ data: frRows }, { data: fngRows }] = await Promise.all([
       supabase.from('follows').select('follower_id').eq('followed_id', profile.id).limit(100),
       supabase.from('follows').select('followed_id').eq('follower_id', profile.id).limit(100),
     ]);
     const frIds = (frRows || []).map((r: any) => r.follower_id);
     const fngIds = (fngRows || []).map((r: any) => r.followed_id);
+    const allIds = [...new Set([...frIds, ...fngIds])];
     const [{ data: frUsers }, { data: fngUsers }] = await Promise.all([
       frIds.length > 0 ? supabase.from('users').select('id, name, username, avatar_url').in('id', frIds) : Promise.resolve({ data: [] }),
       fngIds.length > 0 ? supabase.from('users').select('id, name, username, avatar_url').in('id', fngIds) : Promise.resolve({ data: [] }),
     ]);
     setFollowersList(frUsers || []);
     setFollowingList(fngUsers || []);
-  }, [listsLoaded, profile]);
+    if (uid && allIds.length > 0) {
+      const { data: myFollows } = await supabase.from('follows').select('followed_id').eq('follower_id', uid).in('followed_id', allIds);
+      if (myFollows) setListFollowingIds(new Set(myFollows.map((r: any) => r.followed_id)));
+    }
+  }, [listsLoaded, profile, myDbId, currentDbId]);
+
+  const toggleListFollow = async (userId: string) => {
+    let uid = myDbId || currentDbId;
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
+      if (!me) return;
+      uid = me.id; setMyDbId(me.id);
+    }
+    if (uid === userId) return;
+    if (listFollowingIds.has(userId)) {
+      setListFollowingIds(prev => { const s = new Set(prev); s.delete(userId); return s; });
+      const { data: row } = await supabase.from('follows').select('id').eq('follower_id', uid).eq('followed_id', userId).maybeSingle();
+      if (row) {
+        const { error, count } = await supabase.from('follows').delete({ count: 'exact' }).eq('id', row.id);
+        if (error || count === 0) {
+          await supabase.from('follows').delete().eq('follower_id', uid).eq('followed_id', userId);
+        }
+      }
+    } else {
+      setListFollowingIds(prev => new Set([...prev, userId]));
+      const { error } = await supabase.from('follows').insert({ follower_id: uid, followed_id: userId });
+      if (error) setListFollowingIds(prev => { const s = new Set(prev); s.delete(userId); return s; });
+    }
+  };
 
   const openPost = useCallback(async (postId: string, previewUrl?: string) => {
     setSelectedPostId(postId);
@@ -206,17 +248,35 @@ if (me) {
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleFollow = async () => {
-    if (!myDbId || !profile) return;
-    if (isFollowing) {
+    if (!profile) return;
+    let uid = myDbId;
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
+      if (!me) return;
+      uid = me.id;
+      setMyDbId(me.id);
+    }
+    // Check real DB state first
+    const { data: existing } = await supabase.from('follows').select('id, follower_id, followed_id').eq('follower_id', uid).eq('followed_id', profile.id).maybeSingle();
+    const currentlyFollowing = !!existing;
+    if (currentlyFollowing) {
       setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1));
-      const { error } = await supabase.from('follows').delete().eq('follower_id', myDbId).eq('followed_id', profile.id);
-      if (error) { setIsFollowing(true); setFollowersCount(c => c + 1); } else { setListsLoaded(false); }
+      // Try delete by primary key id first, fallback to columns
+      const { error, count } = await supabase.from('follows').delete({ count: 'exact' }).eq('id', existing.id);
+      if (error || count === 0) {
+        // Fallback: delete by both columns
+        const { error: err2 } = await supabase.from('follows').delete().eq('follower_id', uid).eq('followed_id', profile.id);
+        if (err2) { setIsFollowing(true); setFollowersCount(c => c + 1); return; }
+      }
+      setListsLoaded(false); setListFollowingIds(new Set());
     } else {
       setIsFollowing(true); setFollowersCount(c => c + 1);
-      const { error } = await supabase.from('follows').insert({ follower_id: myDbId, followed_id: profile.id });
+      const { error } = await supabase.from('follows').insert({ follower_id: uid, followed_id: profile.id });
       if (error) { setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
-      setListsLoaded(false);
-      await supabase.from('notifications').insert({ user_id: profile.id, sender_id: myDbId, type: 'follow' });
+      setListsLoaded(false); setListFollowingIds(new Set());
+      supabase.from('notifications').insert({ user_id: profile.id, sender_id: uid, type: 'follow' });
     }
   };
 
@@ -686,15 +746,27 @@ if (me) {
                     const list = followListVisible === 'followers' ? followersList : followingList;
                     const empty = followListVisible === 'followers' ? t('profile_no_followers') : t('profile_no_following');
                     if (list.length === 0) return <p style={{ textAlign: 'center', padding: 40, color: '#AAA', fontFamily: 'var(--font-body)', fontSize: 14 }}>{empty}</p>;
-                    return list.map((u: any) => (
-                      <div key={u.id} onClick={() => { setFollowListVisible(null); onRequestViewUser(u.id); }} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }}>
-                        <AvatarImg uri={u.avatar_url} size={44} seed={u.username} style={{ borderRadius: '50%', border: `2px solid ${ORANGE}`, flexShrink: 0 }} />
-                        <div style={{ marginLeft: 12 }}>
-                          <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>{u.name || u.username}</div>
-                          <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAA', marginTop: 1 }}>@{u.username}</div>
+                    const uid = myDbId || currentDbId;
+                    return list.map((u: any) => {
+                      const isMe = u.id === uid;
+                      const following = listFollowingIds.has(u.id);
+                      return (
+                        <div key={u.id} style={{ display: 'flex', alignItems: 'center', padding: '12px 20px', borderBottom: '1px solid #F8F8F8' }}>
+                          <div onClick={() => { setFollowListVisible(null); onRequestViewUser(u.id); }} style={{ display: 'flex', alignItems: 'center', flex: 1, cursor: 'pointer', minWidth: 0 }}>
+                            <AvatarImg uri={u.avatar_url} size={44} seed={u.username} style={{ borderRadius: '50%', border: `2px solid ${ORANGE}`, flexShrink: 0 }} />
+                            <div style={{ marginLeft: 12, minWidth: 0 }}>
+                              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111' }}>{u.name || u.username}</div>
+                              <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#AAA', marginTop: 1 }}>@{u.username}</div>
+                            </div>
+                          </div>
+                          {!isMe && (
+                            <button onClick={() => toggleListFollow(u.id)} style={{ flexShrink: 0, marginLeft: 10, background: following ? ORANGE : 'transparent', border: `1.5px solid ${following ? ORANGE : ORANGE}`, borderRadius: 20, padding: '5px 14px', cursor: 'pointer' }}>
+                              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 12, color: following ? '#fff' : ORANGE }}>{following ? t('profile_following_btn') : t('profile_follow')}</span>
+                            </button>
+                          )}
                         </div>
-                      </div>
-                    ));
+                      );
+                    });
                   })()}
                 </div>
               </div>
