@@ -117,7 +117,7 @@ if (me) {
       const userId = targetUserId ?? dbMyId;
       if (!userId) return;
 
-      const { data } = await supabase.from('users').select('id, name, username, bio, avatar_url, discipline, role, phone, nationality').eq('id', userId).single();
+      const { data } = await supabase.from('users').select('id, name, username, bio, avatar_url, discipline, role, phone, nationality, is_banned').eq('id', userId).single();
       if (!data) return;
       setProfile(data);
       if (isOwnProfile) { setEditName(data.name || ''); setEditUsername(data.username || ''); setEditBio(data.bio || ''); setEditPhone(data.phone || ''); setEditNationality(data.nationality || ''); }
@@ -601,6 +601,14 @@ if (me) {
             <div style={{ margin: '0 20px 12px', background: ORANGE, borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
               <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
               <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#fff' }}>{t('mutual_follow')}</span>
+            </div>
+          )}
+
+          {/* Banned banner */}
+          {profile.is_banned && (
+            <div style={{ margin: '0 20px 12px', background: '#FF3B3018', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg width="18" height="18" fill="none" stroke="#FF3B30" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#FF3B30' }}>{t('user_banned')}</span>
             </div>
           )}
 

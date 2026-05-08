@@ -99,6 +99,19 @@ export default function AdminPage() {
   const toggleBan = async (id: string, banned: boolean) => {
     if (!confirm(`Vuoi ${banned ? 'sbloccare' : 'bannare'} questo utente?`)) return;
     await supabase.from('users').update({ is_banned: !banned }).eq('id', id);
+    if (!banned) {
+      await supabase.from('posts').delete().eq('user_id', id);
+    }
+    loadUsers();
+  };
+
+  const deleteUser = async (id: string, username: string) => {
+    if (!confirm(`Eliminare definitivamente l'account @${username} e tutti i suoi dati? Questa azione è irreversibile.`)) return;
+    await supabase.from('posts').delete().eq('user_id', id);
+    await supabase.from('likes').delete().eq('user_id', id);
+    await supabase.from('comments').delete().eq('user_id', id);
+    await supabase.from('follows').delete().or(`follower_id.eq.${id},followed_id.eq.${id}`);
+    await supabase.from('users').delete().eq('id', id);
     loadUsers();
   };
 
@@ -252,7 +265,7 @@ export default function AdminPage() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                     <thead>
                       <tr style={{ background: '#FAFAFA', borderBottom: '1.5px solid #EEE' }}>
-                        {['Nome', 'Username', 'Email', 'Telefono', 'Nazionalità', 'Promo', 'Stato', 'Iscritto'].map(h => (
+                        {['Nome', 'Username', 'Email', 'Telefono', 'Nazionalità', 'Promo', 'Stato', 'Iscritto', ''].map(h => (
                           <th key={h} style={{ padding: '12px 14px', textAlign: 'left', fontWeight: 700, color: '#888', fontSize: 12, whiteSpace: 'nowrap' }}>{h}</th>
                         ))}
                       </tr>
@@ -279,6 +292,14 @@ export default function AdminPage() {
                             </button>
                           </td>
                           <td style={{ padding: '11px 14px', color: '#888', whiteSpace: 'nowrap' }}>{formatDate(u.created_at)}</td>
+                          <td style={{ padding: '11px 14px' }}>
+                            {u.id !== myId && (
+                              <button onClick={() => deleteUser(u.id, u.username)}
+                                style={{ background: '#FFF0EE', color: '#FF3B30', border: 'none', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                Elimina
+                              </button>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
