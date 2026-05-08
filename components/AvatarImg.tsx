@@ -1,10 +1,4 @@
-/**
- * AvatarImg — immagine profilo con fallback colorato a gradiente con iniziale.
- * Quando avatarUrl è null/vuoto genera un gradiente unico basato sul seed
- * (username o id) e mostra la prima lettera del nome.
- * Caso speciale: seed === 'jes_official' mostra l'icona JES.
- */
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,21 +40,30 @@ interface Props {
 }
 
 export default function AvatarImg({ uri, size, seed, borderRadius, style }: Props) {
+  const [imgFailed, setImgFailed] = useState(false);
   const r = borderRadius ?? size / 2;
   const shapeStyle = { width: size, height: size, borderRadius: r };
 
-  if (uri) {
-    return <Image source={{ uri }} style={[shapeStyle, style]} resizeMode="cover" />;
+  const validUri = uri && uri.trim() !== '';
+
+  if (validUri && !imgFailed) {
+    return (
+      <Image
+        source={{ uri }}
+        style={[shapeStyle, style] as any}
+        resizeMode="cover"
+        onError={() => setImgFailed(true)}
+      />
+    );
   }
 
-  // Caso speciale: account JES Official → sfondo arancione + icona scudo
   if (seed === JES_OFFICIAL_USERNAME) {
     return (
       <LinearGradient
         colors={['#F07B1D', '#FF9A3D']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={[shapeStyle, { justifyContent: 'center', alignItems: 'center' }, style]}
+        style={[shapeStyle, { justifyContent: 'center', alignItems: 'center' }, style] as any}
       >
         <Ionicons name="shield-checkmark" size={Math.round(size * 0.55)} color="rgba(255,255,255,0.95)" />
       </LinearGradient>
@@ -77,7 +80,7 @@ export default function AvatarImg({ uri, size, seed, borderRadius, style }: Prop
       colors={[color1, color2]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={[shapeStyle, { justifyContent: 'center', alignItems: 'center' }, style]}
+      style={[shapeStyle, { justifyContent: 'center', alignItems: 'center' }, style] as any}
     >
       {initial ? (
         <Text style={{

@@ -15,7 +15,39 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '../lib/supabase';
 
+import { Linking } from 'react-native';
+
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+const GNG_MAIL = 'mailto:mogideag74@gmail.com';
+const ADV_POOL = [
+  { imageUrl: '/adv-gb1.png',    url: 'https://www.gbsrl-studioimmobiliare.it/' },
+  { imageUrl: '/adv-gb2.png',    url: 'https://www.gbsrl-studioimmobiliare.it/' },
+  { imageUrl: '/adv-gng1.png',   url: GNG_MAIL },
+  { imageUrl: '/adv-gng2.png',   url: GNG_MAIL },
+  { imageUrl: '/adv-ges1.png',   url: 'https://gescompany.it/' },
+  { imageUrl: '/adv-ges2.png',   url: 'https://gescompany.it/' },
+  { imageUrl: '/adv-mer1.png',   url: 'https://www.mercury-auctions.com/it_it/index/' },
+  { imageUrl: '/adv-mer2.png',   url: 'https://www.mercury-auctions.com/it_it/index/' },
+  { imageUrl: '/adv-spidi1.png', url: 'https://www.facebook.com/profile.php?id=100077487938941' },
+  { imageUrl: '/adv-spidi2.png', url: 'https://www.facebook.com/profile.php?id=100077487938941' },
+];
+
+type FeedItem = (Post & { _type: 'post' }) | { _type: 'adv'; id: string; imageUrl: string; url: string };
+
+function buildGroupFeed(posts: Post[]): FeedItem[] {
+  const result: FeedItem[] = [];
+  let advIdx = 0;
+  for (let i = 0; i < posts.length; i++) {
+    result.push({ ...posts[i], _type: 'post' });
+    if ((i + 1) % 4 === 0) {
+      const adv = ADV_POOL[advIdx % ADV_POOL.length];
+      advIdx++;
+      result.push({ _type: 'adv', id: `adv_${advIdx}_${i}`, imageUrl: adv.imageUrl, url: adv.url });
+    }
+  }
+  return result;
+}
 function decodeBase64(base64: string): Uint8Array {
   let bufferLength = base64.length * 0.75;
   const len = base64.length;
@@ -39,6 +71,12 @@ const { width: SW } = Dimensions.get('window');
 const ORANGE = '#F07B1D';
 const FALLBACK = null;
 
+const OFFICIAL_GROUPS = [
+  'Pittura', 'Scultura', 'Moda e Fashion', 'Antiquariato', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
+  'Design', 'Architettura', 'Archeologia', 'Storia', 'Recitazione e Danza',
+  'Musica', 'Fumettistica', 'Arte di Strada', 'Partner', 'Sponsor',
+];
+
 export interface Group {
   id: string;
   name: string;
@@ -46,6 +84,7 @@ export interface Group {
   members: number;
   coverUrl: string;
   isPrivate?: boolean;
+  createdBy?: string | null;
 }
 
 interface Post {
@@ -207,21 +246,27 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
   const [loading, setLoading]         = useState(false);
   const [myId, setMyId]               = useState<string | null>(null);
   const [myAvatar, setMyAvatar]       = useState<string | null>(null);
+  const [myRole, setMyRole]           = useState<string | null>(null);
+  const [creatorName, setCreatorName] = useState<string | null>(null);
   const [likedIds, setLikedIds]       = useState<Set<string>>(new Set());
   const [coverUrl, setCoverUrl]       = useState<string>(group.coverUrl || '');
   const [uploadingCover, setUploadingCover] = useState(false);
 
   useEffect(() => { setLocalJoined(joined); }, [joined]);
 
-  // Carica utente corrente
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from('users').select('id, avatar_url').eq('auth_id', user.id).single();
-      if (data) { setMyId(data.id); setMyAvatar(data.avatar_url); }
+      const { data } = await supabase.from('users').select('id, avatar_url, role').eq('auth_id', user.id).single();
+      if (data) { setMyId(data.id); setMyAvatar(data.avatar_url); setMyRole(data.role ?? null); }
+
+      if (group.createdBy && !OFFICIAL_GROUPS.includes(group.name)) {
+        const { data: creator } = await supabase.from('users').select('name, username').eq('id', group.createdBy).single();
+        if (creator) setCreatorName(creator.name || creator.username || null);
+      }
     })();
-  }, []);
+  }, [group.createdBy, group.name]);
 
   const loadPosts = useCallback(async () => {
     setLoading(true);
@@ -331,6 +376,34 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
     }
   };
 
+  const feedData = React.useMemo(() => buildGroupFeed(posts), [posts]);
+
+  const renderAdvCard = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={s.advCard}
+      activeOpacity={0.85}
+      onPress={() => {
+        if (item.url.startsWith('mailto:')) Linking.openURL(item.url);
+        else Linking.openURL(item.url);
+      }}
+    >
+      <View style={s.advBadge}>
+        <Ionicons name="pulse" size={11} color="#888" />
+        <Text style={s.advBadgeText}>Sponsorizzato</Text>
+      </View>
+      <Image source={{ uri: item.imageUrl }} style={s.advImg} resizeMode="cover" />
+      <View style={s.advFooter}>
+        <Text style={s.advFooterText}>Visita il link</Text>
+        <Ionicons name="arrow-forward" size={14} color="#fff" />
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderItem = ({ item }: { item: FeedItem }) => {
+    if (item._type === 'adv') return renderAdvCard({ item });
+    return renderPost({ item });
+  };
+
   const renderPost = ({ item }: { item: Post }) => (
     <View style={s.postCard}>
       <View style={s.postHeader}>
@@ -377,7 +450,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
           <Ionicons name="globe" size={12} color="#fff" />
           <Text style={s.typeBadgeText}>Pubblico</Text>
         </View>
-        {localJoined && (
+        {(myId && (myId === group.createdBy || myRole === 'admin')) && (
           <TouchableOpacity style={s.coverUploadBtn} onPress={uploadCover} activeOpacity={0.85}>
             {uploadingCover
               ? <ActivityIndicator size="small" color="#fff" />
@@ -392,6 +465,9 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
         <View style={s.infoRow}>
           <View style={{ flex: 1 }}>
             <Text style={s.groupName}>{group.name}</Text>
+            {creatorName && (
+              <Text style={{ fontFamily: 'PlusJakartaSans_400Regular', fontSize: 12, color: '#888', marginBottom: 2 }}>Creato da {creatorName}</Text>
+            )}
             <View style={s.metaRow}>
               <Ionicons name="people-outline" size={14} color="#888" />
               <Text style={s.metaText}>{group.members.toLocaleString()} membri</Text>
@@ -449,9 +525,9 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
         </>
       ) : (
         <FlatList
-          data={posts}
+          data={feedData}
           keyExtractor={item => item.id}
-          renderItem={renderPost}
+          renderItem={renderItem}
           ListHeaderComponent={Header}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 40 }}
@@ -523,4 +599,10 @@ const s = StyleSheet.create({
   postActions:      { flexDirection: 'row', alignItems: 'center', gap: 22, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#F5F5F5' },
   actionBtn:        { flexDirection: 'row', alignItems: 'center', gap: 6 },
   actionCount:      { fontFamily: 'PlusJakartaSans_500Medium', fontSize: 14, color: '#999' },
+  advCard:          { backgroundColor: '#fff', marginBottom: 8, overflow: 'hidden' },
+  advBadge:         { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 6 },
+  advBadgeText:     { fontFamily: 'PlusJakartaSans_400Regular', fontSize: 11, color: '#AAA' },
+  advImg:           { width: '100%', height: 200 },
+  advFooter:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: ORANGE, paddingVertical: 12 },
+  advFooterText:    { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 14, color: '#fff' },
 });

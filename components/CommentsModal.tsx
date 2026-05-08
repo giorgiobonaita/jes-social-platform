@@ -19,6 +19,7 @@ interface Comment {
   text: string;
   timeAgo: string;
   userId: string;
+  parentId: string | null;
 }
 
 function formatTimeAgo(isoDate: string): string {
@@ -46,6 +47,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
   const [currentAvatar, setCurrentAvatar] = useState<string | null>(null);
   const [currentDbUserId, setCurrentDbUserId] = useState<string | null>(null);
   const [currentUsername, setCurrentUsername] = useState<string>('tu');
+  const [replyingTo, setReplyingTo] = useState<{ id: string; username: string } | null>(null);
   const inputRef = useRef<TextInput>(null);
   const listRef  = useRef<FlatList>(null);
 
@@ -75,7 +77,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
       try {
         const { data: rows, error } = await supabase
           .from('comments')
-          .select('id, text, created_at, user_id')
+          .select('id, text, created_at, user_id, parent_id')
           .eq('post_id', postId)
           .order('created_at', { ascending: true })
           .limit(80);
@@ -97,6 +99,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
           text:      c.text || '',
           timeAgo:   formatTimeAgo(c.created_at),
           userId:    c.user_id,
+          parentId:  c.parent_id ?? null,
         })));
       } finally {
         setLoading(false);
@@ -133,6 +136,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
           text:      c.text || '',
           timeAgo:   'ora',
           userId:    c.user_id,
+          parentId:  c.parent_id ?? null,
         }]);
         setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
       })
@@ -149,7 +153,9 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const parentId = replyingTo?.id ?? null;
     setInputText('');
+    setReplyingTo(null);
 
     const tempId = `temp_${Date.now()}`;
     setLocalComments(prev => [...prev, {
@@ -159,6 +165,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
       text,
       timeAgo: 'ora',
       userId: currentDbUserId,
+      parentId,
     }]);
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 80);
 
@@ -166,6 +173,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
       post_id: postId,
       user_id: currentDbUserId,
       text,
+      ...(parentId ? { parent_id: parentId } : {}),
     });
 
     if (error) {
@@ -184,34 +192,70 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
     }
   };
 
+  const startReply = (comment: Comment) => {
+    setReplyingTo({ id: comment.id, username: comment.username });
+    inputRef.current?.focus();
+  };
+
   const isMine = (item: Comment) => item.userId === currentDbUserId;
 
-  const renderComment = ({ item, index }: { item: Comment; index: number }) => {
+  // Build flat list: top-level first, then replies directly after parent
+  const flatList = React.useMemo(() => {
+    const topLevel = localComments.filter(c => !c.parentId);
+    const repliesMap: Record<string, Comment[]> = {};
+    localComments.filter(c => c.parentId).forEach(c => {
+      if (!repliesMap[c.parentId!]) repliesMap[c.parentId!] = [];
+      repliesMap[c.parentId!].push(c);
+    });
+    const result: Array<Comment & { isReply: boolean }> = [];
+    topLevel.forEach(c => {
+      result.push({ ...c, isReply: false });
+      (repliesMap[c.id] || []).forEach(r => result.push({ ...r, isReply: true }));
+    });
+    return result;
+  }, [localComments]);
+
+  const renderComment = ({ item, index }: { item: Comment & { isReply: boolean }; index: number }) => {
     const mine = isMine(item);
-    const prev = localComments[index - 1];
-    const showAvatar = !mine && (!prev || prev.userId !== item.userId);
-    const showName   = !mine && (!prev || prev.userId !== item.userId);
+    const prev = flatList[index - 1];
+    const showAvatar = !mine && (!prev || prev.userId !== item.userId || prev.isReply !== item.isReply);
+    const showName   = !mine && (!prev || prev.userId !== item.userId || prev.isReply !== item.isReply);
 
     return (
-      <View style={[s.msgRow, mine ? s.msgRowMine : s.msgRowOther]}>
-        {/* Avatar only for first bubble of a group (others only) */}
+      <View style={[s.msgRow, mine ? s.msgRowMine : s.msgRowOther, item.isReply && s.msgRowReply]}>
         {!mine && (
           <View style={s.avatarCol}>
             {showAvatar
-              ? <AvatarImg uri={item.avatarUrl} size={32} seed={item.username} />
-              : <View style={{ width: 32 }} />
+              ? <AvatarImg uri={item.avatarUrl} size={item.isReply ? 26 : 32} seed={item.username} />
+              : <View style={{ width: item.isReply ? 26 : 32 }} />
             }
           </View>
         )}
 
         <View style={[s.bubbleWrap, mine ? s.bubbleWrapMine : s.bubbleWrapOther]}>
           {showName && (
-            <Text style={s.bubbleName}>{item.username}</Text>
+            <Text style={[s.bubbleName, item.isReply && s.bubbleNameReply]}>{item.username}</Text>
           )}
           <View style={[s.bubble, mine ? s.bubbleMine : s.bubbleOther]}>
+            {item.isReply && item.parentId && (() => {
+              const parent = localComments.find(c => c.id === item.parentId);
+              if (parent) {
+                return (
+                  <Text style={[s.replyTag, mine && s.replyTagMine]}>@{parent.username}</Text>
+                );
+              }
+              return null;
+            })()}
             <Text style={[s.bubbleText, mine && s.bubbleTextMine]}>{item.text}</Text>
           </View>
-          <Text style={[s.bubbleTime, mine && s.bubbleTimeMine]}>{item.timeAgo}</Text>
+          <View style={[s.timeRow, mine && s.timeRowMine]}>
+            <Text style={[s.bubbleTime, mine && s.bubbleTimeMine]}>{item.timeAgo}</Text>
+            {!mine && (
+              <TouchableOpacity onPress={() => startReply(item)} style={s.replyBtn}>
+                <Text style={s.replyBtnText}>Rispondi</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </View>
     );
@@ -244,7 +288,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
           ) : (
             <FlatList
               ref={listRef}
-              data={localComments}
+              data={flatList}
               keyExtractor={item => item.id}
               renderItem={renderComment}
               contentContainerStyle={s.list}
@@ -260,13 +304,23 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
             />
           )}
 
+          {/* Reply indicator */}
+          {replyingTo && (
+            <View style={s.replyIndicator}>
+              <Text style={s.replyIndicatorText}>Risposta a <Text style={s.replyIndicatorName}>@{replyingTo.username}</Text></Text>
+              <TouchableOpacity onPress={() => setReplyingTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close" size={16} color="#888" />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Input bar */}
           <View style={s.inputBar}>
             <AvatarImg uri={currentAvatar} size={34} seed={currentUsername} />
             <TextInput
               ref={inputRef}
               style={s.input}
-              placeholder="Scrivi un commento…"
+              placeholder={replyingTo ? `Rispondi a @${replyingTo.username}…` : 'Scrivi un commento…'}
               placeholderTextColor="#AAAAAA"
               value={inputText}
               onChangeText={setInputText}
@@ -336,6 +390,7 @@ const s = StyleSheet.create({
   },
   msgRowOther: { justifyContent: 'flex-start' },
   msgRowMine:  { justifyContent: 'flex-end' },
+  msgRowReply: { marginLeft: 38, marginTop: 2 },
 
   avatarCol: { marginRight: 6, alignSelf: 'flex-end', marginBottom: 2 },
 
@@ -350,6 +405,7 @@ const s = StyleSheet.create({
     marginBottom: 3,
     marginLeft: 4,
   },
+  bubbleNameReply: { fontSize: 10 },
 
   bubble: {
     borderRadius: 18,
@@ -370,6 +426,14 @@ const s = StyleSheet.create({
     borderBottomRightRadius: 4,
   },
 
+  replyTag: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize: 12,
+    color: ORANGE,
+    marginBottom: 2,
+  },
+  replyTagMine: { color: 'rgba(255,255,255,0.8)' },
+
   bubbleText: {
     fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 14,
@@ -378,15 +442,49 @@ const s = StyleSheet.create({
   },
   bubbleTextMine: { color: '#fff' },
 
-  bubbleTime: {
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 10,
-    color: '#AAAAAA',
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginTop: 3,
     marginLeft: 4,
     marginRight: 4,
   },
+  timeRowMine: { justifyContent: 'flex-end' },
+
+  bubbleTime: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 10,
+    color: '#AAAAAA',
+  },
   bubbleTimeMine: { textAlign: 'right' },
+
+  replyBtn: { paddingVertical: 2 },
+  replyBtnText: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontSize: 11,
+    color: '#888',
+  },
+
+  replyIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFF8F2',
+    borderTopWidth: 1,
+    borderTopColor: '#FFE4CC',
+  },
+  replyIndicatorText: {
+    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 13,
+    color: '#888',
+  },
+  replyIndicatorName: {
+    fontFamily: 'PlusJakartaSans_600SemiBold',
+    color: ORANGE,
+  },
 
   emptyWrap:  { alignItems: 'center', paddingVertical: 60, gap: 10 },
   emptyTitle: { fontFamily: 'PlusJakartaSans_700Bold', fontSize: 15, color: '#111' },

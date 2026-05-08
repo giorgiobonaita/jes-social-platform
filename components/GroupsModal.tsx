@@ -80,6 +80,7 @@ export default function GroupsModal({ visible, onClose, onPostPublished, initial
       members:     memberCounts[g.id] || 0,
       coverUrl:    g.cover_url || '',
       isPrivate:   g.is_private || false,
+      createdBy:   g.created_by || null,
     }));
     
     // Sort: Official groups first
