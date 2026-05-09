@@ -1,6 +1,6 @@
 'use client';
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useLang, T } from '@/lib/i18n';
 import FeedPoll from '@/components/FeedPoll';
@@ -18,6 +18,7 @@ import ChatModal from '@/components/ChatModal';
 import GroupsModal from '@/components/GroupsModal';
 import InterestsModal from '@/components/InterestsModal';
 import AvatarImg from '@/components/AvatarImg';
+import GuestPopup from '@/components/GuestPopup';
 const ORANGE = '#F07B1D';
 const GNG_MAIL = 'mailto:mogideag74@gmail.com';
 
@@ -234,7 +235,7 @@ function ReportSheet({ postId, currentUserId, reportedUserId, onDone }: { postId
 }
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onUnfollowAuthor, onShareToast, onLiked }: {
+function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onUnfollowAuthor, onShareToast, onLiked, onGuestAction }: {
   post: any; currentUserAvatar?: string | null; currentUsername?: string | null;
   onComment: () => void; onUserPress: (id: string) => void;
   onDelete: () => void; isAdmin: boolean;
@@ -242,6 +243,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   isFollowingAuthor?: boolean; onFollowAuthor?: (userId: string) => void; onUnfollowAuthor?: (userId: string) => void;
   onShareToast?: () => void;
   onLiked?: (groupName: string) => void;
+  onGuestAction?: () => void;
 }) {
   const { t } = useLang();
   const [liked, setLiked] = useState(post.isLiked);
@@ -293,7 +295,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   }, [post.id]);
 
   const toggleLike = async () => {
-    if (!post.currentUserId) return;
+    if (!post.currentUserId) { onGuestAction?.(); return; }
     if (liked) {
       setLiked(false); setLikesCount((p: number) => p - 1);
       await supabase.from('likes').delete().eq('post_id', post.id).eq('user_id', post.currentUserId);
@@ -321,7 +323,8 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   const handleDoubleTap = () => {
     const now = Date.now();
     if (now - lastTap.current < 300) {
-      if (!liked && post.currentUserId) { setLiked(true); setLikesCount((p: number) => p + 1); supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId }); }
+      if (!post.currentUserId) { onGuestAction?.(); }
+      else if (!liked) { setLiked(true); setLikesCount((p: number) => p + 1); supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId }); }
     }
     lastTap.current = now;
   };
@@ -701,11 +704,34 @@ function ArcModal({ arcType, onClose }: { arcType: 'artisti' | 'aziende'; onClos
 }
 
 // ── Home Screen ───────────────────────────────────────────────────────────────
-export default function HomePage() {
+function HomePageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isGuest = searchParams.get('guest') === 'true';
   const { t, lang } = useLang();
   const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
   const fmtTime = (iso: string) => formatTimeAgo(iso, tl('groups_now'), tl('notif_mins_ago'), tl('notif_hours_ago'), tl('time_d_ago'));
+
+  const GUEST_FIRST_VISIT_KEY = 'jes_guest_first_visit';
+  const GUEST_EXPIRY_DAYS = 7;
+
+  const [guestPopupVisible, setGuestPopupVisible] = useState(false);
+  const [guestBlocked, setGuestBlocked] = useState(false);
+  const showGuestPopup = () => setGuestPopupVisible(true);
+  const requireAuth = (action: () => void) => { if (isGuest) { showGuestPopup(); return; } action(); };
+
+  useEffect(() => {
+    if (!isGuest) return;
+    try {
+      const stored = localStorage.getItem(GUEST_FIRST_VISIT_KEY);
+      if (!stored) {
+        localStorage.setItem(GUEST_FIRST_VISIT_KEY, String(Date.now()));
+      } else {
+        const daysPassed = (Date.now() - Number(stored)) / (1000 * 60 * 60 * 24);
+        if (daysPassed >= GUEST_EXPIRY_DAYS) setGuestBlocked(true);
+      }
+    } catch {}
+  }, [isGuest]);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
@@ -791,7 +817,7 @@ export default function HomePage() {
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.replace('/'); return; }
+      if (!user) { if (!isGuest) { router.replace('/'); return; } else return; }
       const { data } = await supabase.from('users').select('id, avatar_url, role, username, user_type, category_scores, categories').eq('auth_id', user.id).single();
       if (data) {
         setCurrentUserId(data.id);
@@ -1015,7 +1041,7 @@ export default function HomePage() {
       {/* Header */}
       <header className="home-header">
         <div className="header-side">
-          <button className="icon-btn" onClick={() => setChatVisible(true)}>
+          <button className="icon-btn" onClick={() => requireAuth(() => setChatVisible(true))}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           </button>
           <button className="icon-btn" onClick={() => setSearchVisible(true)}>
@@ -1029,7 +1055,7 @@ export default function HomePage() {
           <button className="icon-btn" onClick={() => setGroupsVisible(true)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           </button>
-          <button className="icon-btn" style={{ position: 'relative' }} onClick={() => { setNotifVisible(true); setHasUnread(false); }}>
+          <button className="icon-btn" style={{ position: 'relative' }} onClick={() => requireAuth(() => { setNotifVisible(true); setHasUnread(false); })}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
             {hasUnread && <div className="notif-badge" />}
           </button>
@@ -1046,10 +1072,10 @@ export default function HomePage() {
         <div className="stories-section">
           <p className="stories-label">{t('following')}</p>
           <div className="stories-row">
-            <StoryRing id="create" username={myUsername ?? ''} label={t('story_your')} seed={myUsername ?? undefined} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />
+            {!isGuest && <StoryRing id="create" username={myUsername ?? ''} label={t('story_your')} seed={myUsername ?? undefined} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />}
             {stories.map((g, idx) => (
               <StoryRing key={g.userId} id={g.userId} username={g.username} avatarUrl={g.avatarUrl} hasUnwatched
-                onPress={() => { setActiveStoryIndex(idx); setStoryVisible(true); }} />
+                onPress={() => requireAuth(() => { setActiveStoryIndex(idx); setStoryVisible(true); })} />
             ))}
           </div>
         </div>
@@ -1079,16 +1105,17 @@ export default function HomePage() {
               key={item.id} post={item}
               currentUserAvatar={currentUserAvatar}
               currentUsername={myUsername}
-              onComment={() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); }}
+              onComment={() => requireAuth(() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); })}
               onUserPress={(uid) => { setProfileTargetUserId(uid); setProfileVisible(true); }}
               onDelete={() => setDbPosts(prev => prev.filter(p => p.id !== item.id))}
               isAdmin={isAdmin}
               onImagePress={(url) => { setImageViewerUrl(url); setImageViewerVisible(true); }}
               isFollowingAuthor={item.userId ? followingIds.has(item.userId) : false}
-              onFollowAuthor={(uid) => updateFollowingIds(prev => new Set([...prev, uid]))}
-              onUnfollowAuthor={(uid) => updateFollowingIds(prev => { const s = new Set(prev); s.delete(uid); return s; })}
+              onFollowAuthor={(uid) => requireAuth(() => updateFollowingIds(prev => new Set([...prev, uid])))}
+              onUnfollowAuthor={(uid) => requireAuth(() => updateFollowingIds(prev => { const s = new Set(prev); s.delete(uid); return s; }))}
               onShareToast={() => showToast(t('share_toast'))}
               onLiked={handleLiked}
+              onGuestAction={isGuest ? showGuestPopup : undefined}
             />
           );
         })}
@@ -1110,15 +1137,19 @@ export default function HomePage() {
         <button className="nav-tab" onClick={() => {}}>
           <svg width="26" height="26" fill={ORANGE} viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         </button>
-        <button className="nav-tab" onClick={() => setCreateMenuVisible(true)}>
+        <button className="nav-tab" onClick={() => requireAuth(() => setCreateMenuVisible(true))}>
           <div className="create-circle">
             <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </div>
         </button>
-        <button className="nav-tab" onClick={() => { setProfileTargetUserId(undefined); setProfileVisible(true); }}>
+        <button className="nav-tab" onClick={() => requireAuth(() => { setProfileTargetUserId(undefined); setProfileVisible(true); })}>
           <svg width="26" height="26" fill="none" stroke="#AAAAAA" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
       </nav>
+
+      {/* Guest Popup */}
+      {guestBlocked && <GuestPopup blocking />}
+      {!guestBlocked && guestPopupVisible && <GuestPopup onClose={() => setGuestPopupVisible(false)} />}
 
       {/* Modals */}
       <ImageViewerModal imageUrl={imageViewerUrl} visible={imageViewerVisible} onClose={() => { setImageViewerVisible(false); setImageViewerUrl(null); }} />
@@ -1188,5 +1219,13 @@ export default function HomePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', background: '#fff' }} />}>
+      <HomePageInner />
+    </Suspense>
   );
 }

@@ -73,6 +73,18 @@ export default function LandingPage() {
         >
           {t('login')}
         </button>
+        <button onClick={() => router.push('/home?guest=true')} style={{
+          height: 44, borderRadius: 14, cursor: 'pointer', width: '100%',
+          background: 'transparent', color: '#888', border: 'none',
+          fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600,
+          transition: 'opacity .15s',
+        }}
+        onMouseDown={e => (e.currentTarget.style.opacity = '0.6')}
+        onMouseUp={e => (e.currentTarget.style.opacity = '1')}
+        onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+        >
+          Continua come ospite
+        </button>
       </div>
     </div>
   );

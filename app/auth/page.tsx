@@ -28,7 +28,7 @@ export default function AuthPage() {
         </div>
 
         <div className="auth-buttons">
-          <GoogleSignInButton />
+          <GoogleSignInButton label="Registrati con Google" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
             <div style={{ flex: 1, height: 1, background: '#E8E8E8' }} />
             <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#AAA' }}>oppure</span>
