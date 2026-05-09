@@ -14,49 +14,31 @@ export default function CallbackPage() {
       const accessToken  = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
 
-      // Caso 1: PKCE flow — c'è un code nel query string
       if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) { router.replace('/login'); return; }
-      }
-      // Caso 2: Implicit flow — token nel fragment, li settiamo manualmente
-      else if (accessToken && refreshToken) {
+      } else if (accessToken && refreshToken) {
         const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
         if (error) { router.replace('/login'); return; }
-      }
-      // Nessun token — prova a leggere sessione esistente (detectSessionInUrl già attivo)
-      // aspetta un attimo che Supabase la processi
-      else {
+      } else {
         await new Promise(r => setTimeout(r, 800));
       }
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.replace('/login'); return; }
 
-      const authId = session.user.id;
-      const email  = session.user.email || '';
-      const name   = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
-      const avatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null;
+      // Aspetta che il trigger crei la riga (può richiedere un momento)
+      await new Promise(r => setTimeout(r, 500));
 
-      const { data: existing } = await supabase
+      const { data: user } = await supabase
         .from('users')
-        .select('id, username')
-        .eq('auth_id', authId)
+        .select('username')
+        .eq('auth_id', session.user.id)
         .maybeSingle();
 
-      if (existing?.username) {
+      if (user?.username) {
         router.replace('/home');
-      } else if (existing) {
-        router.replace('/onboarding/name');
       } else {
-        // Usa API con service role per bypassare RLS
-        const res = await fetch('/api/create-user', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ auth_id: authId, name, avatar_url: avatar }),
-        });
-        const json = await res.json();
-        if (json.error) console.error('Create user error:', json.error);
         router.replace('/onboarding/name');
       }
     })();
