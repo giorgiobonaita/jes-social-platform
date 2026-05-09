@@ -1,9 +1,9 @@
 'use client';
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export default function CallbackClient() {
+function CallbackInner() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -22,4 +22,12 @@ export default function CallbackClient() {
   }, []);
 
   return <div style={{ minHeight: '100dvh', background: '#fff' }} />;
+}
+
+export default function CallbackClient() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', background: '#fff' }} />}>
+      <CallbackInner />
+    </Suspense>
+  );
 }
