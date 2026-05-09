@@ -7,12 +7,20 @@ export default function GoogleSignInButton() {
 
   const handleGoogle = async () => {
     setLoading(true);
-    await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+    if (error) {
+      alert('Errore Google: ' + error.message);
+      setLoading(false);
+      return;
+    }
+    if (data?.url) {
+      window.location.href = data.url;
+    }
     setLoading(false);
   };
 
