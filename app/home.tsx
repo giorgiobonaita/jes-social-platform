@@ -614,6 +614,13 @@ export default function HomeFeedScreen() {
         visible={storyVisible}
         onClose={() => setStoryVisible(false)}
         currentUserId={currentUserId}
+        isAdmin={isAdmin}
+        onStoryDeleted={(storyId) => {
+          setStories(prev => prev.map(g => ({
+            ...g,
+            stories: g.stories.filter(s => s.id !== storyId),
+          })).filter(g => g.stories.length > 0));
+        }}
         onUserPress={(userId) => {
           setStoryVisible(false);
           setProfileTargetUserId(userId);
