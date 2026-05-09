@@ -322,7 +322,14 @@ if (me) {
   const handleDeleteAccount = async () => {
     if (!confirm(t('profile_delete_confirm'))) return;
     if (!profile?.id) return;
-    await supabase.from('users').delete().eq('id', profile.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+    }
     await supabase.auth.signOut();
     onClose();
     setTimeout(() => router.replace('/'), 300);
