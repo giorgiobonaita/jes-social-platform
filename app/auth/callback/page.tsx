@@ -51,10 +51,8 @@ export default function CallbackPage() {
       } else {
         const { error: insertError } = await supabase.from('users').insert({
           auth_id:    authId,
-          email,
-          name,
-          avatar_url: avatar,
-          username:   '',
+          name:       name || null,
+          avatar_url: avatar || null,
         });
         if (insertError) console.error('Insert error:', insertError.message);
         router.replace('/onboarding/name');

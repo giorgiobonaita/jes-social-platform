@@ -21,10 +21,8 @@ export default function LandingPage() {
           .maybeSingle();
         if (user?.username) {
           router.replace('/home');
-        } else if (user) {
-          router.replace('/onboarding/name');
         } else {
-          setReady(true);
+          router.replace('/onboarding/name');
         }
       } else {
         setReady(true);
