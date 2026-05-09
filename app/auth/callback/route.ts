@@ -15,23 +15,20 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data.session) {
-      // Controlla se esiste già un utente nel DB, altrimenti redirect a onboarding
       const { data: existingUser } = await supabase
         .from('users')
         .select('id, username')
         .eq('auth_id', data.session.user.id)
         .maybeSingle();
 
-      const redirectUrl = existingUser?.username
-        ? `${origin}/home`
-        : `${origin}/onboarding/name`;
+      const next = existingUser?.username ? '/home' : '/onboarding/name';
 
-      // Passa il token nella risposta tramite cookie (Supabase lo gestisce via detectSessionInUrl)
       return NextResponse.redirect(
-        `${origin}/auth/callback/client?access_token=${data.session.access_token}&refresh_token=${data.session.refresh_token}&next=${encodeURIComponent(redirectUrl)}`
+        `${origin}/auth/callback/client?access_token=${data.session.access_token}&refresh_token=${data.session.refresh_token}&next=${encodeURIComponent(next)}`
       );
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=oauth`);
+  // Nessun code — Supabase ha già messo i token nel fragment (#), gestito dal client
+  return NextResponse.redirect(`${origin}/auth/callback/client`);
 }

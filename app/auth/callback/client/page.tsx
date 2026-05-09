@@ -13,11 +13,22 @@ function CallbackInner() {
     const next          = params.get('next') || '/home';
 
     if (access_token && refresh_token) {
-      supabase.auth.setSession({ access_token, refresh_token }).then(() => {
+      // Caso: code exchange fatto dal route.ts
+      supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+        if (error) { router.replace('/login'); return; }
         router.replace(next);
       });
     } else {
-      router.replace('/login');
+      // Caso: token nel fragment (#access_token=...) — Supabase lo detecta da solo
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (!session) { router.replace('/login'); return; }
+        const { data: user } = await supabase
+          .from('users')
+          .select('username')
+          .eq('auth_id', session.user.id)
+          .maybeSingle();
+        router.replace(user?.username ? '/home' : '/onboarding/name');
+      });
     }
   }, []);
 
