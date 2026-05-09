@@ -12,9 +12,20 @@ export default function LandingPage() {
   const { t } = useLang();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
-        router.replace('/home');
+        const { data: user } = await supabase
+          .from('users')
+          .select('username')
+          .eq('auth_id', session.user.id)
+          .maybeSingle();
+        if (user?.username) {
+          router.replace('/home');
+        } else if (user) {
+          router.replace('/onboarding/name');
+        } else {
+          setReady(true);
+        }
       } else {
         setReady(true);
       }

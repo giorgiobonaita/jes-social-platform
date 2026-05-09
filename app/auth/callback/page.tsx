@@ -8,28 +8,36 @@ export default function CallbackPage() {
 
   useEffect(() => {
     (async () => {
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get('code');
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams   = new URLSearchParams(window.location.hash.replace('#', ''));
+      const code         = searchParams.get('code');
+      const accessToken  = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
 
-      if (!code) {
-        router.replace('/login');
-        return;
+      // Caso 1: PKCE flow — c'è un code nel query string
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) { router.replace('/login'); return; }
+      }
+      // Caso 2: Implicit flow — token nel fragment, li settiamo manualmente
+      else if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (error) { router.replace('/login'); return; }
+      }
+      // Nessun token — prova a leggere sessione esistente (detectSessionInUrl già attivo)
+      // aspetta un attimo che Supabase la processi
+      else {
+        await new Promise(r => setTimeout(r, 800));
       }
 
-      // Scambia il code con la sessione
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-      if (error || !data.session) {
-        router.replace('/login');
-        return;
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.replace('/login'); return; }
 
-      const session  = data.session;
-      const authId   = session.user.id;
-      const email    = session.user.email || '';
-      const name     = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
-      const avatar   = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null;
+      const authId = session.user.id;
+      const email  = session.user.email || '';
+      const name   = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
+      const avatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null;
 
-      // Controlla se esiste già nel DB
       const { data: existing } = await supabase
         .from('users')
         .select('id, username')
@@ -41,14 +49,14 @@ export default function CallbackPage() {
       } else if (existing) {
         router.replace('/onboarding/name');
       } else {
-        // Nuovo utente Google — crea riga e vai in onboarding
-        await supabase.from('users').insert({
+        const { error: insertError } = await supabase.from('users').insert({
           auth_id:    authId,
           email,
           name,
           avatar_url: avatar,
           username:   '',
         });
+        if (insertError) console.error('Insert error:', insertError.message);
         router.replace('/onboarding/name');
       }
     })();
