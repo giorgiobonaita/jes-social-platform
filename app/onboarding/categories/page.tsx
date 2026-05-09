@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { updateUser } from '@/lib/updateUser';
 import { useLang } from '@/lib/i18n';
 
 const MIN_SELECTIONS = 3;
@@ -57,11 +58,8 @@ export default function OnboardingCategoriesPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: dbUser } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-        if (dbUser) {
-          const selectedTitles = CATEGORIES.filter(c => selectedIds.includes(c.id)).map(c => c.title);
-          await supabase.from('users').update({ categories: selectedTitles }).eq('id', dbUser.id);
-        }
+        const selectedTitles = CATEGORIES.filter(c => selectedIds.includes(c.id)).map(c => c.title);
+        await updateUser({ categories: selectedTitles });
       }
     } catch {}
     router.push('/onboarding/role');

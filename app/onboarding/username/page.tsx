@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { updateUser } from '@/lib/updateUser';
 import { Suspense } from 'react';
 import { useLang } from '@/lib/i18n';
 
@@ -33,14 +34,7 @@ function UsernameContent() {
 
   const handleContinue = async () => {
     if (!isValid) return;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('users')
-          .update({ username, name: `${firstName} ${lastName}`.trim() })
-          .eq('auth_id', user.id);
-      }
-    } catch {}
+    await updateUser({ username, name: `${firstName} ${lastName}`.trim() });
     router.push('/onboarding/age');
   };
 

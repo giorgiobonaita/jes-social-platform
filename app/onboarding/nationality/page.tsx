@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { updateUser } from '@/lib/updateUser';
 import { useLang } from '@/lib/i18n';
 import { COUNTRIES } from '@/lib/countries';
 
@@ -20,10 +21,7 @@ export default function OnboardingNationalityPage() {
   const handleNext = async () => {
     if (!selected || saving) return;
     setSaving(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) await supabase.from('users').update({ nationality: selected }).eq('auth_id', user.id);
-    } catch {}
+    await updateUser({ nationality: selected });
     router.push('/onboarding/photo');
   };
 

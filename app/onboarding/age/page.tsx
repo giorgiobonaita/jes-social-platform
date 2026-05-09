@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { updateUser } from '@/lib/updateUser';
 import { useLang } from '@/lib/i18n';
 
 export default function OnboardingAgePage() {
@@ -16,13 +17,8 @@ export default function OnboardingAgePage() {
 
   const handleNext = async () => {
     if (!isEnabled) return;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const birthYear = new Date().getFullYear() - ageNum;
-        await supabase.from('users').update({ birth_date: `${birthYear}-01-01` }).eq('auth_id', user.id);
-      }
-    } catch {}
+    const birthYear = new Date().getFullYear() - ageNum;
+    await updateUser({ birth_date: `${birthYear}-01-01` });
     router.push('/onboarding/nationality');
   };
 

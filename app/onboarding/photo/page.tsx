@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { updateUser } from '@/lib/updateUser';
 import { useLang } from '@/lib/i18n';
 
 export default function OnboardingPhotoPage() {
@@ -36,7 +37,7 @@ export default function OnboardingPhotoPage() {
         .from('media').upload(filePath, bytes, { contentType: photoFile.type, upsert: true });
       if (!uploadErr) {
         const { data: urlData } = supabase.storage.from('media').getPublicUrl(filePath);
-        await supabase.from('users').update({ avatar_url: `${urlData.publicUrl}?t=${Date.now()}` }).eq('id', dbUser.id);
+        await updateUser({ avatar_url: `${urlData.publicUrl}?t=${Date.now()}` });
       }
     } catch {}
     finally { setUploading(false); }

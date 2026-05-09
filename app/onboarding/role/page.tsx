@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { updateUser } from '@/lib/updateUser';
 import { useLang } from '@/lib/i18n';
 
 const ORANGE = '#F07B1D';
@@ -50,16 +51,8 @@ export default function OnboardingRolePage() {
 
   const handleContinue = async () => {
     if (!selectedId) return;
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: dbUser } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-        if (dbUser) {
-          const role = ROLES.find(r => r.id === selectedId);
-          await supabase.from('users').update({ discipline: role?.title ?? '', user_type: selectedId }).eq('id', dbUser.id);
-        }
-      }
-    } catch {}
+    const role = ROLES.find(r => r.id === selectedId);
+    await updateUser({ discipline: role?.title ?? '', user_type: selectedId });
     router.push('/onboarding/friends');
   };
 
