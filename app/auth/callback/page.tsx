@@ -49,12 +49,14 @@ export default function CallbackPage() {
       } else if (existing) {
         router.replace('/onboarding/name');
       } else {
-        const { error: insertError } = await supabase.from('users').insert({
-          auth_id:    authId,
-          name:       name || null,
-          avatar_url: avatar || null,
+        // Usa API con service role per bypassare RLS
+        const res = await fetch('/api/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ auth_id: authId, name, avatar_url: avatar }),
         });
-        if (insertError) console.error('Insert error:', insertError.message);
+        const json = await res.json();
+        if (json.error) console.error('Create user error:', json.error);
         router.replace('/onboarding/name');
       }
     })();
