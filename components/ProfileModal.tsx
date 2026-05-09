@@ -143,10 +143,10 @@ if (me) {
       }
 
       if (!isOwnProfile && dbMyId) {
-        const { data: fr } = await supabase.from('follows').select('id').eq('follower_id', dbMyId).eq('followed_id', data.id).maybeSingle();
-        setIsFollowing(!!fr);
-        const { data: followerRow } = await supabase.from('follows').select('id').eq('follower_id', data.id).eq('followed_id', dbMyId).maybeSingle();
-        setIsFollower(!!followerRow);
+        const { count: frCount } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', dbMyId).eq('followed_id', data.id);
+        setIsFollowing((frCount ?? 0) > 0);
+        const { count: frCount2 } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', data.id).eq('followed_id', dbMyId);
+        setIsFollower((frCount2 ?? 0) > 0);
       }
     } finally { setLoading(false); }
   }, [targetUserId, isOwnProfile]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -258,22 +258,20 @@ if (me) {
       uid = me.id;
       setMyDbId(me.id);
     }
-    // Check real DB state first
-    const { data: existing } = await supabase.from('follows').select('id, follower_id, followed_id').eq('follower_id', uid).eq('followed_id', profile.id).maybeSingle();
-    const currentlyFollowing = !!existing;
+    // Use count to avoid 400 from maybeSingle RLS issues
+    const { count } = await supabase.from('follows')
+      .select('*', { count: 'exact', head: true })
+      .eq('follower_id', uid)
+      .eq('followed_id', profile.id);
+    const currentlyFollowing = (count ?? 0) > 0;
     if (currentlyFollowing) {
       setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1));
-      // Try delete by primary key id first, fallback to columns
-      const { error, count } = await supabase.from('follows').delete({ count: 'exact' }).eq('id', existing.id);
-      if (error || count === 0) {
-        // Fallback: delete by both columns
-        const { error: err2 } = await supabase.from('follows').delete().eq('follower_id', uid).eq('followed_id', profile.id);
-        if (err2) { setIsFollowing(true); setFollowersCount(c => c + 1); return; }
-      }
+      await supabase.from('follows').delete().eq('follower_id', uid).eq('followed_id', profile.id);
       setListsLoaded(false); setListFollowingIds(new Set());
     } else {
       setIsFollowing(true); setFollowersCount(c => c + 1);
-      const { error } = await supabase.from('follows').insert({ follower_id: uid, followed_id: profile.id });
+      const { error } = await supabase.from('follows')
+        .upsert({ follower_id: uid, followed_id: profile.id }, { onConflict: 'follower_id,followed_id' });
       if (error) { setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
       setListsLoaded(false); setListFollowingIds(new Set());
       supabase.from('notifications').insert({ user_id: profile.id, sender_id: uid, type: 'follow' });

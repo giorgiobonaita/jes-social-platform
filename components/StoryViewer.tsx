@@ -38,6 +38,8 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
   const [likers, setLikers] = useState<Viewer[]>([]);
   const [viewsCount, setViewsCount] = useState(0);
   const [likesCount, setLikesCount] = useState(0);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+  const [myRole, setMyRole] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,10 +47,20 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
   const pausedRef = useRef(false);
   const viewTrackedRef = useRef<string | null>(null);
 
+  // Load current user id + role directly from Supabase session — source of truth
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from('users').select('id, role').eq('auth_id', user.id).single();
+      if (data) { setMyUserId(data.id); setMyRole(data.role); }
+    });
+  }, []);
+
   const group = groups[groupIdx];
   const story = group?.stories[storyIdx];
-  const isOwner = group?.userId === currentUserId;
-  const canSeeStats = isOwner || isAdmin;
+  const isOwner = !!(myUserId && group?.userId && group.userId === myUserId);
+  const canDelete = isOwner || myRole === 'admin';
+  const canSeeStats = canDelete;
 
   const clearTimers = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -96,7 +108,7 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
     }, tick);
   }, [clearTimers, groups, groupIdx, onClose]);
 
-  // Track view + fetch like state + counts
+  // Track view + fetch like state
   useEffect(() => {
     if (!visible) { clearTimers(); return; }
     setIsLiked(false); setShowPanel(false);
@@ -107,27 +119,28 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
     if (!story?.id) return;
 
     // Track view (once per story)
-    if (currentUserId && viewTrackedRef.current !== story.id) {
+    if (myUserId && viewTrackedRef.current !== story.id) {
       viewTrackedRef.current = story.id;
-      supabase.from('story_views').upsert({ story_id: story.id, user_id: currentUserId }, { onConflict: 'story_id,user_id' }).then(() => {});
+      supabase.from('story_views').upsert({ story_id: story.id, user_id: myUserId }, { onConflict: 'story_id,user_id' }).then(() => {});
     }
 
     // Fetch like state
-    if (currentUserId) {
-      supabase.from('story_likes').select('id').eq('story_id', story.id).eq('user_id', currentUserId).maybeSingle()
+    if (myUserId) {
+      supabase.from('story_likes').select('id').eq('story_id', story.id).eq('user_id', myUserId).maybeSingle()
         .then(({ data }) => { if (data) setIsLiked(true); });
     }
 
-    // Fetch counts for owner/admin
-    if (canSeeStats) {
-      supabase.from('story_views').select('id', { count: 'exact', head: true }).eq('story_id', story.id)
-        .then(({ count }) => setViewsCount(count || 0));
-      supabase.from('story_likes').select('id', { count: 'exact', head: true }).eq('story_id', story.id)
-        .then(({ count }) => setLikesCount(count || 0));
-    }
-
     return clearTimers;
-  }, [groupIdx, storyIdx, visible]); // eslint-disable-line
+  }, [groupIdx, storyIdx, visible, myUserId]); // eslint-disable-line
+
+  // Fetch counts whenever story or user role loads
+  useEffect(() => {
+    if (!story?.id || !canSeeStats) return;
+    supabase.from('story_views').select('id', { count: 'exact', head: true }).eq('story_id', story.id)
+      .then(({ count }) => setViewsCount(count || 0));
+    supabase.from('story_likes').select('id', { count: 'exact', head: true }).eq('story_id', story.id)
+      .then(({ count }) => setLikesCount(count || 0));
+  }, [story?.id, canSeeStats]); // eslint-disable-line
 
   useEffect(() => {
     if (visible) { setGroupIdx(initialGroupIndex); setStoryIdx(0); }
@@ -186,7 +199,7 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {(isOwner || isAdmin) && (
+          {canDelete && (
             <button onClick={async () => {
               if (!confirm(t('delete_story_confirm'))) return;
               const deletedId = story.id;
@@ -209,36 +222,38 @@ export default function StoryViewer({ groups, initialGroupIndex, visible, onClos
       <div className="sv-tap-left" onClick={goPrev} onMouseDown={handlePause} onMouseUp={handleResume} onTouchStart={handlePause} onTouchEnd={handleResume} />
       <div className="sv-tap-right" onClick={goNext} onMouseDown={handlePause} onMouseUp={handleResume} onTouchStart={handlePause} onTouchEnd={handleResume} />
 
-      {/* Footer */}
-      <div className="sv-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingLeft: 16, paddingRight: 8 }}>
-        {/* Views/likes stats (solo proprietario o admin) */}
-        {canSeeStats ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button onClick={() => openPanel('views')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <svg width="20" height="20" fill="none" stroke="white" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              <span style={{ color: 'white', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600 }}>{viewsCount}</span>
-            </button>
-            <button onClick={() => openPanel('likes')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <svg width="20" height="20" fill="#FF3B5C" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              <span style={{ color: 'white', fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600 }}>{likesCount}</span>
-            </button>
-          </div>
-        ) : <div />}
+      {/* Stats bar — visible only to owner/admin */}
+      {canSeeStats && (
+        <div style={{ position: 'absolute', bottom: 72, left: 0, right: 0, margin: '0 12px', display: 'flex', gap: 6, zIndex: 5 }}>
+          <button onClick={() => openPanel('views')} style={{ flex: 1, background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '7px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, backdropFilter: 'blur(8px)' }}>
+            <svg width="14" height="14" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span style={{ color: 'white', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700 }}>{viewsCount} Visto da</span>
+            <svg style={{ marginLeft: 'auto' }} width="12" height="12" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button onClick={() => openPanel('likes')} style={{ flex: 1, background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '7px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, backdropFilter: 'blur(8px)' }}>
+            <svg width="14" height="14" fill="#FF7A00" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span style={{ color: 'white', fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700 }}>{likesCount} Mi piace</span>
+            <svg style={{ marginLeft: 'auto' }} width="12" height="12" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      )}
 
+      {/* Footer */}
+      <div className="sv-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingLeft: 16, paddingRight: 8 }}>
         {/* Like button */}
         <button className="sv-like-btn" onClick={async () => {
-          if (!currentUserId || !story?.id) { setIsLiked(p => !p); return; }
+          if (!myUserId || !story?.id) { setIsLiked(p => !p); return; }
           const newVal = !isLiked;
           setIsLiked(newVal);
           setLikesCount(p => newVal ? p + 1 : Math.max(0, p - 1));
           if (newVal) {
-            await supabase.from('story_likes').upsert({ story_id: story.id, user_id: currentUserId }, { onConflict: 'story_id,user_id' });
+            await supabase.from('story_likes').upsert({ story_id: story.id, user_id: myUserId }, { onConflict: 'story_id,user_id' });
           } else {
-            await supabase.from('story_likes').delete().eq('story_id', story.id).eq('user_id', currentUserId);
+            await supabase.from('story_likes').delete().eq('story_id', story.id).eq('user_id', myUserId);
           }
         }}>
           {isLiked
-            ? <svg width="52" height="52" fill="#FF3B5C" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            ? <svg width="52" height="52" fill="#FF7A00" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             : <svg width="52" height="52" fill="none" stroke="white" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
           }
         </button>
