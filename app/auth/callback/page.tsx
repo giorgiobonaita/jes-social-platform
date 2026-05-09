@@ -8,22 +8,26 @@ export default function CallbackPage() {
 
   useEffect(() => {
     (async () => {
-      // Leggi il code dall'URL
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
 
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code);
-        if (error) { router.replace('/login'); return; }
+      if (!code) {
+        router.replace('/login');
+        return;
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.replace('/login'); return; }
+      // Scambia il code con la sessione
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error || !data.session) {
+        router.replace('/login');
+        return;
+      }
 
-      const authId = session.user.id;
-      const email  = session.user.email || '';
-      const name   = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
-      const avatar = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null;
+      const session  = data.session;
+      const authId   = session.user.id;
+      const email    = session.user.email || '';
+      const name     = session.user.user_metadata?.full_name || session.user.user_metadata?.name || '';
+      const avatar   = session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || null;
 
       // Controlla se esiste già nel DB
       const { data: existing } = await supabase
@@ -33,13 +37,11 @@ export default function CallbackPage() {
         .maybeSingle();
 
       if (existing?.username) {
-        // Utente già registrato → home
         router.replace('/home');
       } else if (existing) {
-        // Esiste ma senza username → continua onboarding
         router.replace('/onboarding/name');
       } else {
-        // Nuovo utente Google → crea riga nel DB e vai in onboarding
+        // Nuovo utente Google — crea riga e vai in onboarding
         await supabase.from('users').insert({
           auth_id:    authId,
           email,
