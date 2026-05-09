@@ -35,7 +35,11 @@ function UsernameContent() {
     if (!isValid) return;
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) await supabase.from('users').update({ username }).eq('auth_id', user.id);
+      if (user) {
+        await supabase.from('users')
+          .update({ username, name: `${firstName} ${lastName}`.trim() })
+          .eq('auth_id', user.id);
+      }
     } catch {}
     router.push('/onboarding/age');
   };
