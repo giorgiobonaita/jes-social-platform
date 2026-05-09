@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useLang } from '@/lib/i18n';
+import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,12 +26,28 @@ export default function LoginPage() {
         </div>
 
         <div className="auth-buttons">
-          <button className="btn-primary" onClick={() => router.push('/login/email')}>
-            <svg width="22" height="22" fill="none" stroke="white" strokeWidth="1.8" viewBox="0 0 24 24">
+          <GoogleSignInButton />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
+            <div style={{ flex: 1, height: 1, background: '#E8E8E8' }} />
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#AAA' }}>oppure</span>
+            <div style={{ flex: 1, height: 1, background: '#E8E8E8' }} />
+          </div>
+          <button onClick={() => router.push('/login/email')} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            height: 56, borderRadius: 14, width: '100%', cursor: 'pointer',
+            background: '#F0F0F0', color: '#111', border: 'none',
+            fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 700,
+            transition: 'opacity .15s, transform .1s',
+          }}
+          onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
+          onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            <svg width="20" height="20" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
             </svg>
-            {t('login_with_email')}
+            Accedi con email
           </button>
         </div>
 

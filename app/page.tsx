@@ -39,11 +39,29 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <div style={{ padding: '0 20px 48px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <button className="btn-primary" onClick={() => router.push('/signup')}>
+      <div style={{ padding: '0 20px 48px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <button onClick={() => router.push('/auth')} style={{
+          height: 56, borderRadius: 14, cursor: 'pointer', width: '100%',
+          background: '#F07B1D', color: '#fff', border: 'none',
+          fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+          transition: 'opacity .15s, transform .1s',
+        }}
+        onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
+        onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+        >
           {t('sign_up')}
         </button>
-        <button className="btn-secondary" onClick={() => router.push('/login/email')}>
+        <button onClick={() => router.push('/login')} style={{
+          height: 56, borderRadius: 14, cursor: 'pointer', width: '100%',
+          background: '#F0F0F0', color: '#111', border: 'none',
+          fontFamily: 'var(--font-body)', fontSize: 16, fontWeight: 700,
+          transition: 'opacity .15s, transform .1s',
+        }}
+        onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.97)')}
+        onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
+        onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+        >
           {t('login')}
         </button>
       </div>

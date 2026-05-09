@@ -77,6 +77,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
   const [currentDbId, setCurrentDbId]       = useState<string | null>(null);
   const [myRole, setMyRole]                 = useState<string | null>(null);
   const [loading, setLoading]               = useState(false);
+  const [streakData, setStreakData]         = useState<{ current: number; best: number } | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const [followersList, setFollowersList]   = useState<any[]>([]);
@@ -148,10 +149,14 @@ if (me) {
         const { count: frCount2 } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', data.id).eq('followed_id', dbMyId);
         setIsFollower((frCount2 ?? 0) > 0);
       }
+
+      // Load streak for this profile
+      const { data: sk } = await supabase.from('user_streaks').select('current_streak, best_streak').eq('user_id', data.id).maybeSingle();
+      if (sk) setStreakData({ current: sk.current_streak, best: sk.best_streak });
     } finally { setLoading(false); }
   }, [targetUserId, isOwnProfile]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (visible) { setIsFollowing(false); setListsLoaded(false); setListFollowingIds(new Set()); setSavedLoaded(false); setSavedPosts([]); setActiveTab('posts'); setFollowListVisible(null); loadProfile(); } }, [visible, targetUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (visible) { setIsFollowing(false); setListsLoaded(false); setListFollowingIds(new Set()); setSavedLoaded(false); setSavedPosts([]); setActiveTab('posts'); setFollowListVisible(null); setStreakData(null); loadProfile(); } }, [visible, targetUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadFollowersFollowing = useCallback(async () => {
     if (listsLoaded || !profile) return;
@@ -584,6 +589,17 @@ if (me) {
               ))}
             </div>
           </div>
+
+          {/* Streak badge */}
+          {streakData && streakData.current > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(255,122,0,0.08)', borderRadius: 12, margin: '0 16px 8px' }}>
+              <span style={{ fontSize: 18 }}>🔥</span>
+              <div>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, color: '#FF7A00' }}>{streakData.current} {streakData.current === 1 ? 'giorno' : 'giorni'} di fila</span>
+                {streakData.best > 1 && <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: '#AAA', marginLeft: 8 }}>Record: {streakData.best}</span>}
+              </div>
+            </div>
+          )}
 
           {/* Like totali badge */}
           {totalLikes > 0 && (
