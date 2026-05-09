@@ -6,6 +6,10 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons, FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
+import { supabase } from '../lib/supabase';
+
+WebBrowser.maybeCompleteAuthSession();
 
 function AuthButton({
   style,
@@ -62,6 +66,27 @@ export default function AuthScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const handleGoogleSignIn = async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: 'jes://auth/callback',
+        skipBrowserRedirect: true,
+      },
+    });
+    if (error || !data.url) return;
+    const result = await WebBrowser.openAuthSessionAsync(data.url, 'jes://auth/callback');
+    if (result.type === 'success' && result.url) {
+      const url = new URL(result.url);
+      const access_token  = url.searchParams.get('access_token');
+      const refresh_token = url.searchParams.get('refresh_token');
+      if (access_token && refresh_token) {
+        await supabase.auth.setSession({ access_token, refresh_token });
+        router.replace('/home');
+      }
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
@@ -114,7 +139,7 @@ export default function AuthScreen() {
                 style={styles.googleIconImage}
               />
             }
-            onPress={() => router.replace('/home')}
+            onPress={handleGoogleSignIn}
           />
           <AuthButton
             style={styles.neutralButton}

@@ -7,6 +7,7 @@ import {
 import AvatarImg from './AvatarImg';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { sendPushNotification } from '../lib/notifications';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -159,6 +160,15 @@ export default function PostCard({
         type:     'like',
         post_id:  id,
       }).then(() => {});
+      // Push solo al primo like del post (ogni like successivo lo vedi nel tab, non rompe)
+      supabase.from('likes')
+        .select('id', { count: 'exact', head: true })
+        .eq('post_id', id)
+        .then(({ count }) => {
+          if ((count ?? 0) <= 1) {
+            sendPushNotification(userId, '❤️ Nuovo like', 'Qualcuno ha messo like al tuo post', { type: 'like', post_id: id }).catch(() => {});
+          }
+        });
     }
   }, [userId, id]);
 

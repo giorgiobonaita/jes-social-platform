@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { sendPushNotification } from '../lib/notifications';
 import {
   Modal,
   View,
@@ -74,10 +75,10 @@ function parseLinks(text: string): Array<{ text: string; isUrl: boolean }> {
 
 // ─── VOCI IMPOSTAZIONI ───────────────────────────────────────────────────────
 const SETTINGS = () => [
-  { id: 's1', icon: 'person-outline',        label: t('edit_profile') },
-  { id: 's2', icon: 'notifications-outline', label: t('settings_notif') },
-  { id: 's5', icon: 'help-circle-outline',   label: t('settings_support') },
-  { id: 's6', icon: 'document-text-outline', label: t('settings_terms') },
+  { id: 's1', icon: 'person-outline',        label: t('edit_profile'),    danger: false },
+  { id: 's2', icon: 'notifications-outline', label: t('settings_notif'),  danger: false },
+  { id: 's5', icon: 'help-circle-outline',   label: t('settings_support'),danger: false },
+  { id: 's6', icon: 'document-text-outline', label: t('settings_terms'),  danger: false },
 ];
 
 interface ProfileModalProps {
@@ -320,6 +321,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
       setFollowersCount(c => c + 1);
       await supabase.from('follows').insert({ follower_id: myDbId, following_id: profile.id });
       await supabase.from('notifications').insert({ user_id: profile.id, sender_id: myDbId, type: 'follow' });
+      sendPushNotification(profile.id, '👤 Nuovo follower', 'Qualcuno ha iniziato a seguirti', { type: 'follow' }).catch(() => {});
     }
   };
 

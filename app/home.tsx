@@ -4,6 +4,7 @@ import {
   StatusBar, Pressable, Image, ScrollView, Dimensions, Linking, Alert, Animated,
 } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { registerPushToken } from '../lib/notifications';
 import { t } from '../lib/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -223,6 +224,9 @@ export default function HomeFeedScreen() {
           .eq('user_id', data.id)
           .eq('read', false);
         setHasUnreadNotifs((count || 0) > 0);
+
+        // Registra push token per notifiche Android
+        registerPushToken(data.id).catch(() => {});
       }
     })();
   }, []);

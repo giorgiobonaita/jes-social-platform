@@ -124,7 +124,7 @@ export default function NotificationsModal({ visible, onClose }: NotificationsMo
           dbId = dbUser.id;
           setMyDbId(dbId);
         }
-        await loadNotifications(dbId);
+        await loadNotifications(dbId!);
       } catch (e) {
         console.warn('[NotificationsModal] errore caricamento:', e);
       } finally {

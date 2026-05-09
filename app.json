@@ -12,14 +12,18 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.jes.social",
+      "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
+      "compileSdkVersion": 35,
+      "targetSdkVersion": 35,
+      "minSdkVersion": 24,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      }
     },
     "web": {
       "output": "static",
@@ -27,6 +31,14 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#F07B1D",
+          "sounds": []
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -38,11 +50,18 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8b3cfc22-5a9f-4484-8432-5920ac8b1fea"
+      }
+    },
+    "owner": "manvirrr"
   }
 }

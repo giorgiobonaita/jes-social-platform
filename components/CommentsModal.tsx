@@ -8,6 +8,7 @@ import AvatarImg from './AvatarImg';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '../lib/supabase';
+import { sendPushNotification } from '../lib/notifications';
 import { containsBlacklistedWord } from '../lib/blacklist';
 
 const ORANGE = '#F07B1D';
@@ -182,13 +183,27 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId }
       return;
     }
 
-    if (postAuthorId && postAuthorId !== currentDbUserId) {
+    if (parentId) {
+      // Notifica risposta a commento
+      const parentComment = localComments.find(c => c.id === parentId);
+      const parentAuthorId = parentComment?.userId;
+      if (parentAuthorId && parentAuthorId !== currentDbUserId) {
+        supabase.from('notifications').insert({
+          user_id:  parentAuthorId,
+          actor_id: currentDbUserId,
+          type:     'comment_reply',
+          post_id:  postId,
+        }).then(() => {});
+        sendPushNotification(parentAuthorId, '↩️ Risposta al commento', 'Qualcuno ha risposto al tuo commento', { type: 'comment_reply', post_id: postId }).catch(() => {});
+      }
+    } else if (postAuthorId && postAuthorId !== currentDbUserId) {
       supabase.from('notifications').insert({
         user_id:  postAuthorId,
         actor_id: currentDbUserId,
         type:     'comment',
         post_id:  postId,
       }).then(() => {});
+      sendPushNotification(postAuthorId, '💬 Nuovo commento', 'Qualcuno ha commentato il tuo post', { type: 'comment', post_id: postId }).catch(() => {});
     }
   };
 

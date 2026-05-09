@@ -7,6 +7,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { supabase, JES_OFFICIAL_USERNAME } from '../lib/supabase';
+import { sendPushNotification } from '../lib/notifications';
 import AvatarImg from './AvatarImg';
 
 const ORANGE = '#F07B1D';
@@ -171,8 +172,8 @@ export default function SearchModal({ visible, onClose, onUserPress, onGroupPres
       await supabase.from('follows').delete().eq('follower_id', myId).eq('following_id', userId);
     } else {
       await supabase.from('follows').insert({ follower_id: myId, following_id: userId });
-      // Notifica
       await supabase.from('notifications').insert({ user_id: userId, sender_id: myId, type: 'follow' });
+      sendPushNotification(userId, '👤 Nuovo follower', 'Qualcuno ha iniziato a seguirti', { type: 'follow' }).catch(() => {});
     }
   };
 
