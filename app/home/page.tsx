@@ -277,6 +277,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   };
   const [previewComments, setPreviewComments] = useState<{ id: string; username: string; text: string }[]>([]);
   const lastTap = useRef<number>(0);
+  const [heartAnim, setHeartAnim] = useState(false);
 
   const isOfficial = post.author?.role === 'official' || post.author?.role === 'admin';
   const photos: string[] = post.imageUrls && post.imageUrls.length > 0 ? post.imageUrls : post.imageUrl ? [post.imageUrl] : [];
@@ -341,7 +342,18 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
     const now = Date.now();
     if (now - lastTap.current < 300) {
       if (!post.currentUserId) { onGuestAction?.(); }
-      else if (!liked) { setLiked(true); setLikesCount((p: number) => p + 1); supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId }); }
+      else {
+        setHeartAnim(true);
+        setTimeout(() => setHeartAnim(false), 800);
+        if (!liked) {
+          setLiked(true);
+          setLikesCount((p: number) => p + 1);
+          supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId });
+          if (post.userId && post.userId !== post.currentUserId) {
+            supabase.from('notifications').insert({ user_id: post.userId, actor_id: post.currentUserId, type: 'like', post_id: post.id }).then(() => {});
+          }
+        }
+      }
     }
     lastTap.current = now;
   };
@@ -427,7 +439,15 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
 
         {/* Image / Carousel */}
         {photos.length > 0 && (
-          <div className="pc-image-wrap" onClick={handleDoubleTap}>
+          <div className="pc-image-wrap" onClick={handleDoubleTap} style={{ position: 'relative' }}>
+            {heartAnim && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
+                <svg width="90" height="90" fill="white" viewBox="0 0 24 24" style={{ filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))', animation: 'heartPop 0.8s ease forwards' }}>
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+            )}
+            <style>{`@keyframes heartPop { 0%{transform:scale(0);opacity:1} 40%{transform:scale(1.2);opacity:1} 70%{transform:scale(1);opacity:1} 100%{transform:scale(1.1);opacity:0} }`}</style>
             {isCarousel ? (
               <>
                 <div className="pc-carousel-track" style={{ transform: `translateX(-${carouselIdx * 100}%)` }}>
