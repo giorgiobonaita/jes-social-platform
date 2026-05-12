@@ -42,6 +42,8 @@ export default function AdminPage() {
   const [loadingBlacklist, setLoadingBlacklist] = useState(false);
   const [newWord, setNewWord] = useState('');
   const [myId, setMyId] = useState<string | null>(null);
+  const [postCount, setPostCount] = useState<number | null>(null);
+  const [commentCount, setCommentCount] = useState<number | null>(null);
 
   useEffect(() => {
     async function checkAuth() {
@@ -61,6 +63,8 @@ export default function AdminPage() {
       loadUsers();
       loadReports();
       loadBlacklist();
+      supabase.from('posts').select('id', { count: 'exact', head: true }).then(({ count }) => setPostCount(count ?? 0));
+      supabase.from('comments').select('id', { count: 'exact', head: true }).then(({ count }) => setCommentCount(count ?? 0));
     }
     checkAuth();
   }, []);
@@ -213,12 +217,14 @@ export default function AdminPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
               {[
                 { label: 'Utenti totali', value: users.length, color: '#111' },
-                { label: 'Accettano promozioni', value: promoEmails.length, color: '#F07B1D' },
+                { label: 'Post totali', value: postCount, color: '#F07B1D' },
+                { label: 'Commenti totali', value: commentCount, color: '#9C27B0' },
+                { label: 'Accettano promozioni', value: promoEmails.length, color: '#FF5722' },
                 { label: 'Con telefono', value: users.filter(u => u.phone).length, color: '#2196F3' },
                 { label: 'Con nazionalità', value: users.filter(u => u.nationality).length, color: '#4CAF50' },
               ].map(s => (
                 <div key={s.label} style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
-                  <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  <div style={{ fontSize: 28, fontWeight: 800, color: s.color }}>{s.value == null ? '…' : s.value}</div>
                   <div style={{ fontSize: 13, color: '#888', marginTop: 2 }}>{s.label}</div>
                 </div>
               ))}
