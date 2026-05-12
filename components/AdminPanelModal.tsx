@@ -45,12 +45,16 @@ export default function AdminPanelModal({ visible, onClose, onUserPress }: Props
   }, [visible]);
 
   const loadStats = async () => {
-    const [{ count: userCount }, { count: postCount }, { count: commentCount }] = await Promise.all([
-      supabase.from('users').select('id', { count: 'exact', head: true }),
-      supabase.from('posts').select('id', { count: 'exact', head: true }),
-      supabase.from('comments').select('id', { count: 'exact', head: true }),
-    ]);
-    setStats({ users: userCount || 0, posts: postCount || 0, comments: commentCount || 0 });
+    try {
+      const [r1, r2, r3] = await Promise.all([
+        supabase.from('users').select('id', { count: 'exact', head: true }),
+        supabase.from('posts').select('id', { count: 'exact', head: true }),
+        supabase.from('comments').select('id', { count: 'exact', head: true }),
+      ]);
+      setStats({ users: r1.count ?? 0, posts: r2.count ?? 0, comments: r3.count ?? 0 });
+    } catch {
+      setStats({ users: 0, posts: 0, comments: 0 });
+    }
   };
 
   const loadReports = async () => {
@@ -139,21 +143,21 @@ export default function AdminPanelModal({ visible, onClose, onUserPress }: Props
       </div>
 
       {/* ── STATS ── */}
-      {stats && (
-        <div style={{ display: 'flex', gap: 10, padding: '12px 16px 0' }}>
-          {[
-            { label: 'Utenti', value: stats.users, color: '#3B82F6', icon: <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> },
-            { label: 'Post', value: stats.posts, color: ORANGE, icon: <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg> },
-            { label: 'Commenti', value: stats.comments, color: '#34C759', icon: <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> },
-          ].map(s => (
-            <div key={s.label} style={{ flex: 1, background: s.color, borderRadius: 14, padding: '12px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              {s.icon}
-              <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 18, color: '#fff', lineHeight: 1 }}>{s.value.toLocaleString('it-IT')}</span>
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{s.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: 10, padding: '12px 16px 0' }}>
+        {[
+          { label: 'Utenti', value: stats?.users, color: '#3B82F6', icon: <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> },
+          { label: 'Post', value: stats?.posts, color: ORANGE, icon: <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg> },
+          { label: 'Commenti', value: stats?.comments, color: '#34C759', icon: <svg width="18" height="18" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> },
+        ].map(s => (
+          <div key={s.label} style={{ flex: 1, background: s.color, borderRadius: 14, padding: '12px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            {s.icon}
+            <span style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: 18, color: '#fff', lineHeight: 1 }}>
+              {s.value == null ? '…' : s.value.toLocaleString('it-IT')}
+            </span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
 
       {/* ── TAB UTENTI ── */}
       {tab === 'users' && (
