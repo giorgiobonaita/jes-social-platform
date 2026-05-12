@@ -7,9 +7,9 @@ import { useLang } from '@/lib/i18n';
 const ORANGE = '#F07B1D';
 
 const OFFICIAL_GROUP_NAMES = [
-  'Pittura', 'Scultura', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
+  'Pittura', 'Scultura', 'Moda e Fashion', 'Antiquariato', 'Letteratura', 'Fotografia', 'Cucina Chef', 'Tattoo',
   'Design', 'Architettura', 'Archeologia', 'Storia', 'Recitazione e Danza',
-  'Musica', 'Fumettistica', 'Arte di Strada', 'Partner',
+  'Musica', 'Fumettistica', 'Arte di Strada', 'Partner', 'Sponsor',
 ];
 
 interface GroupOption { id: string; name: string; }
