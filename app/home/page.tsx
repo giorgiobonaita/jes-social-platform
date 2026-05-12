@@ -258,6 +258,23 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   const [editingCaption, setEditingCaption] = useState(false);
   const [editCaptionText, setEditCaptionText] = useState('');
   const [caption, setCaption] = useState(post.caption || '');
+  const [likersVisible, setLikersVisible] = useState(false);
+  const [likers, setLikers] = useState<{ id: string; username: string; name: string; avatar_url: string | null }[]>([]);
+  const [loadingLikers, setLoadingLikers] = useState(false);
+
+  const openLikers = async () => {
+    if (likesCount === 0) return;
+    setLikersVisible(true);
+    setLoadingLikers(true);
+    const { data } = await supabase
+      .from('likes')
+      .select('user_id, users(id, username, name, avatar_url)')
+      .eq('post_id', post.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    setLikers((data || []).map((l: any) => l.users).filter(Boolean));
+    setLoadingLikers(false);
+  };
   const [previewComments, setPreviewComments] = useState<{ id: string; username: string; text: string }[]>([]);
   const lastTap = useRef<number>(0);
 
@@ -436,14 +453,18 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <button className={`pc-action-btn${liked ? ' liked' : ''}`} onClick={toggleLike}>
                 {liked
-                  ? <svg width="28" height="28" fill={ORANGE} viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                  : <svg width="28" height="28" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  ? <svg width="32" height="32" fill={ORANGE} viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                  : <svg width="32" height="32" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 }
               </button>
-              {likesCount > 0 && <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 13, color: '#111' }}>{likesCount.toLocaleString('it-IT')}</span>}
+              {likesCount > 0 && (
+                <span onClick={openLikers} style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: '#111', cursor: 'pointer' }}>
+                  {likesCount.toLocaleString('it-IT')}
+                </span>
+              )}
             </div>
             <button className="pc-action-btn" onClick={onComment}>
-              <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+              <svg width="30" height="30" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             </button>
             <button className="pc-action-btn" onClick={async () => {
               const shareUrl = `https://jessocial.com/post/${post.id}`;
@@ -462,19 +483,19 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
                 onShareToast?.();
               }
             }}>
-              <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              <svg width="30" height="30" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             {!isOwn && (
               <button className="pc-action-btn" title="Segnala" onClick={() => { setMenuOpen(false); setTimeout(() => setConfirmAction('report'), 50); }} style={{ opacity: 0.55 }}>
-                <svg width="22" height="22" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                <svg width="26" height="26" fill="none" stroke="#888" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
               </button>
             )}
             <button className={`pc-action-btn${saved ? ' saved' : ''}`} onClick={toggleSave}>
               {saved
-                ? <svg width="26" height="26" fill={ORANGE} viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
-                : <svg width="26" height="26" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                ? <svg width="30" height="30" fill={ORANGE} viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+                : <svg width="30" height="30" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
               }
             </button>
           </div>
@@ -531,6 +552,32 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
           </div>
         </div>
       </div>
+
+      {/* Likers Bottom Sheet */}
+      {likersVisible && (
+        <div className="modal-overlay" onClick={() => setLikersVisible(false)}>
+          <div className="modal-sheet" onClick={e => e.stopPropagation()} style={{ maxHeight: '60vh', display: 'flex', flexDirection: 'column' }}>
+            <div className="modal-handle" />
+            <p style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: '#111', margin: '0 0 12px', paddingLeft: 4 }}>
+              {likesCount.toLocaleString('it-IT')} {likesCount === 1 ? 'like' : 'like'}
+            </p>
+            {loadingLikers
+              ? <div style={{ display: 'flex', justifyContent: 'center', padding: 20 }}><div className="spin" /></div>
+              : <div style={{ overflowY: 'auto', flex: 1 }}>
+                  {likers.map(u => (
+                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 10, paddingBottom: 10, borderBottom: '1px solid #F5F5F5' }}>
+                      <AvatarImg uri={u.avatar_url} size={38} seed={u.username} style={{ borderRadius: '50%' }} />
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14, color: '#111' }}>{u.username}</div>
+                        {u.name && <div style={{ fontFamily: 'var(--font-body)', fontSize: 12, color: '#888' }}>{u.name}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+            }
+          </div>
+        </div>
+      )}
 
       {/* 3-dot Menu Bottom Sheet */}
       {menuOpen && (
