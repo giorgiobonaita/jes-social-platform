@@ -77,8 +77,9 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
   const [currentDbId, setCurrentDbId]       = useState<string | null>(null);
   const [myRole, setMyRole]                 = useState<string | null>(null);
   const [loading, setLoading]               = useState(false);
-  const [streakData, setStreakData]         = useState<{ current: number; best: number } | null>(null);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [deleteAccountModal, setDeleteAccountModal] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const [followersList, setFollowersList]   = useState<any[]>([]);
   const [followingList, setFollowingList]   = useState<any[]>([]);
@@ -150,13 +151,10 @@ if (me) {
         setIsFollower((frCount2 ?? 0) > 0);
       }
 
-      // Load streak for this profile
-      const { data: sk } = await supabase.from('user_streaks').select('current_streak, best_streak').eq('user_id', data.id).maybeSingle();
-      if (sk) setStreakData({ current: sk.current_streak, best: sk.best_streak });
-    } finally { setLoading(false); }
+} finally { setLoading(false); }
   }, [targetUserId, isOwnProfile]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { if (visible) { setIsFollowing(false); setListsLoaded(false); setListFollowingIds(new Set()); setSavedLoaded(false); setSavedPosts([]); setActiveTab('posts'); setFollowListVisible(null); setStreakData(null); loadProfile(); } }, [visible, targetUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (visible) { setIsFollowing(false); setListsLoaded(false); setListFollowingIds(new Set()); setSavedLoaded(false); setSavedPosts([]); setActiveTab('posts'); setFollowListVisible(null); loadProfile(); } }, [visible, targetUserId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadFollowersFollowing = useCallback(async () => {
     if (listsLoaded || !profile) return;
@@ -319,9 +317,13 @@ if (me) {
     setTimeout(() => router.replace('/'), 300);
   };
 
-  const handleDeleteAccount = async () => {
-    if (!confirm(t('profile_delete_confirm'))) return;
+  const handleDeleteAccount = () => {
+    setDeleteAccountModal(true);
+  };
+
+  const confirmDeleteAccount = async () => {
     if (!profile?.id) return;
+    setDeletingAccount(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await fetch('/api/delete-account', {
@@ -331,6 +333,8 @@ if (me) {
       });
     }
     await supabase.auth.signOut();
+    setDeletingAccount(false);
+    setDeleteAccountModal(false);
     onClose();
     setTimeout(() => router.replace('/'), 300);
   };
@@ -541,6 +545,7 @@ if (me) {
 
   // ── Main Profile Screen ───────────────────────────────────────────────────────
   return (
+    <>
     <div className="pm-panel" style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
@@ -597,16 +602,6 @@ if (me) {
             </div>
           </div>
 
-          {/* Streak badge */}
-          {streakData && streakData.current > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(255,122,0,0.08)', borderRadius: 12, margin: '0 16px 8px' }}>
-              <span style={{ fontSize: 18 }}>🔥</span>
-              <div>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 13, color: '#FF7A00' }}>{streakData.current} {streakData.current === 1 ? 'giorno' : 'giorni'} di fila</span>
-                {streakData.best > 1 && <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: '#AAA', marginLeft: 8 }}>Record: {streakData.best}</span>}
-              </div>
-            </div>
-          )}
 
           {/* Like totali badge */}
           {totalLikes > 0 && (
@@ -947,5 +942,27 @@ if (me) {
         </div>
       )}
     </div>
+
+    {/* Delete account modal */}
+    {deleteAccountModal && (
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        onClick={() => setDeleteAccountModal(false)}>
+        <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
+          <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>
+          <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>Questa azione è irreversibile. Tutti i tuoi dati, post e follower verranno cancellati permanentemente.</p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setDeleteAccountModal(false)}
+              style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Annulla
+            </button>
+            <button onClick={confirmDeleteAccount} disabled={deletingAccount}
+              style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: deletingAccount ? 'not-allowed' : 'pointer' }}>
+              {deletingAccount ? 'Eliminazione…' : 'Elimina account'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

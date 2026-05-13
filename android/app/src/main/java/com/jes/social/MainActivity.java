@@ -1,4 +1,4 @@
-package com.jessocial.app;
+package com.jes.social;
 
 import com.getcapacitor.BridgeActivity;
 

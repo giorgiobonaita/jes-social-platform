@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useLang, T } from '@/lib/i18n';
 import AvatarImg from './AvatarImg';
 
-type NotifType = 'like' | 'comment' | 'follow' | 'mention';
+type NotifType = 'like' | 'comment' | 'follow' | 'mention' | 'post_removed';
 
 interface Notification {
   id: string;
@@ -15,6 +15,7 @@ interface Notification {
   text: string;
   timeAgo: string;
   postThumb?: string;
+  message?: string;
 }
 
 function formatTimeAgo(isoDate: string, tFn: (k: string) => string): string {
@@ -31,10 +32,11 @@ function formatTimeAgo(isoDate: string, tFn: (k: string) => string): string {
 
 function notifText(type: NotifType, tFn: (k: string) => string): string {
   switch (type) {
-    case 'like':    return tFn('notif_like');
-    case 'comment': return tFn('notif_comment');
-    case 'follow':  return tFn('notif_follow');
-    case 'mention': return tFn('notif_mention');
+    case 'like':         return tFn('notif_like');
+    case 'comment':      return tFn('notif_comment');
+    case 'follow':       return tFn('notif_follow');
+    case 'mention':      return tFn('notif_mention');
+    case 'post_removed': return '';
   }
 }
 
@@ -61,6 +63,12 @@ const NOTIF_ICON_FALLBACK: { icon: React.ReactElement; color: string; bg: string
   color: '#888', bg: '#F0F0F0',
 };
 
+// @ts-ignore — extended icon for admin action
+NOTIF_ICONS['post_removed'] = {
+  icon: <svg width="11" height="11" fill="#FF3B30" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
+  color: '#FF3B30', bg: '#FFF0EE',
+};
+
 interface Props { visible: boolean; onClose: () => void; }
 
 export default function NotificationsModal({ visible, onClose }: Props) {
@@ -76,7 +84,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
   const loadNotifications = useCallback(async (dbUserId: string) => {
     const { data: notifs, error } = await supabase
       .from('notifications')
-      .select('id, type, actor_id, post_id, created_at, read')
+      .select('id, type, actor_id, post_id, created_at, read, message')
       .eq('user_id', dbUserId)
       .order('created_at', { ascending: false })
       .limit(30);
@@ -105,6 +113,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
         text: notifText(n.type as NotifType, t),
         timeAgo: n.created_at ? formatTimeAgo(n.created_at, t) : '',
         postThumb: n.post_id ? postMap[n.post_id] : undefined,
+        message: n.message || undefined,
       };
     }));
 
@@ -206,19 +215,25 @@ export default function NotificationsModal({ visible, onClose }: Props) {
                 </div>
                 {/* Testo */}
                 <div style={{ flex: 1 }}>
-                  <span style={{
-                    fontFamily: 'var(--font-body)', fontSize: 13,
-                    color: '#333', lineHeight: '19px', display: 'block', marginBottom: 4,
-                  }}>
-                    <strong style={{ fontWeight: 600, color: '#111' }}>{item.username} </strong>
-                    {item.text}
-                  </span>
+                  {item.type === 'post_removed' ? (
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#FF3B30', lineHeight: '19px', display: 'block', marginBottom: 4 }}>
+                      {item.message || 'Un tuo post è stato rimosso dal team JES.'}
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontFamily: 'var(--font-body)', fontSize: 13,
+                      color: '#333', lineHeight: '19px', display: 'block', marginBottom: 4,
+                    }}>
+                      <strong style={{ fontWeight: 600, color: '#111' }}>{item.username} </strong>
+                      {item.text}
+                    </span>
+                  )}
                   <span style={{ fontFamily: 'var(--font-body)', fontSize: 11, color: '#AAAAAA' }}>
                     {item.timeAgo}
                   </span>
                 </div>
                 {/* Miniatura post */}
-                {item.postThumb ? (
+                {item.type !== 'post_removed' && (item.postThumb ? (
                   <img
                     src={item.postThumb}
                     style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0, backgroundColor: '#EEE' }}
@@ -226,7 +241,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
                   />
                 ) : (
                   <div style={{ width: 44, height: 44, borderRadius: 8, backgroundColor: '#EEE', flexShrink: 0 }} />
-                )}
+                ))}
               </div>
             );
           })

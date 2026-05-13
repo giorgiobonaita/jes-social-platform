@@ -255,6 +255,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'delete' | 'report' | 'ban' | null>(null);
+  const [deleteReason, setDeleteReason] = useState('');
   const [editingCaption, setEditingCaption] = useState(false);
   const [editCaptionText, setEditCaptionText] = useState('');
   const [caption, setCaption] = useState(post.caption || '');
@@ -366,9 +367,26 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
     setEditingCaption(false);
   };
 
+  const POST_DELETE_REASONS = [
+    'Contenuto inappropriato',
+    'Spam',
+    'Violazione copyright',
+    'Nudità o contenuto sessuale',
+    'Violenza o contenuto pericoloso',
+    'Odio o molestia',
+  ];
+
   const handleDelete = async () => {
     setConfirmAction(null); setMenuOpen(false);
-    await supabase.from('posts').delete().eq('id', post.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await fetch('/api/admin-delete-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: post.id, caller_auth_id: user.id, reason: deleteReason || undefined }),
+      });
+    }
+    setDeleteReason('');
     onDelete();
   };
 
@@ -663,8 +681,21 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
             {confirmAction === 'delete' && <>
               <p className="confirm-title">{t('confirm_delete_post')}</p>
               <p className="confirm-msg">{t('confirm_delete_msg')}</p>
+              {isAdmin && (
+                <div style={{ marginBottom: 12, textAlign: 'left' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#888', marginBottom: 6 }}>MOTIVO (opzionale)</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {POST_DELETE_REASONS.map(r => (
+                      <button key={r} onClick={() => setDeleteReason(prev => prev === r ? '' : r)}
+                        style={{ background: deleteReason === r ? '#FF3B30' : '#F5F5F5', color: deleteReason === r ? '#fff' : '#555', border: 'none', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <button className="confirm-btn-danger" onClick={handleDelete}>{t('delete')}</button>
-              <button className="confirm-btn-cancel" onClick={() => setConfirmAction(null)}>{t('cancel')}</button>
+              <button className="confirm-btn-cancel" onClick={() => { setConfirmAction(null); setDeleteReason(''); }}>{t('cancel')}</button>
             </>}
             {confirmAction === 'ban' && <>
               <p className="confirm-title">{t('confirm_ban_title')} {post.author?.username}</p>
@@ -812,7 +843,6 @@ function HomePageInner() {
   const [categoryScores, setCategoryScores] = useState<Record<string, number> | null>(null);
   const [interests, setInterests] = useState<string[] | null>(null);
   const [algoActive, setAlgoActive] = useState(false);
-  const [streakToast, setStreakToast] = useState<{ days: number; best: boolean } | null>(null);
 
   const handleLiked = useCallback((groupName: string) => {
     if (!myDbId || !groupName) return;
@@ -883,9 +913,12 @@ function HomePageInner() {
 
   useEffect(() => {
     (async () => {
+      console.log('[home] effect running');
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('[home] auth user:', user?.id ?? 'null');
       if (!user) { if (!isGuest) { router.replace('/'); return; } else return; }
-      const { data } = await supabase.from('users').select('id, avatar_url, role, username, user_type, category_scores, categories').eq('auth_id', user.id).single();
+      const { data, error } = await supabase.from('users').select('id, avatar_url, role, username, user_type, category_scores').eq('auth_id', user.id).single();
+      console.log('[home] db data:', data, 'error:', error?.message);
       if (data) {
         setCurrentUserId(data.id);
         setMyDbId(data.id);
@@ -894,7 +927,7 @@ function HomePageInner() {
         setMyUsername(data.username || null);
         setUserType(data.user_type || null);
         setCategoryScores(data.category_scores || null);
-        setInterests(data.categories || null);
+        setInterests(null);
 
         // Controlla se algoritmo attivo (>500 utenti)
         const { count: userCount } = await supabase.from('users').select('id', { count: 'exact', head: true });
@@ -909,26 +942,6 @@ function HomePageInner() {
     })();
   }, [router]);
 
-  useEffect(() => {
-    if (!currentUserId) return;
-    (async () => {
-      const today = new Date().toISOString().split('T')[0];
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-      const { data: streak } = await supabase.from('user_streaks').select('current_streak, best_streak, last_active').eq('user_id', currentUserId).maybeSingle();
-      if (!streak) {
-        await supabase.from('user_streaks').insert({ user_id: currentUserId, current_streak: 1, best_streak: 1, last_active: today });
-        setStreakToast({ days: 1, best: false });
-      } else if (streak.last_active === today) {
-        setStreakToast({ days: streak.current_streak, best: false });
-      } else {
-        const newStreak = streak.last_active === yesterday ? streak.current_streak + 1 : 1;
-        const newBest = Math.max(newStreak, streak.best_streak);
-        await supabase.from('user_streaks').update({ current_streak: newStreak, best_streak: newBest, last_active: today, updated_at: new Date().toISOString() }).eq('user_id', currentUserId);
-        setStreakToast({ days: newStreak, best: newStreak > streak.best_streak });
-      }
-      setTimeout(() => setStreakToast(null), 4000);
-    })();
-  }, [currentUserId]); // eslint-disable-line
 
   const CACHE_KEY = 'jes_feed_v1';
   const CACHE_TTL = 5 * 60 * 1000; // 5 minuti
@@ -1227,7 +1240,7 @@ function HomePageInner() {
           onDone={() => {
             setShowInterests(false);
             supabase.from('users').select('category_scores, categories').eq('id', myDbId).single().then(({ data }) => {
-              if (data) { setCategoryScores(data.category_scores || null); setInterests(data.categories || null); }
+              if (data) { setCategoryScores(data.category_scores || null); }
             });
           }}
         />
@@ -1275,16 +1288,6 @@ function HomePageInner() {
       <CreateStoryModal visible={createStoryVisible} onClose={() => { setCreateStoryVisible(false); setJesStoryAuthorId(undefined); }} onPublished={loadStories} authorUserId={jesStoryAuthorId} />
       <CreatePollModal visible={createPollVisible} onClose={() => setCreatePollVisible(false)} />
 
-      {/* Streak toast */}
-      {streakToast && (
-        <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', background: 'rgba(20,20,20,0.92)', borderRadius: 24, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, zIndex: 9999, boxShadow: '0 4px 24px rgba(0,0,0,0.25)', animation: 'fadeInUp 0.35s ease', pointerEvents: 'none' }}>
-          <span style={{ fontSize: 20 }}>🔥</span>
-          <span style={{ color: 'white', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 14 }}>
-            {streakToast.days} {streakToast.days === 1 ? 'giorno' : 'giorni'} di fila
-            {streakToast.best && <span style={{ color: '#FF7A00', marginLeft: 6 }}>· Nuovo record!</span>}
-          </span>
-        </div>
-      )}
     </div>
   );
 }

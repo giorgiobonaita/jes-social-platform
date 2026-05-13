@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import OfflineScreen from "@/components/OfflineScreen";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jessocial.com'),
@@ -29,7 +30,10 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <OfflineScreen />
+      </body>
     </html>
   );
 }
