@@ -164,18 +164,6 @@ export default function AdminPage() {
     await hardDeleteUser(id);
   };
 
-  const deleteAllPosts = async () => {
-    if (!confirm('Eliminare TUTTI i post di tutti gli utenti? Questa azione è irreversibile.')) return;
-    if (!confirm('Sei sicuro? Tutti i post, like e commenti verranno cancellati permanentemente.')) return;
-    await supabase.from('likes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('comments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('post_tags').delete().neq('post_id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('saves').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await supabase.from('posts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    setPostCount(0);
-    setCommentCount(0);
-    alert('Tutti i post sono stati eliminati.');
-  };
 
   const updateReport = async (id: string, status: string) => {
     await supabase.from('reports').update({ status }).eq('id', id);
@@ -328,17 +316,6 @@ export default function AdminPage() {
               ))}
             </div>
 
-            {/* Danger zone */}
-            <div style={{ background: '#FFF0EE', borderRadius: 14, padding: '14px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#FF3B30' }}>Elimina tutti i post</div>
-                <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>Cancella tutti i post, like, commenti e tag. Irreversibile.</div>
-              </div>
-              <button onClick={deleteAllPosts}
-                style={{ background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                Elimina tutti
-              </button>
-            </div>
 
             {/* Promo email bar */}
             <div style={{ background: '#fff', borderRadius: 14, padding: '16px 20px', marginBottom: 20, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}>
