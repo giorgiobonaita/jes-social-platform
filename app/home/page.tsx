@@ -500,7 +500,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
         )}
 
         {/* Image / Carousel */}
-        {post.postType !== 'text' && photos.length > 0 && (
+        {post.postType !== 'text' && post.postType !== 'plain_text' && post.postType !== 'video' && photos.length > 0 && (
           <div className="pc-image-wrap" onClick={handleDoubleTap} style={{ position: 'relative' }}>
             {heartAnim && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
@@ -1015,7 +1015,7 @@ const { t, lang } = useLang();
         createdAt: p.created_at,
         tags: tagsByPost[p.id] || [],
         groupName: p.group_name || undefined,
-        postType: p.post_type || 'image',
+        postType: p.post_type || (p.video_url ? 'video' : 'image'),
         textBg: p.text_bg || null,
         textColor: p.text_color || '#FFFFFF',
         textSize: p.text_size || 28,

@@ -94,7 +94,7 @@ export default function CreateVideoModal({ visible, onClose, onPublished, author
       const videoUrl = urlData.publicUrl;
 
       const selectedGroup = groups.find(g => g.id === selectedGroupId);
-      await supabase.from('posts').insert({
+      const { error: insertErr } = await supabase.from('posts').insert({
         user_id:    postUserId,
         caption:    caption.trim(),
         image_urls: [],
@@ -106,6 +106,7 @@ export default function CreateVideoModal({ visible, onClose, onPublished, author
         group_id:   selectedGroupId || null,
         group_name: selectedGroup?.name || null,
       });
+      if (insertErr) { setError(`Errore pubblicazione: ${insertErr.message}`); return; }
 
       setUploadProgress(100);
       onPublished?.();
