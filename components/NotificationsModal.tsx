@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useLang, T } from '@/lib/i18n';
 import AvatarImg from './AvatarImg';
@@ -11,10 +12,12 @@ interface Notification {
   id: string;
   type: NotifType;
   username: string;
+  actorUsername: string;
   avatarUrl: string | null;
   text: string;
   timeAgo: string;
   postThumb?: string;
+  postId: string | null;
   message?: string;
 }
 
@@ -63,7 +66,7 @@ const NOTIF_ICON_FALLBACK: { icon: React.ReactElement; color: string; bg: string
   color: '#888', bg: '#F0F0F0',
 };
 
-// @ts-ignore — extended icon for admin action
+// @ts-ignore
 NOTIF_ICONS['post_removed'] = {
   icon: <svg width="11" height="11" fill="#FF3B30" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
   color: '#FF3B30', bg: '#FFF0EE',
@@ -74,10 +77,12 @@ interface Props { visible: boolean; onClose: () => void; }
 export default function NotificationsModal({ visible, onClose }: Props) {
   const { t, lang } = useLang();
   const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading]             = useState(false);
   const [myDbId, setMyDbId]               = useState<string | null>(null);
   const [mounted, setMounted]             = useState(false);
+  const [actionSheet, setActionSheet]     = useState<Notification | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -109,10 +114,13 @@ export default function NotificationsModal({ visible, onClose }: Props) {
       const sender = senderMap[n.actor_id] || {};
       return {
         id: n.id, type: n.type as NotifType,
-        username: sender.username || tl('user_fallback'), avatarUrl: sender.avatar_url || null,
+        username: sender.username || tl('user_fallback'),
+        actorUsername: sender.username || '',
+        avatarUrl: sender.avatar_url || null,
         text: notifText(n.type as NotifType, t),
         timeAgo: n.created_at ? formatTimeAgo(n.created_at, t) : '',
         postThumb: n.post_id ? postMap[n.post_id] : undefined,
+        postId: n.post_id || null,
         message: n.message || undefined,
       };
     }));
@@ -143,7 +151,6 @@ export default function NotificationsModal({ visible, onClose }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
-  // Realtime
   useEffect(() => {
     if (!visible || !myDbId) return;
     const ch = supabase.channel(`notifs_modal_${myDbId}`)
@@ -152,6 +159,21 @@ export default function NotificationsModal({ visible, onClose }: Props) {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [visible, myDbId, loadNotifications]);
+
+  const handleGoToUser = () => {
+    if (!actionSheet?.actorUsername) return;
+    setActionSheet(null);
+    onClose();
+    router.push(`/profile/${actionSheet.actorUsername}`);
+  };
+
+  const handleGoToPost = () => {
+    if (!actionSheet?.postId) return;
+    const suffix = actionSheet.type === 'comment' ? '?comments=1' : '';
+    setActionSheet(null);
+    onClose();
+    router.push(`/post/${actionSheet.postId}${suffix}`);
+  };
 
   if (!mounted || !visible) return null;
 
@@ -196,11 +218,17 @@ export default function NotificationsModal({ visible, onClose }: Props) {
         ) : (
           notifications.map(item => {
             const ic = NOTIF_ICONS[item.type] ?? NOTIF_ICON_FALLBACK;
+            const clickable = item.type !== 'post_removed';
             return (
-              <div key={item.id} style={{
-                display: 'flex', alignItems: 'flex-start',
-                padding: '14px 20px', borderBottom: '1px solid #F8F8F8', gap: 12,
-              }}>
+              <div
+                key={item.id}
+                onClick={() => clickable && setActionSheet(item)}
+                style={{
+                  display: 'flex', alignItems: 'flex-start',
+                  padding: '14px 20px', borderBottom: '1px solid #F8F8F8', gap: 12,
+                  cursor: clickable ? 'pointer' : 'default',
+                }}
+              >
                 {/* Avatar + badge */}
                 <div style={{ position: 'relative', width: 48, height: 48, flexShrink: 0 }}>
                   <AvatarImg uri={item.avatarUrl} size={48} seed={item.username} />
@@ -247,6 +275,101 @@ export default function NotificationsModal({ visible, onClose }: Props) {
           })
         )}
       </div>
+
+      {/* Action sheet */}
+      {actionSheet && (
+        <div
+          onClick={() => setActionSheet(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 10000,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: '20px 20px 0 0',
+              width: '100%', maxWidth: 500,
+              paddingBottom: 'env(safe-area-inset-bottom, 12px)',
+            }}
+          >
+            {/* Handle */}
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0' }} />
+            </div>
+
+            {/* Chi ha fatto l'azione */}
+            <div style={{ padding: '8px 20px 16px', borderBottom: '1px solid #F0F0F0' }}>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#888' }}>
+                <strong style={{ color: '#111' }}>@{actionSheet.actorUsername}</strong>
+                {' '}{actionSheet.text}
+              </span>
+            </div>
+
+            {/* Bottone: Guarda utente */}
+            {actionSheet.actorUsername && (
+              <button
+                onClick={handleGoToUser}
+                style={{
+                  width: '100%', background: 'none', border: 'none',
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  padding: '18px 24px', cursor: 'pointer', borderBottom: '1px solid #F8F8F8',
+                }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#111' }}>
+                  Guarda utente
+                </span>
+              </button>
+            )}
+
+            {/* Bottone: Guarda post */}
+            {actionSheet.postId && (
+              <button
+                onClick={handleGoToPost}
+                style={{
+                  width: '100%', background: 'none', border: 'none',
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  padding: '18px 24px', cursor: 'pointer', borderBottom: '1px solid #F8F8F8',
+                }}
+              >
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: '#E8F4FD', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {actionSheet.type === 'comment' ? (
+                    <svg width="20" height="20" fill="none" stroke="#2196F3" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" fill="none" stroke="#2196F3" strokeWidth="1.8" viewBox="0 0 24 24">
+                      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+                    </svg>
+                  )}
+                </div>
+                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#111' }}>
+                  {actionSheet.type === 'comment' ? 'Guarda commento' : 'Guarda post'}
+                </span>
+              </button>
+            )}
+
+            {/* Annulla */}
+            <button
+              onClick={() => setActionSheet(null)}
+              style={{
+                width: '100%', background: 'none', border: 'none',
+                padding: '18px 24px', cursor: 'pointer',
+                fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 15, color: '#888',
+                textAlign: 'center',
+              }}
+            >
+              Annulla
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 

@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
+import { Suspense } from 'react';
 import PostClient from './PostClient';
 
 export const dynamic = 'force-dynamic';
@@ -75,5 +76,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const { id } = await params;
-  return <PostClient id={id} />;
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', background: '#fff' }} />}>
+      <PostClient id={id} />
+    </Suspense>
+  );
 }

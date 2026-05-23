@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
@@ -32,6 +33,8 @@ interface Comment {
 }
 
 export default function PostClient({ id }: { id: string }) {
+  const searchParams = useSearchParams();
+  const openComments = searchParams?.get('comments') === '1';
   const [post, setPost] = useState<PostData | null | undefined>(undefined);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [dbUserId, setDbUserId] = useState<string | null>(null);
@@ -43,11 +46,22 @@ export default function PostClient({ id }: { id: string }) {
   const [imgIdx, setImgIdx] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const commentInputRef = useRef<HTMLInputElement>(null);
+  const commentsRef = useRef<HTMLDivElement>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
   };
+
+  // Auto-scroll to comments if ?comments=1
+  useEffect(() => {
+    if (openComments && comments.length >= 0 && post) {
+      setTimeout(() => {
+        commentsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        commentInputRef.current?.focus();
+      }, 400);
+    }
+  }, [post, openComments]);
 
   useEffect(() => {
     async function load() {
@@ -268,7 +282,7 @@ export default function PostClient({ id }: { id: string }) {
 
             {/* Comments */}
             {comments.length > 0 && (
-              <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div ref={commentsRef} style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {comments.map(c => (
                   <div key={c.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
                     <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EEE', overflow: 'hidden', flexShrink: 0 }}>
