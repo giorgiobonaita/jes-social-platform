@@ -18,7 +18,6 @@ import ChatModal from '@/components/ChatModal';
 import GroupsModal from '@/components/GroupsModal';
 import InterestsModal from '@/components/InterestsModal';
 import AvatarImg from '@/components/AvatarImg';
-import GuestPopup from '@/components/GuestPopup';
 const ORANGE = '#F07B1D';
 const GNG_MAIL = 'mailto:mogideag74@gmail.com';
 
@@ -805,31 +804,10 @@ function ArcModal({ arcType, onClose }: { arcType: 'artisti' | 'aziende'; onClos
 function HomePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isGuest = searchParams.get('guest') === 'true';
-  const { t, lang } = useLang();
+const { t, lang } = useLang();
   const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
   const fmtTime = (iso: string) => formatTimeAgo(iso, tl('groups_now'), tl('notif_mins_ago'), tl('notif_hours_ago'), tl('time_d_ago'));
 
-  const GUEST_FIRST_VISIT_KEY = 'jes_guest_first_visit';
-  const GUEST_EXPIRY_DAYS = 7;
-
-  const [guestPopupVisible, setGuestPopupVisible] = useState(false);
-  const [guestBlocked, setGuestBlocked] = useState(false);
-  const showGuestPopup = () => setGuestPopupVisible(true);
-  const requireAuth = (action: () => void) => { if (isGuest) { showGuestPopup(); return; } action(); };
-
-  useEffect(() => {
-    if (!isGuest) return;
-    try {
-      const stored = localStorage.getItem(GUEST_FIRST_VISIT_KEY);
-      if (!stored) {
-        localStorage.setItem(GUEST_FIRST_VISIT_KEY, String(Date.now()));
-      } else {
-        const daysPassed = (Date.now() - Number(stored)) / (1000 * 60 * 60 * 24);
-        if (daysPassed >= GUEST_EXPIRY_DAYS) setGuestBlocked(true);
-      }
-    } catch {}
-  }, [isGuest]);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserAvatar, setCurrentUserAvatar] = useState<string | null>(null);
@@ -916,7 +894,7 @@ function HomePageInner() {
       console.log('[home] effect running');
       const { data: { user } } = await supabase.auth.getUser();
       console.log('[home] auth user:', user?.id ?? 'null');
-      if (!user) { if (!isGuest) { router.replace('/'); return; } else return; }
+      if (!user) { router.replace('/'); return; }
       const { data, error } = await supabase.from('users').select('id, avatar_url, role, username, user_type, category_scores').eq('auth_id', user.id).single();
       console.log('[home] db data:', data, 'error:', error?.message);
       if (data) {
@@ -1121,7 +1099,7 @@ function HomePageInner() {
       {/* Header */}
       <header className="home-header">
         <div className="header-side">
-          <button className="icon-btn" onClick={() => requireAuth(() => setChatVisible(true))}>
+          <button className="icon-btn" onClick={() => setChatVisible(true)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           </button>
           <button className="icon-btn" onClick={() => setSearchVisible(true)}>
@@ -1135,7 +1113,7 @@ function HomePageInner() {
           <button className="icon-btn" onClick={() => setGroupsVisible(true)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           </button>
-          <button className="icon-btn" style={{ position: 'relative' }} onClick={() => requireAuth(() => { setNotifVisible(true); setHasUnread(false); })}>
+          <button className="icon-btn" style={{ position: 'relative' }} onClick={() => { setNotifVisible(true); setHasUnread(false); }}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
             {hasUnread && <div className="notif-badge" />}
           </button>
@@ -1152,10 +1130,10 @@ function HomePageInner() {
         <div className="stories-section">
           <p className="stories-label">{t('following')}</p>
           <div className="stories-row">
-            {!isGuest && <StoryRing id="create" username={myUsername ?? ''} label={t('story_your')} seed={myUsername ?? undefined} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />}
+            <StoryRing id="create" username={myUsername ?? ''} label={t('story_your')} seed={myUsername ?? undefined} avatarUrl={currentUserAvatar} isCustom onPress={() => setCreateStoryVisible(true)} />
             {stories.map((g, idx) => (
               <StoryRing key={g.userId} id={g.userId} username={g.username} avatarUrl={g.avatarUrl} hasUnwatched
-                onPress={() => requireAuth(() => { setActiveStoryIndex(idx); setStoryVisible(true); })} />
+                onPress={() => { setActiveStoryIndex(idx); setStoryVisible(true); }} />
             ))}
           </div>
         </div>
@@ -1185,17 +1163,16 @@ function HomePageInner() {
               key={item.id} post={item}
               currentUserAvatar={currentUserAvatar}
               currentUsername={myUsername}
-              onComment={() => requireAuth(() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); })}
+              onComment={() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); }}
               onUserPress={(uid) => { setProfileTargetUserId(uid); setProfileVisible(true); }}
               onDelete={() => setDbPosts(prev => prev.filter(p => p.id !== item.id))}
               isAdmin={isAdmin}
               onImagePress={(url) => { setImageViewerUrl(url); setImageViewerVisible(true); }}
               isFollowingAuthor={item.userId ? followingIds.has(item.userId) : false}
-              onFollowAuthor={(uid) => requireAuth(() => updateFollowingIds(prev => new Set([...prev, uid])))}
-              onUnfollowAuthor={(uid) => requireAuth(() => updateFollowingIds(prev => { const s = new Set(prev); s.delete(uid); return s; }))}
+              onFollowAuthor={(uid) => updateFollowingIds(prev => new Set([...prev, uid]))}
+              onUnfollowAuthor={(uid) => updateFollowingIds(prev => { const s = new Set(prev); s.delete(uid); return s; })}
               onShareToast={() => showToast(t('share_toast'))}
               onLiked={handleLiked}
-              onGuestAction={isGuest ? showGuestPopup : undefined}
             />
           );
         })}
@@ -1217,19 +1194,16 @@ function HomePageInner() {
         <button className="nav-tab" onClick={() => {}}>
           <svg width="26" height="26" fill={ORANGE} viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         </button>
-        <button className="nav-tab" onClick={() => requireAuth(() => setCreateMenuVisible(true))}>
+        <button className="nav-tab" onClick={() => setCreateMenuVisible(true)}>
           <div className="create-circle">
             <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </div>
         </button>
-        <button className="nav-tab" onClick={() => requireAuth(() => { setProfileTargetUserId(undefined); setProfileVisible(true); })}>
+        <button className="nav-tab" onClick={() => { setProfileTargetUserId(undefined); setProfileVisible(true); }}>
           <svg width="26" height="26" fill="none" stroke="#AAAAAA" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
       </nav>
 
-      {/* Guest Popup */}
-      {guestBlocked && <GuestPopup blocking />}
-      {!guestBlocked && guestPopupVisible && <GuestPopup onClose={() => setGuestPopupVisible(false)} />}
 
       {/* Modals */}
       <ImageViewerModal imageUrl={imageViewerUrl} visible={imageViewerVisible} onClose={() => { setImageViewerVisible(false); setImageViewerUrl(null); }} />
