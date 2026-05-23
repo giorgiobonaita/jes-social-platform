@@ -87,6 +87,13 @@ const IT = {
   s12p2: 'JES si riserva il diritto di eliminare account inattivi da più di 24 mesi, previa notifica via email all\'indirizzo registrato con preavviso di almeno 30 giorni.',
   s13: '13. Modifiche ai Termini',
   s13p: 'JES si riserva il diritto di modificare i presenti Termini in qualsiasi momento. In caso di modifiche sostanziali, gli utenti registrati saranno avvisati via email o tramite notifica in-app almeno 14 giorni prima dell\'entrata in vigore. La versione aggiornata sarà sempre disponibile su questa pagina con indicazione della data di aggiornamento. Il proseguimento dell\'utilizzo della Piattaforma dopo la data di entrata in vigore costituisce accettazione delle modifiche.',
+  s15: '15. Copyright e rimozione contenuti (DMCA / Diritto d\'autore UE)',
+  s15p1: 'Se ritieni che un contenuto presente su JES violi il tuo diritto d\'autore o altri diritti di proprietà intellettuale, invia una comunicazione scritta a:',
+  s15p2: 'La comunicazione deve includere: (a) identificazione dell\'opera protetta; (b) identificazione del contenuto lesivo e sua posizione sulla Piattaforma; (c) i tuoi recapiti; (d) dichiarazione in buona fede che l\'uso non è autorizzato; (e) dichiarazione, sotto pena di responsabilità, che le informazioni sono accurate e che sei il titolare o agisci per suo conto. JES elaborerà le comunicazioni valide tempestivamente e rimuoverà i contenuti contestati ove necessario.',
+  s16: '16. Risoluzione alternativa delle controversie (ODR)',
+  s16p: 'Ai sensi del Regolamento UE n. 524/2013 sulla risoluzione online delle controversie dei consumatori, JES informa gli utenti che la Commissione europea mette a disposizione una piattaforma ODR (Online Dispute Resolution) per la risoluzione extragiudiziale delle controversie:',
+  s16link: 'Piattaforma ODR UE',
+  s16p2: 'Indirizzo email di JES ai fini ODR:',
   s14: '14. Contatti',
   s14p: 'Per qualsiasi richiesta relativa ai presenti Termini, alla Privacy o al supporto:',
   s14email: 'Email:',
@@ -180,6 +187,13 @@ const EN = {
   s12p2: 'JES reserves the right to delete accounts inactive for more than 24 months, following email notification to the registered address with at least 30 days\' notice.',
   s13: '13. Changes to the Terms',
   s13p: 'JES reserves the right to modify these Terms at any time. In the event of material changes, registered users will be notified by email or in-app notification at least 14 days before the changes take effect. The updated version will always be available on this page with the update date indicated. Continued use of the Platform after the effective date constitutes acceptance of the changes.',
+  s15: '15. Copyright & IP Takedown (DMCA / EU Copyright)',
+  s15p1: 'If you believe that content on JES infringes your copyright or other intellectual property rights, send a written notice to:',
+  s15p2: 'Your notice must include: (a) identification of the copyrighted work; (b) identification of the infringing content and its location on the Platform; (c) your contact details; (d) a good-faith statement that the use is not authorised; (e) a declaration, under penalty of perjury, that the information is accurate and that you are the rights holder or authorised to act on their behalf. JES will process valid notices promptly and remove infringing content where required.',
+  s16: '16. EU Online Dispute Resolution',
+  s16p: 'In accordance with EU Regulation No. 524/2013 on online dispute resolution for consumer disputes, JES informs users that the European Commission provides an Online Dispute Resolution (ODR) platform. Users may use this platform to resolve disputes arising from the use of JES:',
+  s16link: 'EU ODR Platform',
+  s16p2: 'JES\'s email address for ODR purposes:',
   s14: '14. Contact',
   s14p: 'For any enquiry regarding these Terms, Privacy or support:',
   s14email: 'Email:',
@@ -383,6 +397,33 @@ export default function TerminiClient() {
             </li>
             <li>{c.s14site} <strong>jessocial.com</strong></li>
           </ul>
+        </div>
+
+        <div className={s.dividerLine} />
+
+        <div className={s.docSection}>
+          <h2><span className={s.num}>15</span> {c.s15}</h2>
+          <p>
+            {c.s15p1}{' '}
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
+          </p>
+          <p>{c.s15p2}</p>
+        </div>
+
+        <div className={s.dividerLine} />
+
+        <div className={s.docSection}>
+          <h2><span className={s.num}>16</span> {c.s16}</h2>
+          <p>{c.s16p}</p>
+          <p>
+            <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener noreferrer" className={s.linkOrange}>
+              {c.s16link}
+            </a>
+          </p>
+          <p>
+            {c.s16p2}{' '}
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>
+          </p>
         </div>
 
       </div>

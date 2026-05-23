@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
-import { redirect } from 'next/navigation';
+import ProfilePageClient from './ProfilePageClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,5 +48,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProfilePage({ params }: Props) {
   const { username } = await params;
-  redirect(`/?profile=${username}`);
+  return <ProfilePageClient username={username} />;
 }

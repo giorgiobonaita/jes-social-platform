@@ -67,6 +67,7 @@ export default function PrivacyClient() {
             <li>Session tokens stored in the browser via localStorage</li>
             <li>Content creation, modification and access timestamps</li>
             <li>Message read status</li>
+            <li>Push notification device tokens (FCM / APNs) — collected only if you grant notification permission; used solely to deliver in-app notifications and never shared with third parties</li>
           </ul>
 
           <p><strong>Data we do NOT collect</strong></p>
@@ -199,7 +200,45 @@ export default function PrivacyClient() {
         <div className={s.dividerLine} />
 
         <div className={s.docSection}>
-          <h2><span className={s.num}>10</span> Updates to this Policy</h2>
+          <h2><span className={s.num}>10</span> Automated decision-making and profiling</h2>
+          <p>
+            JES does <strong>not</strong> use automated decision-making processes or profiling that produce legal or similarly significant effects
+            for users, within the meaning of Art. 22 GDPR. Content shown in the feed is determined by chronological order and
+            user-defined settings, not by algorithmic profiling of personal data.
+          </p>
+        </div>
+
+        <div className={s.dividerLine} />
+
+        <div className={s.docSection}>
+          <h2><span className={s.num}>11</span> Data Protection Officer (DPO)</h2>
+          <p>
+            JES is not currently required to appoint a Data Protection Officer pursuant to Art. 37 GDPR, as processing does not fall
+            within the categories requiring mandatory designation. For any privacy-related matter, contact us directly at{' '}
+            <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a>.
+          </p>
+        </div>
+
+        <div className={s.dividerLine} />
+
+        <div className={s.docSection}>
+          <h2><span className={s.num}>12</span> App store data</h2>
+          <p>
+            If you downloaded the JES app via the Apple App Store or Google Play Store, those platforms independently collect
+            certain device and usage data pursuant to their own privacy policies. JES has no control over such data collection.
+            Please refer to{' '}
+            <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener noreferrer" className={s.linkOrange}>Apple&apos;s Privacy Policy</a>{' '}
+            and{' '}
+            <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={s.linkOrange}>Google&apos;s Privacy Policy</a>{' '}
+            for details.
+          </p>
+        </div>
+
+        <div className={s.dividerLine} />
+
+        <div className={s.docSection}>
+          <h2><span className={s.num}>13</span> Updates to this Policy</h2>
+
           <p>
             The Controller reserves the right to update this Policy. In the event of material changes, registered users will be
             notified by email or in-app notification at least <strong>14 days</strong> before the changes take effect.
@@ -209,7 +248,7 @@ export default function PrivacyClient() {
         <div className={s.dividerLine} />
 
         <div className={s.docSection}>
-          <h2><span className={s.num}>11</span> Contact and right to lodge a complaint</h2>
+          <h2><span className={s.num}>14</span> Contact and right to lodge a complaint</h2>
           <ul>
             <li>Email: <a href="mailto:jes.socialdellemozioni@gmail.com" className={s.linkOrange}>jes.socialdellemozioni@gmail.com</a></li>
             <li>Website: <strong>jessocial.com</strong></li>
