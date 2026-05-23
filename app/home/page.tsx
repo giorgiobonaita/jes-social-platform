@@ -1099,10 +1099,10 @@ const { t, lang } = useLang();
       {/* Header */}
       <header className="home-header">
         <div className="header-side">
-          <button className="icon-btn" onClick={() => setChatVisible(true)}>
+          <button className="icon-btn" onClick={() => router.push('/chat')}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
           </button>
-          <button className="icon-btn" onClick={() => setSearchVisible(true)}>
+          <button className="icon-btn" onClick={() => router.push('/search')}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </button>
         </div>
@@ -1113,7 +1113,7 @@ const { t, lang } = useLang();
           <button className="icon-btn" onClick={() => setGroupsVisible(true)}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           </button>
-          <button className="icon-btn" style={{ position: 'relative' }} onClick={() => { setNotifVisible(true); setHasUnread(false); }}>
+          <button className="icon-btn" style={{ position: 'relative' }} onClick={() => { router.push('/notifications'); setHasUnread(false); }}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
             {hasUnread && <div className="notif-badge" />}
           </button>
@@ -1199,7 +1199,7 @@ const { t, lang } = useLang();
             <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </div>
         </button>
-        <button className="nav-tab" onClick={() => { setProfileTargetUserId(undefined); setProfileVisible(true); }}>
+        <button className="nav-tab" onClick={() => myUsername ? router.push(`/profile/${myUsername}`) : router.push('/settings')}>
           <svg width="26" height="26" fill="none" stroke="#AAAAAA" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
       </nav>
@@ -1232,7 +1232,7 @@ const { t, lang } = useLang();
             stories: g.stories.filter(s => s.id !== deletedId),
           })).filter(g => g.stories.length > 0));
         }}
-        onUserPress={(uid) => { setStoryVisible(false); setProfileTargetUserId(uid); setProfileVisible(true); }}
+        onUserPress={(uid) => { setStoryVisible(false); setProfileTargetUserId(uid); setProfileVisible(true); /* profile modal stays for story viewer */ }}
       />
       <CommentsModal visible={commentsVisible} postId={commentsPostId} postAuthorId={commentsAuthorId} onClose={() => { setCommentsVisible(false); setCommentsPostId(null); setCommentsAuthorId(null); }} />
       <SearchModal visible={searchVisible} onClose={() => setSearchVisible(false)}
@@ -1240,9 +1240,10 @@ const { t, lang } = useLang();
         onGroupPress={gid => { setGroupsInitialId(gid); setGroupsVisible(true); }}
         onPostPress={(_, url) => { setImageViewerUrl(url); setImageViewerVisible(true); }} />
       <NotificationsModal visible={notifVisible} onClose={() => setNotifVisible(false)} />
+      {/* Note: chat/search/notifications/settings now have dedicated URL routes */}
       <ProfileModal visible={profileVisible} targetUserId={profileTargetUserId}
         onClose={() => { setProfileVisible(false); setProfileTargetUserId(undefined); }}
-        onMessagePress={(uid, name, avatar) => { setChatOpenWith({ userId: uid, name, avatar }); setProfileVisible(false); setTimeout(() => setChatVisible(true), 350); }}
+        onMessagePress={(uid, name, avatar) => { setProfileVisible(false); router.push(`/chat?with=${uid}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar ?? '')}`); }}
         onRequestViewUser={uid => setProfileTargetUserId(uid)}
         onPostAsJes={(jesId, type) => {
           if (type === 'post') setJesPostAuthorId(jesId);
