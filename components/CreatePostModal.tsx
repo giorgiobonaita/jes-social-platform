@@ -92,7 +92,7 @@ export default function CreatePostModal({ visible, onClose, onPublished, authorU
     return data.publicUrl;
   };
 
-  const canPublish = caption.trim().length > 0 && files.length > 0;
+  const canPublish = files.length > 0;
 
   const publish = async () => {
     if (!canPublish || publishing) return;
