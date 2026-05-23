@@ -7,6 +7,7 @@ import FeedPoll from '@/components/FeedPoll';
 import CommentsModal from '@/components/CommentsModal';
 import CreateMenuModal from '@/components/CreateMenuModal';
 import CreatePostModal from '@/components/CreatePostModal';
+import CreateTextPostModal from '@/components/CreateTextPostModal';
 import CreateStoryModal from '@/components/CreateStoryModal';
 import CreatePollModal from '@/components/CreatePollModal';
 import ImageViewerModal from '@/components/ImageViewerModal';
@@ -454,8 +455,24 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
           </button>
         </div>
 
+        {/* Text post */}
+        {post.postType === 'text' && post.textBg && (
+          <div onClick={handleDoubleTap} style={{ position: 'relative', width: '100%', aspectRatio: '1', background: post.textBg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 28, boxSizing: 'border-box', cursor: 'pointer' }}>
+            {heartAnim && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
+                <svg width="90" height="90" fill="white" viewBox="0 0 24 24" style={{ filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.35))', animation: 'heartPop 0.8s ease forwards' }}>
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+            )}
+            <p style={{ fontFamily: 'var(--font-display)', fontSize: post.textSize || 28, fontWeight: 700, color: post.textColor || '#fff', textAlign: (post.textAlign as any) || 'center', lineHeight: 1.35, margin: 0, wordBreak: 'break-word', textShadow: post.textColor === '#FFFFFF' ? '0 1px 8px rgba(0,0,0,0.2)' : '0 1px 8px rgba(255,255,255,0.1)' }}>
+              {post.caption}
+            </p>
+          </div>
+        )}
+
         {/* Image / Carousel */}
-        {photos.length > 0 && (
+        {post.postType !== 'text' && photos.length > 0 && (
           <div className="pc-image-wrap" onClick={handleDoubleTap} style={{ position: 'relative' }}>
             {heartAnim && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
@@ -547,7 +564,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
             </div>
           )}
 
-          {caption && (
+          {caption && post.postType !== 'text' && (
             <div className="pc-caption-wrap" onClick={() => setExpanded(p => !p)}>
               <span className="pc-caption">
                 <strong className="pc-caption-user">{post.author?.username} </strong>
@@ -876,6 +893,7 @@ const { t, lang } = useLang();
   const [groupsInitialId, setGroupsInitialId] = useState<string | undefined>();
   const [createMenuVisible, setCreateMenuVisible] = useState(false);
   const [createPostVisible, setCreatePostVisible] = useState(false);
+  const [createTextPostVisible, setCreateTextPostVisible] = useState(false);
   const [createStoryVisible, setCreateStoryVisible] = useState(false);
   const [createPollVisible, setCreatePollVisible] = useState(false);
   const [jesPostAuthorId, setJesPostAuthorId] = useState<string | undefined>();
@@ -968,6 +986,11 @@ const { t, lang } = useLang();
         createdAt: p.created_at,
         tags: tagsByPost[p.id] || [],
         groupName: p.group_name || undefined,
+        postType: p.post_type || 'image',
+        textBg: p.text_bg || null,
+        textColor: p.text_color || '#FFFFFF',
+        textSize: p.text_size || 28,
+        textAlign: p.text_align || 'center',
       };
     });
     if (append) setDbPosts(prev => [...prev, ...mapped]);
@@ -1257,7 +1280,11 @@ const { t, lang } = useLang();
         onClose={() => { setGroupsVisible(false); setGroupsInitialId(undefined); }}
         onPostPublished={(post: any) => setGroupPosts(prev => [post, ...prev])} />
       <CreateMenuModal visible={createMenuVisible} onClose={() => setCreateMenuVisible(false)}
-        onPost={() => setCreatePostVisible(true)} onStory={() => setCreateStoryVisible(true)} onPoll={() => { setCreateMenuVisible(false); setCreatePollVisible(true); }} />
+        onPost={() => setCreatePostVisible(true)}
+        onTextPost={() => setCreateTextPostVisible(true)}
+        onStory={() => setCreateStoryVisible(true)}
+        onPoll={() => { setCreateMenuVisible(false); setCreatePollVisible(true); }} />
+      <CreateTextPostModal visible={createTextPostVisible} onClose={() => setCreateTextPostVisible(false)} onPublished={loadDbPosts} />
       <CreatePostModal visible={createPostVisible} authorUserId={jesPostAuthorId}
         onClose={() => { setCreatePostVisible(false); setJesPostAuthorId(undefined); }} onPublished={loadDbPosts} />
       <CreateStoryModal visible={createStoryVisible} onClose={() => { setCreateStoryVisible(false); setJesStoryAuthorId(undefined); }} onPublished={loadStories} authorUserId={jesStoryAuthorId} />

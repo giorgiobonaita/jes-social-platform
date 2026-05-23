@@ -3,10 +3,10 @@ import { useLang } from '@/lib/i18n';
 
 interface Props {
   visible: boolean; onClose: () => void;
-  onPost: () => void; onStory: () => void; onPoll: () => void;
+  onPost: () => void; onStory: () => void; onPoll: () => void; onTextPost: () => void;
 }
 
-export default function CreateMenuModal({ visible, onClose, onPost, onStory, onPoll }: Props) {
+export default function CreateMenuModal({ visible, onClose, onPost, onStory, onPoll, onTextPost }: Props) {
   const { t } = useLang();
   if (!visible) return null;
 
@@ -17,6 +17,15 @@ export default function CreateMenuModal({ visible, onClose, onPost, onStory, onP
       icon: (
         <svg width="28" height="28" fill="none" stroke="#5B6AF5" strokeWidth="1.8" viewBox="0 0 24 24">
           <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+        </svg>
+      ),
+    },
+    {
+      key: 'textpost', label: 'Testo', sub: 'Post con solo testo e sfondo',
+      color: '#FF5E5E', bg: '#FF5E5E18',
+      icon: (
+        <svg width="28" height="28" fill="none" stroke="#FF5E5E" strokeWidth="1.8" viewBox="0 0 24 24">
+          <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>
         </svg>
       ),
     },
@@ -42,9 +51,10 @@ export default function CreateMenuModal({ visible, onClose, onPost, onStory, onP
   ];
 
   const handlers: Record<string, () => void> = {
-    post: () => { onClose(); setTimeout(onPost, 200); },
-    story: () => { onClose(); setTimeout(onStory, 200); },
-    poll: () => { onClose(); setTimeout(onPoll, 200); },
+    post:     () => { onClose(); setTimeout(onPost, 200); },
+    textpost: () => { onClose(); setTimeout(onTextPost, 200); },
+    story:    () => { onClose(); setTimeout(onStory, 200); },
+    poll:     () => { onClose(); setTimeout(onPoll, 200); },
   };
 
   return (
