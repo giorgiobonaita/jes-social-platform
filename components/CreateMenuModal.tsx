@@ -3,10 +3,10 @@ import { useLang } from '@/lib/i18n';
 
 interface Props {
   visible: boolean; onClose: () => void;
-  onPost: () => void; onStory: () => void; onPoll: () => void; onTextPost: () => void;
+  onPost: () => void; onStory: () => void; onPoll: () => void; onTextPost: () => void; onVideo: () => void;
 }
 
-export default function CreateMenuModal({ visible, onClose, onPost, onStory, onPoll, onTextPost }: Props) {
+export default function CreateMenuModal({ visible, onClose, onPost, onStory, onPoll, onTextPost, onVideo }: Props) {
   const { t } = useLang();
   if (!visible) return null;
 
@@ -40,6 +40,15 @@ export default function CreateMenuModal({ visible, onClose, onPost, onStory, onP
       ),
     },
     {
+      key: 'video', label: 'Video', sub: 'Carica un video (max 50MB)',
+      color: '#FF3B30', bg: '#FF3B3018',
+      icon: (
+        <svg width="28" height="28" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24">
+          <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+        </svg>
+      ),
+    },
+    {
       key: 'poll', label: t('create_poll_label'), sub: t('poll_sub'),
       color: '#34C759', bg: '#34C75918',
       icon: (
@@ -53,6 +62,7 @@ export default function CreateMenuModal({ visible, onClose, onPost, onStory, onP
   const handlers: Record<string, () => void> = {
     post:     () => { onClose(); setTimeout(onPost, 200); },
     textpost: () => { onClose(); setTimeout(onTextPost, 200); },
+    video:    () => { onClose(); setTimeout(onVideo, 200); },
     story:    () => { onClose(); setTimeout(onStory, 200); },
     poll:     () => { onClose(); setTimeout(onPoll, 200); },
   };

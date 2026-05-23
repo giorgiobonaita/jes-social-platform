@@ -8,6 +8,7 @@ import CommentsModal from '@/components/CommentsModal';
 import CreateMenuModal from '@/components/CreateMenuModal';
 import CreatePostModal from '@/components/CreatePostModal';
 import CreateTextPostModal from '@/components/CreateTextPostModal';
+import CreateVideoModal from '@/components/CreateVideoModal';
 import CreateStoryModal from '@/components/CreateStoryModal';
 import CreatePollModal from '@/components/CreatePollModal';
 import ImageViewerModal from '@/components/ImageViewerModal';
@@ -454,6 +455,17 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
           </button>
         </div>
+
+        {/* Video post */}
+        {post.postType === 'video' && (post as any).videoUrl && (
+          <div style={{ background: '#000', width: '100%' }}>
+            <video
+              src={(post as any).videoUrl}
+              controls playsInline
+              style={{ width: '100%', maxHeight: '65vw', display: 'block', objectFit: 'contain' }}
+            />
+          </div>
+        )}
 
         {/* Text post (plain) */}
         {post.postType === 'plain_text' && (
@@ -910,6 +922,7 @@ const { t, lang } = useLang();
   const [createMenuVisible, setCreateMenuVisible] = useState(false);
   const [createPostVisible, setCreatePostVisible] = useState(false);
   const [createTextPostVisible, setCreateTextPostVisible] = useState(false);
+  const [createVideoVisible, setCreateVideoVisible] = useState(false);
   const [createStoryVisible, setCreateStoryVisible] = useState(false);
   const [createPollVisible, setCreatePollVisible] = useState(false);
   const [jesPostAuthorId, setJesPostAuthorId] = useState<string | undefined>();
@@ -1007,6 +1020,7 @@ const { t, lang } = useLang();
         textColor: p.text_color || '#FFFFFF',
         textSize: p.text_size || 28,
         textAlign: p.text_align || 'center',
+        videoUrl: p.video_url || null,
       };
     });
     if (append) setDbPosts(prev => [...prev, ...mapped]);
@@ -1298,9 +1312,11 @@ const { t, lang } = useLang();
       <CreateMenuModal visible={createMenuVisible} onClose={() => setCreateMenuVisible(false)}
         onPost={() => setCreatePostVisible(true)}
         onTextPost={() => setCreateTextPostVisible(true)}
+        onVideo={() => setCreateVideoVisible(true)}
         onStory={() => setCreateStoryVisible(true)}
         onPoll={() => { setCreateMenuVisible(false); setCreatePollVisible(true); }} />
       <CreateTextPostModal visible={createTextPostVisible} onClose={() => setCreateTextPostVisible(false)} onPublished={loadDbPosts} />
+      <CreateVideoModal visible={createVideoVisible} onClose={() => setCreateVideoVisible(false)} onPublished={loadDbPosts} />
       <CreatePostModal visible={createPostVisible} authorUserId={jesPostAuthorId}
         onClose={() => { setCreatePostVisible(false); setJesPostAuthorId(undefined); }} onPublished={loadDbPosts} />
       <CreateStoryModal visible={createStoryVisible} onClose={() => { setCreateStoryVisible(false); setJesStoryAuthorId(undefined); }} onPublished={loadStories} authorUserId={jesStoryAuthorId} />
