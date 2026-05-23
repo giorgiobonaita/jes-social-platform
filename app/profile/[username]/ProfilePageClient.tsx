@@ -53,7 +53,10 @@ export default function ProfilePageClient({ username }: Props) {
           if (data?.username) router.push(`/profile/${data.username}`);
         });
       }}
-      onPostAsJes={(jesUserId, type) => {}}
+      onPostAsJes={(jesUserId, type) => {
+        if (type === 'post') router.push(`/home?jesPost=${jesUserId}`);
+        else router.push(`/home?jesStory=${jesUserId}`);
+      }}
     />
   );
 }

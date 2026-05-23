@@ -936,6 +936,14 @@ const { t, lang } = useLang();
   const allPosts = useMemo(() => [...groupPosts, ...dbPosts], [groupPosts, dbPosts]);
   const feedData = useMemo(() => buildFeed(allPosts, myUsername, userType, categoryScores, interests, algoActive), [allPosts, myUsername, userType, categoryScores, interests, algoActive]);
 
+  // Handle ?jesPost=<userId> and ?jesStory=<userId> from admin "Pubblica su JES" flow
+  useEffect(() => {
+    const jesPost = searchParams.get('jesPost');
+    const jesStory = searchParams.get('jesStory');
+    if (jesPost) { setJesPostAuthorId(jesPost); setCreatePostVisible(true); }
+    if (jesStory) { setJesStoryAuthorId(jesStory); setCreateStoryVisible(true); }
+  }, [searchParams]);
+
   useEffect(() => {
     (async () => {
       console.log('[home] effect running');
