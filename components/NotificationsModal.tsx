@@ -163,7 +163,6 @@ export default function NotificationsModal({ visible, onClose }: Props) {
   const handleGoToUser = () => {
     if (!actionSheet?.actorUsername) return;
     setActionSheet(null);
-    onClose();
     router.push(`/profile/${actionSheet.actorUsername}`);
   };
 
@@ -171,7 +170,6 @@ export default function NotificationsModal({ visible, onClose }: Props) {
     if (!actionSheet?.postId) return;
     const suffix = actionSheet.type === 'comment' ? '?comments=1' : '';
     setActionSheet(null);
-    onClose();
     router.push(`/post/${actionSheet.postId}${suffix}`);
   };
 
