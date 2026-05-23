@@ -240,12 +240,16 @@ export default function CreateVideoModal({ visible, onClose, onPublished, author
               Visibilità
             </label>
             <div style={{ display: 'flex', gap: 10 }}>
-              {(['all', 'me'] as const).map(v => (
-                <button key={v} onClick={() => setPrivacy(v)}
-                  style={{ flex: 1, padding: '10px', borderRadius: 12, border: privacy === v ? `2px solid ${ORANGE}` : '1.5px solid #E8E8E8', background: privacy === v ? '#FFF0E6' : '#fff', color: privacy === v ? ORANGE : '#555', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
-                  {v === 'all' ? '🌍 Tutti' : '🔒 Solo io'}
-                </button>
-              ))}
+              <button onClick={() => setPrivacy('all')}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, border: privacy === 'all' ? `2px solid ${ORANGE}` : '1.5px solid #E8E8E8', background: privacy === 'all' ? '#FFF0E6' : '#fff', color: privacy === 'all' ? ORANGE : '#555', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                Tutti
+              </button>
+              <button onClick={() => setPrivacy('me')}
+                style={{ flex: 1, padding: '12px', borderRadius: 12, border: privacy === 'me' ? `2px solid ${ORANGE}` : '1.5px solid #E8E8E8', background: privacy === 'me' ? '#FFF0E6' : '#fff', color: privacy === 'me' ? ORANGE : '#555', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                Solo io
+              </button>
             </div>
           </div>
         </div>
