@@ -236,7 +236,7 @@ function ReportSheet({ postId, currentUserId, reportedUserId, onDone }: { postId
 // ── Post Card ─────────────────────────────────────────────────────────────────
 function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onUnfollowAuthor, onShareToast, onLiked, onGuestAction }: {
   post: any; currentUserAvatar?: string | null; currentUsername?: string | null;
-  onComment: () => void; onUserPress: (id: string) => void;
+  onComment: () => void; onUserPress: (id: string, username?: string) => void;
   onDelete: () => void; isAdmin: boolean;
   onImagePress: (url: string) => void;
   isFollowingAuthor?: boolean; onFollowAuthor?: (userId: string) => void; onUnfollowAuthor?: (userId: string) => void;
@@ -416,10 +416,10 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
       <div className="pc-post">
         {/* Header */}
         <div className="pc-header">
-          <div className="pc-avatar-ring" onClick={() => onUserPress(post.userId)} style={{ cursor: 'pointer' }}>
+          <div className="pc-avatar-ring" onClick={() => onUserPress(post.userId, post.author?.username)} style={{ cursor: 'pointer' }}>
             <AvatarImg uri={post.author?.avatarUrl} size={40} seed={post.author?.username} className="pc-avatar-img" style={{ borderRadius: '50%' }} />
           </div>
-          <div className="pc-meta" onClick={() => onUserPress(post.userId)} style={{ cursor: 'pointer' }}>
+          <div className="pc-meta" onClick={() => onUserPress(post.userId, post.author?.username)} style={{ cursor: 'pointer' }}>
             <div className="pc-username">
               {post.author?.username}{post.groupName ? ` — ${post.groupName}` : ''}
               {isOfficial && (
@@ -1110,7 +1110,7 @@ const { t, lang } = useLang();
         <span style={{ fontFamily: 'var(--font-display)', fontSize: 30, fontWeight: 800, color: ORANGE, letterSpacing: -1, cursor: 'pointer' }} onClick={() => feedScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}>JES</span>
 
         <div className="header-side">
-          <button className="icon-btn" onClick={() => setGroupsVisible(true)}>
+          <button className="icon-btn" onClick={() => router.push('/groups')}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
           </button>
           <button className="icon-btn" style={{ position: 'relative' }} onClick={() => { router.push('/notifications'); setHasUnread(false); }}>
@@ -1164,7 +1164,7 @@ const { t, lang } = useLang();
               currentUserAvatar={currentUserAvatar}
               currentUsername={myUsername}
               onComment={() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); }}
-              onUserPress={(uid) => { setProfileTargetUserId(uid); setProfileVisible(true); }}
+              onUserPress={(uid, username) => { if (username) router.push(`/profile/${username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
               onDelete={() => setDbPosts(prev => prev.filter(p => p.id !== item.id))}
               isAdmin={isAdmin}
               onImagePress={(url) => { setImageViewerUrl(url); setImageViewerVisible(true); }}
@@ -1232,11 +1232,11 @@ const { t, lang } = useLang();
             stories: g.stories.filter(s => s.id !== deletedId),
           })).filter(g => g.stories.length > 0));
         }}
-        onUserPress={(uid) => { setStoryVisible(false); setProfileTargetUserId(uid); setProfileVisible(true); /* profile modal stays for story viewer */ }}
+        onUserPress={async (uid) => { setStoryVisible(false); const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) router.push(`/profile/${data.username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
       />
       <CommentsModal visible={commentsVisible} postId={commentsPostId} postAuthorId={commentsAuthorId} onClose={() => { setCommentsVisible(false); setCommentsPostId(null); setCommentsAuthorId(null); }} />
       <SearchModal visible={searchVisible} onClose={() => setSearchVisible(false)}
-        onUserPress={uid => { setProfileTargetUserId(uid); setProfileVisible(true); }}
+        onUserPress={async uid => { const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) router.push(`/profile/${data.username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
         onGroupPress={gid => { setGroupsInitialId(gid); setGroupsVisible(true); }}
         onPostPress={(_, url) => { setImageViewerUrl(url); setImageViewerVisible(true); }} />
       <NotificationsModal visible={notifVisible} onClose={() => setNotifVisible(false)} />
