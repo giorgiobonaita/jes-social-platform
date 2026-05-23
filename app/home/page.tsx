@@ -455,7 +455,23 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
           </button>
         </div>
 
-        {/* Text post */}
+        {/* Text post (plain) */}
+        {post.postType === 'plain_text' && (
+          <div onClick={handleDoubleTap} style={{ position: 'relative', width: '100%', padding: '20px 20px 4px', boxSizing: 'border-box', cursor: 'pointer', background: '#fff' }}>
+            {heartAnim && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, pointerEvents: 'none' }}>
+                <svg width="90" height="90" fill="#F07B1D" viewBox="0 0 24 24" style={{ filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.2))', animation: 'heartPop 0.8s ease forwards' }}>
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+              </div>
+            )}
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: 16, color: '#111', lineHeight: 1.55, margin: 0, wordBreak: 'break-word' }}>
+              {post.caption}
+            </p>
+          </div>
+        )}
+
+        {/* Text post (styled with bg) */}
         {post.postType === 'text' && post.textBg && (
           <div onClick={handleDoubleTap} style={{ position: 'relative', width: '100%', aspectRatio: '1', background: post.textBg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 28, boxSizing: 'border-box', cursor: 'pointer' }}>
             {heartAnim && (
@@ -564,7 +580,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
             </div>
           )}
 
-          {caption && post.postType !== 'text' && (
+          {caption && post.postType !== 'text' && post.postType !== 'plain_text' && (
             <div className="pc-caption-wrap" onClick={() => setExpanded(p => !p)}>
               <span className="pc-caption">
                 <strong className="pc-caption-user">{post.author?.username} </strong>
