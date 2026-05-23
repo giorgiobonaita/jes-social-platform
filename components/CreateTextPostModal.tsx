@@ -146,14 +146,14 @@ export default function CreateTextPostModal({ visible, onClose, onPublished, aut
     } finally { setPublishing(false); }
   };
 
-  const headerBg = mode === 'styled' ? '#111' : '#fff';
-  const headerColor = mode === 'styled' ? '#fff' : '#111';
+  const headerBg = '#fff';
+  const headerColor = '#111';
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: mode === 'styled' ? '#000' : '#fff', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#fff', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: headerBg, borderBottom: mode === 'plain' ? '1px solid #F0F0F0' : 'none', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#fff', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
         <button onClick={() => setMode(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: headerColor, display: 'flex', alignItems: 'center', padding: 0 }}>
           <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -219,14 +219,14 @@ export default function CreateTextPostModal({ visible, onClose, onPublished, aut
           </div>
 
           {/* Controls */}
-          <div style={{ background: '#111', paddingBottom: 'env(safe-area-inset-bottom, 16px)', flexShrink: 0 }}>
+          <div style={{ background: '#fff', borderTop: '1px solid #F0F0F0', paddingBottom: 'env(safe-area-inset-bottom, 16px)', flexShrink: 0 }}>
             {/* Align + font size */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: '1px solid #222' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: '1px solid #F0F0F0' }}>
               <div style={{ display: 'flex', gap: 4 }}>
                 {(['left','center','right'] as const).map(a => (
                   <button key={a} onClick={() => setTextAlign(a)}
-                    style={{ background: textAlign === a ? '#F07B1D22' : 'none', border: textAlign === a ? '1.5px solid #F07B1D' : '1.5px solid #333', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
-                    <svg width="18" height="18" fill="none" stroke={textAlign === a ? '#F07B1D' : '#888'} strokeWidth="2" viewBox="0 0 24 24">
+                    style={{ background: textAlign === a ? '#FFF0E6' : 'none', border: textAlign === a ? '1.5px solid #F07B1D' : '1.5px solid #E0E0E0', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
+                    <svg width="18" height="18" fill="none" stroke={textAlign === a ? '#F07B1D' : '#999'} strokeWidth="2" viewBox="0 0 24 24">
                       {a === 'left'   && <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></>}
                       {a === 'center' && <><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></>}
                       {a === 'right'  && <><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></>}
@@ -236,29 +236,29 @@ export default function CreateTextPostModal({ visible, onClose, onPublished, aut
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 <button onClick={() => setFontSize(s => Math.max(FONT_SIZES[0], s - 4))}
-                  style={{ background: '#222', border: 'none', borderRadius: 8, width: 32, height: 32, color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                <span style={{ color: '#fff', fontSize: 13, fontWeight: 600, minWidth: 28, textAlign: 'center' }}>{fontSize}</span>
+                  style={{ background: '#F5F5F5', border: 'none', borderRadius: 8, width: 32, height: 32, color: '#111', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                <span style={{ color: '#111', fontSize: 13, fontWeight: 600, minWidth: 28, textAlign: 'center' }}>{fontSize}</span>
                 <button onClick={() => setFontSize(s => Math.min(FONT_SIZES[FONT_SIZES.length - 1], s + 4))}
-                  style={{ background: '#222', border: 'none', borderRadius: 8, width: 32, height: 32, color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  style={{ background: '#F5F5F5', border: 'none', borderRadius: 8, width: 32, height: 32, color: '#111', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
               </div>
             </div>
             {/* Text color */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', borderBottom: '1px solid #222' }}>
-              <span style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 }}>Testo</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', borderBottom: '1px solid #F0F0F0' }}>
+              <span style={{ fontSize: 11, color: '#999', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 }}>Testo</span>
               <div style={{ display: 'flex', gap: 8, overflowX: 'auto' }}>
                 {TEXT_COLORS.map(c => (
                   <button key={c} onClick={() => setTextColor(c)}
-                    style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: textColor === c ? '3px solid #F07B1D' : '2px solid #444', cursor: 'pointer', flexShrink: 0, boxShadow: c === '#FFFFFF' ? 'inset 0 0 0 1px #555' : 'none' }} />
+                    style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: textColor === c ? '3px solid #F07B1D' : '2px solid #E0E0E0', cursor: 'pointer', flexShrink: 0, boxShadow: c === '#FFFFFF' ? 'inset 0 0 0 1px #CCC' : 'none' }} />
                 ))}
               </div>
             </div>
             {/* Background */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px' }}>
-              <span style={{ fontSize: 11, color: '#888', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 }}>Sfondo</span>
+              <span style={{ fontSize: 11, color: '#999', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase', flexShrink: 0 }}>Sfondo</span>
               <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
                 {BACKGROUNDS.map(b => (
                   <button key={b.id} onClick={() => { setBg(b); setTextColor(textColorAuto(b.value)); }}
-                    style={{ width: 36, height: 36, borderRadius: 10, background: b.value, border: bg.id === b.id ? '3px solid #F07B1D' : '2px solid #333', cursor: 'pointer', flexShrink: 0, boxShadow: b.value === '#FFFFFF' ? 'inset 0 0 0 1px #555' : 'none' }} />
+                    style={{ width: 36, height: 36, borderRadius: 10, background: b.value, border: bg.id === b.id ? '3px solid #F07B1D' : '2px solid #E0E0E0', cursor: 'pointer', flexShrink: 0, boxShadow: b.value === '#FFFFFF' ? 'inset 0 0 0 1px #CCC' : 'none' }} />
                 ))}
               </div>
             </div>
