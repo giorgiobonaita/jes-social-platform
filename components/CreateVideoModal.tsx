@@ -102,9 +102,8 @@ export default function CreateVideoModal({ visible, onClose, onPublished, author
         video_url:  videoUrl,
         aspect_ratio: 1,
         post_type:  'video',
-        visibility: privacy === 'me' ? 'private' : 'public',
-        group_id:   selectedGroupId || null,
-        group_name: selectedGroup?.name || null,
+        privacy,
+        ...(selectedGroup ? { group_id: selectedGroup.id, group_name: selectedGroup.name } : {}),
       });
       if (insertErr) { setError(`Errore pubblicazione: ${insertErr.message}`); return; }
 
