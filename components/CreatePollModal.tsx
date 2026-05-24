@@ -6,9 +6,10 @@ import { useLang } from '@/lib/i18n';
 interface Props {
   visible: boolean;
   onClose: () => void;
+  authorUserId?: string;
 }
 
-export default function CreatePollModal({ visible, onClose }: Props) {
+export default function CreatePollModal({ visible, onClose, authorUserId }: Props) {
   const { t } = useLang();
   
   const DURATIONS = [
@@ -39,10 +40,14 @@ export default function CreatePollModal({ visible, onClose }: Props) {
     setPublishing(true);
     setError('');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error(t('not_logged'));
-      const { data: dbUser } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
-      if (!dbUser) throw new Error(t('profile_not_found'));
+      let postUserId = authorUserId ?? null;
+      if (!postUserId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error(t('not_logged'));
+        const { data: dbUser } = await supabase.from('users').select('id').eq('auth_id', user.id).single();
+        if (!dbUser) throw new Error(t('profile_not_found'));
+        postUserId = dbUser.id;
+      }
 
       const pollOptions = filledOptions.map((opt, idx) => ({ id: String.fromCharCode(65 + idx), label: opt, votes: 0 }));
       const durationDays: Record<string, number> = { '1d': 1, '3d': 3, '7d': 7 };
@@ -50,7 +55,7 @@ export default function CreatePollModal({ visible, onClose }: Props) {
       expires.setDate(expires.getDate() + (durationDays[duration] ?? 1));
 
       const { error: err } = await supabase.from('posts').insert({
-        user_id: dbUser.id, type: 'poll',
+        user_id: postUserId, type: 'poll',
         poll_question: question.trim(), poll_options: pollOptions,
         aspect_ratio: 1, privacy: 'all',
       });

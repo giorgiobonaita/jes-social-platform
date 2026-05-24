@@ -936,12 +936,18 @@ const { t, lang } = useLang();
   const allPosts = useMemo(() => [...groupPosts, ...dbPosts], [groupPosts, dbPosts]);
   const feedData = useMemo(() => buildFeed(allPosts, myUsername, userType, categoryScores, interests, algoActive), [allPosts, myUsername, userType, categoryScores, interests, algoActive]);
 
-  // Handle ?jesPost=<userId> and ?jesStory=<userId> from admin "Pubblica su JES" flow
+  // Handle jes* query params from admin "Pubblica su JES" flow
   useEffect(() => {
-    const jesPost = searchParams.get('jesPost');
+    const jesPost  = searchParams.get('jesPost');
     const jesStory = searchParams.get('jesStory');
-    if (jesPost) { setJesPostAuthorId(jesPost); setCreatePostVisible(true); }
-    if (jesStory) { setJesStoryAuthorId(jesStory); setCreateStoryVisible(true); }
+    const jesVideo = searchParams.get('jesVideo');
+    const jesText  = searchParams.get('jesText');
+    const jesPoll  = searchParams.get('jesPoll');
+    if (jesPost)  { setJesPostAuthorId(jesPost);   setCreatePostVisible(true); }
+    if (jesStory) { setJesStoryAuthorId(jesStory);  setCreateStoryVisible(true); }
+    if (jesVideo) { setJesPostAuthorId(jesVideo);   setCreateVideoVisible(true); }
+    if (jesText)  { setJesPostAuthorId(jesText);    setCreateTextPostVisible(true); }
+    if (jesPoll)  { setJesPostAuthorId(jesPoll);    setCreatePollVisible(true); }
   }, [searchParams]);
 
   useEffect(() => {
@@ -1323,12 +1329,12 @@ const { t, lang } = useLang();
         onVideo={() => setCreateVideoVisible(true)}
         onStory={() => setCreateStoryVisible(true)}
         onPoll={() => { setCreateMenuVisible(false); setCreatePollVisible(true); }} />
-      <CreateTextPostModal visible={createTextPostVisible} onClose={() => setCreateTextPostVisible(false)} onPublished={loadDbPosts} />
-      <CreateVideoModal visible={createVideoVisible} onClose={() => setCreateVideoVisible(false)} onPublished={loadDbPosts} />
+      <CreateTextPostModal visible={createTextPostVisible} onClose={() => { setCreateTextPostVisible(false); setJesPostAuthorId(undefined); }} onPublished={loadDbPosts} authorUserId={jesPostAuthorId} />
+      <CreateVideoModal visible={createVideoVisible} onClose={() => { setCreateVideoVisible(false); setJesPostAuthorId(undefined); }} onPublished={loadDbPosts} authorUserId={jesPostAuthorId} />
       <CreatePostModal visible={createPostVisible} authorUserId={jesPostAuthorId}
         onClose={() => { setCreatePostVisible(false); setJesPostAuthorId(undefined); }} onPublished={loadDbPosts} />
       <CreateStoryModal visible={createStoryVisible} onClose={() => { setCreateStoryVisible(false); setJesStoryAuthorId(undefined); }} onPublished={loadStories} authorUserId={jesStoryAuthorId} />
-      <CreatePollModal visible={createPollVisible} onClose={() => setCreatePollVisible(false)} />
+      <CreatePollModal visible={createPollVisible} onClose={() => { setCreatePollVisible(false); setJesPostAuthorId(undefined); }} authorUserId={jesPostAuthorId} />
 
     </div>
   );

@@ -40,7 +40,7 @@ interface Props {
   targetUserId?: string;
   onMessagePress: (userId: string, name: string, avatar: string | null) => void;
   onRequestViewUser: (userId: string) => void;
-  onPostAsJes: (jesUserId: string, type: 'post' | 'story') => void;
+  onPostAsJes: (jesUserId: string, type: 'post' | 'story' | 'video' | 'text' | 'poll') => void;
 }
 
 export default function ProfileModal({ visible, onClose, targetUserId, onMessagePress, onRequestViewUser, onPostAsJes }: Props) {
@@ -508,10 +508,10 @@ if (me) {
                   <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>{t('admin_panel')}</p>
                   {[
                     { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: t('admin_panel'), action: () => { window.open('/admin', '_blank'); } },
-                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5 6.5-7"/></svg>, label: t('official_profile'), action: async () => {
+                    ...(!isOwnProfile && isJes ? [] : [{ icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5 6.5-7"/></svg>, label: t('official_profile'), action: async () => {
                       const { data } = await supabase.from('users').select('id').eq('username', JES_OFFICIAL_USERNAME).maybeSingle();
                       if (data) { setShowSettings(false); onRequestViewUser(data.id); } else alert(`Crea prima l'utente "${JES_OFFICIAL_USERNAME}" in Supabase.`);
-                    }},
+                    }}]),
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={item.action}>
                       <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>{item.icon}</div>
@@ -519,6 +519,15 @@ if (me) {
                       <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
                   ))}
+                  {!isOwnProfile && isJes && (
+                    <div style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer' }} onClick={() => { setShowSettings(false); onClose(); }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
+                        <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+                      </div>
+                      <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>Torna al tuo profilo</span>
+                      <svg width="18" height="18" fill="none" stroke="#CCC" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                  )}
                 </>
               )}
               <div style={{ marginTop: 20 }}>
@@ -555,8 +564,8 @@ if (me) {
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>
           {isOwnProfile ? t('profile_title') : profile?.username ? `@${profile.username}` : t('profile_title')}
         </span>
-        {isOwnProfile ? (
-          <button onClick={() => { router.push('/settings'); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
+        {(isOwnProfile || (!isOwnProfile && isJes && myRole === 'admin')) ? (
+          <button onClick={() => setShowSettings(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
             <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
         ) : profile?.username !== JES_OFFICIAL_USERNAME ? (
@@ -697,13 +706,22 @@ if (me) {
           )}
           {!isOwnProfile && isJes && myRole === 'admin' && (
             <div style={{ padding: '0 20px 16px' }}>
-              <button onClick={() => {
-                const type = confirm(t('publish_as_jes')) ? 'post' : 'story';
-                onPostAsJes(profile.id, type);
-              }} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 10, border: `1.5px solid ${ORANGE}`, padding: '10px 0', background: 'none', cursor: 'pointer' }}>
-                <svg width="16" height="16" fill="none" stroke={ORANGE} strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 14, color: ORANGE }}>{t('publish_as_jes')}</span>
-              </button>
+              <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', textTransform: 'uppercase', margin: '0 0 10px' }}>Pubblica come JES</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {[
+                  { type: 'post' as const, label: 'Foto', color: '#5B6AF5', icon: <svg width="22" height="22" fill="none" stroke="#5B6AF5" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> },
+                  { type: 'text' as const, label: 'Testo', color: '#FF5E5E', icon: <svg width="22" height="22" fill="none" stroke="#FF5E5E" strokeWidth="1.8" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg> },
+                  { type: 'story' as const, label: 'Storia', color: ORANGE, icon: <svg width="22" height="22" fill="none" stroke={ORANGE} strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" strokeDasharray="3 2"/><polygon points="10,8 16,12 10,16" fill={ORANGE} stroke="none"/></svg> },
+                  { type: 'video' as const, label: 'Video', color: '#FF3B30', icon: <svg width="22" height="22" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg> },
+                  { type: 'poll' as const, label: 'Sondaggio', color: '#34C759', icon: <svg width="22" height="22" fill="none" stroke="#34C759" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="13" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="13" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg> },
+                ].map(opt => (
+                  <button key={opt.type} onClick={() => onPostAsJes(profile.id, opt.type)}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '12px 8px', borderRadius: 14, border: `1.5px solid ${opt.color}22`, background: `${opt.color}10`, cursor: 'pointer' }}>
+                    {opt.icon}
+                    <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: opt.color }}>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 

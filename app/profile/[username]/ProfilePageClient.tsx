@@ -54,8 +54,10 @@ export default function ProfilePageClient({ username }: Props) {
         });
       }}
       onPostAsJes={(jesUserId, type) => {
-        if (type === 'post') router.push(`/home?jesPost=${jesUserId}`);
-        else router.push(`/home?jesStory=${jesUserId}`);
+        const paramMap: Record<string, string> = {
+          post: 'jesPost', story: 'jesStory', video: 'jesVideo', text: 'jesText', poll: 'jesPoll',
+        };
+        router.push(`/home?${paramMap[type]}=${jesUserId}`);
       }}
     />
   );
