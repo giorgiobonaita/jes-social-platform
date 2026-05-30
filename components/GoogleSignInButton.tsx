@@ -1,53 +1,24 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 export default function GoogleSignInButton({ label = 'Accedi con Google' }: { label?: string }) {
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      const { Capacitor } = await import('@capacitor/core');
-
-      if (Capacitor.isNativePlatform()) {
-        // Native app: use Google Auth plugin (no WebView redirect)
-        const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
-        await GoogleAuth.initialize({
-          clientId: '150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com',
-          scopes: ['profile', 'email'],
-          grantOfflineAccess: true,
-        });
-        const googleUser = await GoogleAuth.signIn();
-        const idToken = googleUser.authentication?.idToken;
-        if (!idToken) throw new Error('Nessun token Google');
-
-        const { error } = await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: idToken,
-        });
-        if (error) throw error;
-
-        // Check if user has completed onboarding
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('Utente non trovato');
-        const { data: dbUser } = await supabase.from('users').select('username').eq('auth_id', user.id).maybeSingle();
-        router.replace(dbUser?.username ? '/home' : '/onboarding/name');
-      } else {
-        // Web: standard OAuth redirect
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: { redirectTo: `${window.location.origin}/auth/callback` },
-        });
-        if (error) throw error;
-        if (data?.url) window.location.href = data.url;
-      }
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          // Always redirect to jessocial.com — deep links bring user back into the app automatically
+          redirectTo: 'https://jessocial.com/auth/callback',
+        },
+      });
+      if (error) throw error;
+      if (data?.url) window.location.href = data.url;
     } catch (e: any) {
-      if (e?.error !== 'popup_closed_by_user') {
-        alert('Errore Google: ' + (e?.message || e));
-      }
+      alert('Errore Google: ' + (e?.message || e));
     } finally {
       setLoading(false);
     }
