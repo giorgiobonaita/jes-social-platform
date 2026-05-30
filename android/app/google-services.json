@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "150769005493",
+    "project_id": "jes-social",
+    "storage_bucket": "jes-social.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:150769005493:android:44e5d08b496912020e9ffc",
+        "android_client_info": {
+          "package_name": "com.jes.social"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJofP5k83EqCUPp7v_y2aQLXVy19LWoy4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:150769005493:android:e94ce710b7b9ae1b0e9ffc",
+        "android_client_info": {
+          "package_name": "com.jessocial.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJofP5k83EqCUPp7v_y2aQLXVy19LWoy4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
