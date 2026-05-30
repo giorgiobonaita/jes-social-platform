@@ -1,8 +1,11 @@
 /** @type {import('next').NextConfig} */
+const isMobileBuild = process.env.MOBILE_BUILD === 'true';
+
 const nextConfig = {
-  output: 'export',
+  // Static export only for Capacitor mobile build, not for web deployment
+  ...(isMobileBuild ? { output: 'export' } : {}),
   images: {
-    unoptimized: true,
+    unoptimized: isMobileBuild,
     remotePatterns: [
       { protocol: 'https', hostname: 'cunftokrdqvprepcnlum.supabase.co' },
       { protocol: 'https', hostname: 'upload.wikimedia.org' },

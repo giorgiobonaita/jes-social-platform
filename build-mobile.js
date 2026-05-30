@@ -18,7 +18,7 @@ try {
     fs.rmSync(nextDir, { recursive: true, force: true });
     console.log('✓ .next cache cleared');
   }
-  execSync('npm run build', { stdio: 'inherit' });
+  execSync('npm run build', { stdio: 'inherit', env: { ...process.env, MOBILE_BUILD: 'true' } });
 } finally {
   if (fs.existsSync(tmpDir)) {
     fs.renameSync(tmpDir, apiDir);
