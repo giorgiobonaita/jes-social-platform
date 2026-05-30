@@ -551,20 +551,20 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
             </button>
             <button className="pc-action-btn" onClick={async () => {
               const shareUrl = `https://jessocial.com/post/${post.id}`;
-              if (navigator.share) {
-                try {
-                  await navigator.share({ title: `Post di @${post.author?.username} su JES`, url: shareUrl });
-                  return;
-                } catch (e: any) {
-                  if (e?.name === 'AbortError') return;
-                }
-              }
+              const shareTitle = `Post di @${post.author?.username} su JES`;
               try {
-                await navigator.clipboard.writeText(shareUrl);
-                onShareToast?.();
-              } catch {
-                onShareToast?.();
+                const { Capacitor } = await import('@capacitor/core');
+                if (Capacitor.isNativePlatform()) {
+                  const { Share } = await import('@capacitor/share');
+                  await Share.share({ title: shareTitle, url: shareUrl, dialogTitle: 'Condividi post' });
+                  return;
+                }
+              } catch {}
+              if (navigator.share) {
+                try { await navigator.share({ title: shareTitle, url: shareUrl }); return; } catch (e: any) { if (e?.name === 'AbortError') return; }
               }
+              try { await navigator.clipboard.writeText(shareUrl); } catch {}
+              onShareToast?.();
             }}>
               <svg width="30" height="30" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>

@@ -4,4 +4,5 @@
     <string name="title_activity_main">JES Social</string>
     <string name="package_name">com.jes.social</string>
     <string name="custom_url_scheme">com.jes.social</string>
+    <string name="server_client_id">150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com</string>
 </resources>

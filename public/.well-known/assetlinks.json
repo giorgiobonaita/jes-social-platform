@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.jes.social",
+    "sha256_cert_fingerprints": [
+      "CF:75:C8:43:77:62:04:EC:B5:F5:31:72:42:90:7E:51:C1:E2:AE:96:5D:8E:62:2B:57:96:06:78:90:27:3D:CA"
+    ]
+  }
+}]
