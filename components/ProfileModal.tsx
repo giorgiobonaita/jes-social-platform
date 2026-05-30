@@ -483,7 +483,7 @@ if (me) {
                     if (item.id === 's1') { setShowSettings(false); setTimeout(() => setShowEditProfile(true), 200); }
                     else if (item.id === 's2') { setSettingsScreen('notifiche'); }
                     else if (item.id === 's5') { window.location.href = 'mailto:jes.socialdellemozioni@gmail.com'; }
-                    else if (item.id === 's6') { window.open('https://jessocial.com/legal/termini', '_system'); }
+                    else if (item.id === 's6') { router.push('/legal/termini'); }
                   }}>
                   <div style={{ width: 38, height: 38, borderRadius: 10, background: '#FFF0E6', display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>{item.icon}</div>
                   <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: '#111' }}>
@@ -507,7 +507,7 @@ if (me) {
                 <>
                   <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: 11, color: '#AAA', letterSpacing: '0.8px', padding: '20px 20px 6px', textTransform: 'uppercase' }}>{t('admin_panel')}</p>
                   {[
-                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: t('admin_panel'), action: () => { window.open('/admin', '_blank'); } },
+                    { icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: t('admin_panel'), action: () => { router.push('/admin'); } },
                     ...(!isOwnProfile && isJes ? [] : [{ icon: <svg width="20" height="20" fill="none" stroke="#F07B1D" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 12.5l3.5 3.5 6.5-7"/></svg>, label: t('official_profile'), action: async () => {
                       const { data } = await supabase.from('users').select('id').eq('username', JES_OFFICIAL_USERNAME).maybeSingle();
                       if (data) { setShowSettings(false); onRequestViewUser(data.id); } else alert(`Crea prima l'utente "${JES_OFFICIAL_USERNAME}" in Supabase.`);

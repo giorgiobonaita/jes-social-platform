@@ -1,52 +1,23 @@
-import { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
+import { Suspense } from 'react';
 import ProfilePageClient from './ProfilePageClient';
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-static';
+export const dynamicParams = false;
+
+export function generateStaticParams() {
+  // Pre-generate only jes_official; all other profiles load client-side via SPA fallback
+  return [{ username: 'jes_official' }];
+}
 
 interface Props {
   params: Promise<{ username: string }>;
 }
 
-const DEFAULT_META: Metadata = { title: 'JES — Il Social delle Emozioni' };
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  try {
-    const { username } = await params;
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    const { data: user } = await supabase
-      .from('users')
-      .select('name, username, bio, avatar_url, discipline')
-      .eq('username', username)
-      .single();
-
-    if (!user) return DEFAULT_META;
-
-    const title = `${user.name} (@${user.username}) su JES Social`;
-    const description = user.bio || user.discipline || 'Scopri il profilo su JES Social';
-    const ogImage = user.avatar_url || 'https://jessocial.com/logo.png';
-
-    return {
-      title,
-      description,
-      openGraph: {
-        title, description,
-        url: `https://jessocial.com/profile/${username}`,
-        siteName: 'JES Social',
-        images: [{ url: ogImage, width: 400, height: 400 }],
-        type: 'profile',
-      },
-      twitter: { card: 'summary', title, description, images: [ogImage] },
-    };
-  } catch {
-    return DEFAULT_META;
-  }
-}
-
 export default async function ProfilePage({ params }: Props) {
   const { username } = await params;
-  return <ProfilePageClient username={username} />;
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', background: '#fff' }} />}>
+      <ProfilePageClient username={username} />
+    </Suspense>
+  );
 }

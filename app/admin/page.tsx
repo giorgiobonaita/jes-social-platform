@@ -175,7 +175,7 @@ export default function AdminPage() {
     setDeletingPostId(reportDeleteModal.postId);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await fetch('/api/admin-delete-post', {
+      await fetch('https://jessocial.com/api/admin-delete-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ post_id: reportDeleteModal.postId, caller_auth_id: user.id, reason: reportDeleteReason.trim() }),

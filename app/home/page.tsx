@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { initPushNotifications } from '@/lib/pushNotifications';
 import { useLang, T } from '@/lib/i18n';
 import FeedPoll from '@/components/FeedPoll';
 import CommentsModal from '@/components/CommentsModal';
@@ -381,7 +382,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
     setConfirmAction(null); setMenuOpen(false);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await fetch('/api/admin-delete-post', {
+      await fetch('https://jessocial.com/api/admin-delete-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ post_id: post.id, caller_auth_id: user.id, reason: deleteReason || undefined }),
@@ -967,6 +968,7 @@ const { t, lang } = useLang();
         setUserType(data.user_type || null);
         setCategoryScores(data.category_scores || null);
         setInterests(null);
+        initPushNotifications(data.id);
 
         // Controlla se algoritmo attivo (>500 utenti)
         const { count: userCount } = await supabase.from('users').select('id', { count: 'exact', head: true });
