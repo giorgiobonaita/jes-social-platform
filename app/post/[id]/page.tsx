@@ -26,8 +26,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const title = user?.name ? `${user.name} su JES Social` : 'JES Social';
   const description = data.caption || 'Guarda questo post su JES Social';
   let image = 'https://jessocial.com/logo.png';
-  if (Array.isArray(data.image_urls) && data.image_urls.length > 0) image = data.image_urls[0];
-  else if (data.image_url) image = data.image_url;
+  if (Array.isArray(data.image_urls) && data.image_urls.length > 0) {
+    image = data.image_urls[0];
+  } else if (typeof data.image_urls === 'string' && (data.image_urls as string).startsWith('{')) {
+    const parsed = (data.image_urls as string).slice(1, -1).split(',').map((s: string) => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
+    if (parsed.length > 0) image = parsed[0];
+  } else if (data.image_url) {
+    image = data.image_url;
+  }
 
   return {
     title,
