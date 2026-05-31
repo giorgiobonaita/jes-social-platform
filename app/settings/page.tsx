@@ -47,7 +47,7 @@ export default function SettingsPage() {
     setDeleting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await fetch('https://jessocial.com/api/delete-account', {
+      await fetch('/api/delete-account', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id }),

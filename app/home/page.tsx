@@ -382,7 +382,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
     setConfirmAction(null); setMenuOpen(false);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await fetch('https://jessocial.com/api/admin-delete-post', {
+      await fetch('/api/admin-delete-post', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ post_id: post.id, caller_auth_id: user.id, reason: deleteReason || undefined }),
