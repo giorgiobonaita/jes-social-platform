@@ -1,13 +1,6 @@
 import { Suspense } from 'react';
 import PostClient from './PostClient';
 
-export const dynamic = 'force-static';
-export const dynamicParams = false;
-
-export function generateStaticParams() {
-  // No posts pre-generated; all load client-side via SPA fallback
-  return [{ id: '_' }];
-}
 
 interface Props {
   params: Promise<{ id: string }>;
