@@ -118,7 +118,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
     setComments(prev => [...prev, { id: tempId, username: currentUsername, avatarUrl: currentAvatar, text, timeAgo: t('notif_now'), userId: currentDbUserId, parentId }]);
     scrollToBottom();
     const { error } = await supabase.from('comments').insert({ post_id: postId, user_id: currentDbUserId, text, parent_id: parentId });
-    if (error) { setComments(prev => prev.filter(c => c.id !== tempId)); return; }
+    if (error) { console.error('[comment] insert error:', error); setComments(prev => prev.filter(c => c.id !== tempId)); return; }
     if (postAuthorId && postAuthorId !== currentDbUserId) {
       supabase.from('notifications').insert({ user_id: postAuthorId, actor_id: currentDbUserId, type: 'comment', post_id: postId }).then(() => {});
     }

@@ -316,13 +316,15 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   }, [post.id]);
 
   const toggleLike = async () => {
-    if (!post.currentUserId) { onGuestAction?.(); return; }
+    if (!post.currentUserId) { console.warn('[like] no currentUserId'); onGuestAction?.(); return; }
     if (liked) {
       setLiked(false); setLikesCount((p: number) => p - 1);
-      await supabase.from('likes').delete().eq('post_id', post.id).eq('user_id', post.currentUserId);
+      const { error } = await supabase.from('likes').delete().eq('post_id', post.id).eq('user_id', post.currentUserId);
+      if (error) { console.error('[like] delete error:', error); setLiked(true); setLikesCount((p: number) => p + 1); }
     } else {
       setLiked(true); setLikesCount((p: number) => p + 1);
-      await supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId });
+      const { error } = await supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId });
+      if (error) { console.error('[like] insert error:', error); setLiked(false); setLikesCount((p: number) => p - 1); return; }
       if (post.groupName) onLiked?.(post.groupName);
       if (post.userId && post.userId !== post.currentUserId) {
         supabase.from('notifications').insert({ user_id: post.userId, actor_id: post.currentUserId, type: 'like', post_id: post.id }).then(() => {});
