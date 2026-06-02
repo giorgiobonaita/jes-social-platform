@@ -274,10 +274,10 @@ if (me) {
     } else {
       setIsFollowing(true); setFollowersCount(c => c + 1);
       const { error } = await supabase.from('follows')
-        .upsert({ follower_id: uid, followed_id: profile.id }, { onConflict: 'follower_id,followed_id' });
-      if (error) { setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
+        .insert({ follower_id: uid, followed_id: profile.id });
+      if (error) { console.error('[follow] insert error:', error); setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
       setListsLoaded(false); setListFollowingIds(new Set());
-      supabase.from('notifications').insert({ user_id: profile.id, sender_id: uid, type: 'follow' });
+      supabase.from('notifications').insert({ user_id: profile.id, actor_id: uid, type: 'follow' });
     }
   };
 
