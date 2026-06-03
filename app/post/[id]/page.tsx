@@ -38,7 +38,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title,
     description,
-    openGraph: { title, description, images: [image], url: `https://jessocial.com/post/${id}`, siteName: 'JES Social', type: 'article' },
+    openGraph: {
+      title, description,
+      images: [{ url: image, width: 1200, height: 630, alt: title }],
+      url: `https://jessocial.com/post/${id}`,
+      siteName: 'JES Social',
+      type: 'article',
+    },
     twitter: { card: 'summary_large_image', title, description, images: [image] },
   };
 }
