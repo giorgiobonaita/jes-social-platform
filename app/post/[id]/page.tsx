@@ -14,18 +14,21 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('posts')
-    .select('caption, image_url, image_urls, users:user_id(name, username)')
+    .select('caption, image_url, image_urls, video_url, users:user_id(name, username, avatar_url)')
     .eq('id', id)
     .single();
+
+  console.log('[og] post', id, 'data:', JSON.stringify(data), 'error:', error?.message);
 
   if (!data) return { title: 'Post · JES Social' };
 
   const user = data.users as any;
   const title = user?.name ? `${user.name} su JES Social` : 'JES Social';
   const description = data.caption || 'Guarda questo post su JES Social';
-  let image = 'https://jessocial.com/logo.png';
+  let image = user?.avatar_url || 'https://jessocial.com/logo.png';
+
   if (Array.isArray(data.image_urls) && data.image_urls.length > 0) {
     image = data.image_urls[0];
   } else if (typeof data.image_urls === 'string' && (data.image_urls as string).startsWith('{')) {
@@ -33,6 +36,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (parsed.length > 0) image = parsed[0];
   } else if (data.image_url) {
     image = data.image_url;
+  } else if (data.video_url) {
+    image = user?.avatar_url || 'https://jessocial.com/logo.png';
   }
 
   return {
