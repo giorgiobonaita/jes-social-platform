@@ -254,6 +254,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   const [saved, setSaved] = useState(false);
   const viewedRef = useRef(false);
   const [carouselIdx, setCarouselIdx] = useState(0);
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'delete' | 'report' | 'ban' | null>(null);
@@ -517,7 +518,9 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
               <>
                 <div className="pc-carousel-track" style={{ transform: `translateX(-${carouselIdx * 100}%)` }}>
                   {photos.map((url, i) => (
-                    <img key={i} src={url} alt="post" className="pc-carousel-slide" onClick={() => onImagePress(url)} />
+                    imgErrors[i]
+                      ? <div key={i} className="pc-carousel-slide" style={{ background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="40" height="40" fill="none" stroke="#ccc" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+                      : <img key={i} src={url} alt="post" className="pc-carousel-slide" onClick={() => onImagePress(url)} onError={() => setImgErrors(p => ({ ...p, [i]: true }))} />
                   ))}
                 </div>
                 <div className="pc-dots">
@@ -527,7 +530,10 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
                 <button className="pc-carousel-next" onClick={e => { e.stopPropagation(); setCarouselIdx(p => Math.min(photos.length - 1, p + 1)); }} style={{ display: carouselIdx === photos.length - 1 ? 'none' : 'flex' }}>›</button>
               </>
             ) : (
-              <img src={photos[0]} alt="post" className="pc-single-img" onClick={() => onImagePress(photos[0])} />
+              {imgErrors[0]
+                ? <div className="pc-single-img" style={{ background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="40" height="40" fill="none" stroke="#ccc" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
+                : <img src={photos[0]} alt="post" className="pc-single-img" onClick={() => onImagePress(photos[0])} onError={() => setImgErrors(p => ({ ...p, 0: true }))} />
+              }
             )}
           </div>
         )}
@@ -1010,11 +1016,11 @@ const { t, lang } = useLang();
     const mapped = posts.map((p: any) => {
       const u = userMap[p.user_id] || {};
       let imageUrls: string[] = [];
+      const isValidUrl = (s: string) => s && s.startsWith('http');
       if (Array.isArray(p.image_urls) && p.image_urls.length > 0) {
-        imageUrls = p.image_urls;
-      } else if (typeof p.image_urls === 'string' && p.image_urls.startsWith('{')) {
-        // PostgreSQL array format: {url1,url2}
-        imageUrls = p.image_urls.slice(1, -1).split(',').map((s: string) => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
+        imageUrls = p.image_urls.filter(isValidUrl);
+      } else if (typeof p.image_urls === 'string' && (p.image_urls as string).startsWith('{')) {
+        imageUrls = (p.image_urls as string).slice(1, -1).split(',').map((s: string) => s.trim().replace(/^"|"$/g, '')).filter(isValidUrl);
       } else if (p.image_url) {
         imageUrls = [p.image_url];
       }
