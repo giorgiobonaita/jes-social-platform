@@ -10,8 +10,8 @@ export async function GET(req: NextRequest) {
   if (!res.ok) return new NextResponse('Not found', { status: 404 });
   const buffer = Buffer.from(await res.arrayBuffer());
   const compressed = await sharp(buffer)
-    .resize({ width: 1200, height: 630, fit: 'inside', withoutEnlargement: true })
-    .jpeg({ quality: 80 })
+    .resize({ width: 800, height: 600, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 60 })
     .toBuffer();
   return new NextResponse(compressed, {
     headers: {
