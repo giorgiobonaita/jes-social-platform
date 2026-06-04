@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const proxyImage = image.startsWith('https://cunftokrdqvprepcnlum.supabase.co/')
-    ? `https://www.jessocial.com/_next/image?url=${encodeURIComponent(image)}&w=828&q=60`
+    ? `https://wsrv.nl/?url=${encodeURIComponent(image)}&w=800&q=60&output=jpg`
     : image;
 
   return {
