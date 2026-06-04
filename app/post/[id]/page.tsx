@@ -40,17 +40,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     image = user?.avatar_url || 'https://jessocial.com/logo.png';
   }
 
+  // Proxy through our domain to avoid x-robots-tag: none from Supabase
+  const proxyImage = image.startsWith('https://cunftokrdqvprepcnlum.supabase.co/')
+    ? `https://jessocial.com/api/img?url=${encodeURIComponent(image)}`
+    : image;
+
   return {
     title,
     description,
     openGraph: {
       title, description,
-      images: [{ url: image, width: 1200, height: 630, alt: title }],
+      images: [{ url: proxyImage, width: 1200, height: 630, alt: title }],
       url: `https://jessocial.com/post/${id}`,
       siteName: 'JES Social',
       type: 'article',
     },
-    twitter: { card: 'summary_large_image', title, description, images: [image] },
+    twitter: { card: 'summary_large_image', title, description, images: [proxyImage] },
   };
 }
 
