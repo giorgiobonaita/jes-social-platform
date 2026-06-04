@@ -40,9 +40,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     image = user?.avatar_url || 'https://jessocial.com/logo.png';
   }
 
-  // Proxy through our domain to avoid x-robots-tag: none from Supabase
   const proxyImage = image.startsWith('https://cunftokrdqvprepcnlum.supabase.co/')
-    ? `https://www.jessocial.com/api/img?url=${encodeURIComponent(image)}`
+    ? `https://www.jessocial.com/_next/image?url=${encodeURIComponent(image)}&w=828&q=60`
     : image;
 
   return {
