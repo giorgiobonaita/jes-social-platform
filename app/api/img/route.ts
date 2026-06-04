@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import sharp from 'sharp';
 
 export async function GET(req: NextRequest) {
   const url = req.nextUrl.searchParams.get('url');
@@ -7,10 +8,14 @@ export async function GET(req: NextRequest) {
   }
   const res = await fetch(url);
   if (!res.ok) return new NextResponse('Not found', { status: 404 });
-  const blob = await res.blob();
-  return new NextResponse(blob, {
+  const buffer = Buffer.from(await res.arrayBuffer());
+  const compressed = await sharp(buffer)
+    .resize({ width: 1200, height: 630, fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+  return new NextResponse(compressed, {
     headers: {
-      'Content-Type': res.headers.get('content-type') || 'image/jpeg',
+      'Content-Type': 'image/jpeg',
       'Cache-Control': 'public, max-age=86400',
     },
   });
