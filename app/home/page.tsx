@@ -530,10 +530,9 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
                 <button className="pc-carousel-next" onClick={e => { e.stopPropagation(); setCarouselIdx(p => Math.min(photos.length - 1, p + 1)); }} style={{ display: carouselIdx === photos.length - 1 ? 'none' : 'flex' }}>›</button>
               </>
             ) : (
-              {imgErrors[0]
+              imgErrors[0]
                 ? <div className="pc-single-img" style={{ background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="40" height="40" fill="none" stroke="#ccc" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div>
                 : <img src={photos[0]} alt="post" className="pc-single-img" onClick={() => onImagePress(photos[0])} onError={() => setImgErrors(p => ({ ...p, 0: true }))} />
-              }
             )}
           </div>
         )}
