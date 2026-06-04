@@ -22,8 +22,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq('id', id)
     .single();
 
-  console.log('[og] post', id, 'data:', JSON.stringify(data), 'error:', error?.message);
-
   if (!data) return { title: 'Post · JES Social' };
 
   const user = data.users as any;
