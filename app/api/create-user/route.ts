@@ -6,13 +6,20 @@ export async function POST(request: NextRequest) {
     const { auth_id, name, avatar_url } = await request.json();
     if (!auth_id) return NextResponse.json({ error: 'Missing auth_id' }, { status: 400 });
 
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const admin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
       { auth: { persistSession: false } }
     );
 
-    // Controlla se esiste già
+    const { data: { user }, error: authError } = await admin.auth.getUser(token);
+    if (authError || !user || user.id !== auth_id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
     const { data: existing } = await admin
       .from('users')
       .select('id, username')

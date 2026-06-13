@@ -173,12 +173,12 @@ export default function AdminPage() {
   const deletePostFromReport = async () => {
     if (!reportDeleteModal || !reportDeleteReason.trim()) return;
     setDeletingPostId(reportDeleteModal.postId);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
       await fetch('/api/admin-delete-post', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ post_id: reportDeleteModal.postId, caller_auth_id: user.id, reason: reportDeleteReason.trim() }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ post_id: reportDeleteModal.postId, reason: reportDeleteReason.trim() }),
       });
     }
     await supabase.from('reports').update({ status: 'reviewed' }).eq('id', reportDeleteModal.reportId);

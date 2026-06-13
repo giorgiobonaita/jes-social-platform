@@ -3,8 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { post_id, caller_auth_id, reason } = await request.json();
-    if (!post_id || !caller_auth_id) return NextResponse.json({ error: 'Missing params' }, { status: 400 });
+    const { post_id, reason } = await request.json();
+    if (!post_id) return NextResponse.json({ error: 'Missing params' }, { status: 400 });
+
+    const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const admin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,7 +15,10 @@ export async function POST(request: NextRequest) {
       { auth: { persistSession: false } }
     );
 
-    const { data: caller } = await admin.from('users').select('id, role').eq('auth_id', caller_auth_id).single();
+    const { data: { user }, error: authError } = await admin.auth.getUser(token);
+    if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { data: caller } = await admin.from('users').select('id, role').eq('auth_id', user.id).single();
     if (!caller) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const { data: post } = await admin.from('posts').select('user_id, caption, created_at').eq('id', post_id).single();
@@ -21,7 +27,6 @@ export async function POST(request: NextRequest) {
 
     if (!isOwner && !isAdmin) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    // Se admin cancella un post altrui, invia notifica al proprietario
     if (isAdmin && !isOwner && post?.user_id && reason) {
       const postDate = post.created_at
         ? new Date(post.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
