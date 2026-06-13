@@ -4,7 +4,7 @@ const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 30;
 const ipCounts = new Map<string, { count: number; resetAt: number }>();
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith('/api/')) {

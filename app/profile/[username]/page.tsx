@@ -12,6 +12,12 @@ interface Props {
   params: Promise<{ username: string }>;
 }
 
+export async function generateStaticParams() {
+  return [];
+}
+
+export const dynamicParams = false;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
   const { data } = await supabaseAdmin
