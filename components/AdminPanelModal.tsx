@@ -110,12 +110,6 @@ export default function AdminPanelModal({ visible, onClose, onUserPress }: Props
     if (!error) loadUsers();
   };
 
-  const promoteToAdmin = async (id: string) => {
-    if (!confirm('Vuoi far diventare questo utente un amministratore?')) return;
-    const { error } = await supabase.from('users').update({ role: 'admin', role_level: 3 }).eq('id', id);
-    if (!error) loadUsers();
-  };
-
   const statusColor = (r: any) => r.status === 'reviewed' ? '#34C759' : r.status === 'dismissed' ? '#AAA' : ORANGE;
 
   if (!visible) return null;
@@ -190,10 +184,7 @@ export default function AdminPanelModal({ visible, onClose, onUserPress }: Props
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                    <button onClick={() => promoteToAdmin(item.id)} style={{ padding: 6, background: 'none', border: 'none', cursor: 'pointer' }} title="Promuovi admin">
-                      <svg width="20" height="20" fill="none" stroke="#111" strokeWidth="1.8" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    </button>
-                    <button onClick={() => toggleBan(item.id, item.is_banned)} style={{ padding: 6, background: 'none', border: 'none', cursor: 'pointer' }} title={item.is_banned ? 'Sblocca' : 'Banna'}>
+<button onClick={() => toggleBan(item.id, item.is_banned)} style={{ padding: 6, background: 'none', border: 'none', cursor: 'pointer' }} title={item.is_banned ? 'Sblocca' : 'Banna'}>
                       {item.is_banned
                         ? <svg width="20" height="20" fill="none" stroke="#34C759" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                         : <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 019.9-1"/></svg>
