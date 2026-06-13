@@ -46,10 +46,11 @@ export default function SettingsPage() {
   const confirmDelete = async () => {
     setDeleting(true);
     const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
     if (user) {
       await fetch('/api/delete-account', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({ userId: user.id }),
       });
     }
