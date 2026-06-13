@@ -85,7 +85,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
       expires.setDate(expires.getDate() + 30);
       const { error: storyErr } = await supabase.from('stories').insert({
         user_id: storyUserId, image_url: urlData.publicUrl,
-        link_url: linkText || null, mention: mentionText || null,
+        link_url: linkText && (linkText.startsWith('https://') || linkText.startsWith('http://')) ? linkText : null, mention: mentionText || null,
         privacy, expires_at: expires.toISOString(),
       });
       if (storyErr) throw new Error(storyErr.message);

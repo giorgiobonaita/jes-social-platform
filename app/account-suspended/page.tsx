@@ -95,8 +95,9 @@ export default function AccountSuspendedPage() {
             </label>
             <textarea
               value={appealText}
-              onChange={e => setAppealText(e.target.value)}
+              onChange={e => setAppealText(e.target.value.slice(0, 1000))}
               placeholder="Scrivi qui la tua motivazione…"
+              maxLength={1000}
               rows={4}
               style={{ width: '100%', border: '1.5px solid #EEE', borderRadius: 12, padding: '10px 14px', fontSize: 13, fontFamily: 'var(--font-body)', resize: 'none', outline: 'none', boxSizing: 'border-box' }}
             />
