@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { auth_id, name, avatar_url } = await request.json();
+    const { auth_id, name, avatar_url, email } = await request.json();
     if (!auth_id) return NextResponse.json({ error: 'Missing auth_id' }, { status: 400 });
 
     const token = request.headers.get('Authorization')?.replace('Bearer ', '');
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
       auth_id,
       name:       name || null,
       avatar_url: avatar_url || null,
+      email:      email || user.email || null,
     }).select('id').single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

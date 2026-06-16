@@ -40,13 +40,24 @@ export default function CallbackPage() {
 
       const { data: user } = await supabase
         .from('users')
-        .select('username')
+        .select('username, nationality, name')
         .eq('auth_id', session.user.id)
         .maybeSingle();
 
-      if (user?.username) {
+      // Save email from OAuth provider (Google) — fire-and-forget
+      const oauthEmail = session.user.email;
+      if (oauthEmail) {
+        supabase.from('users').update({ email: oauthEmail }).eq('auth_id', session.user.id).then(() => {});
+      }
+
+      if (user?.username && user?.nationality) {
+        // Onboarding completo
         router.replace('/home');
+      } else if (user?.username) {
+        // Ha messo username ma non ha finito — riprende dall'età
+        router.replace('/onboarding/age');
       } else {
+        // Nessuno username — ricomincia dall'inizio
         router.replace('/onboarding/name');
       }
     })();
