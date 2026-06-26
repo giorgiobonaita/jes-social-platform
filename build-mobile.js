@@ -8,10 +8,13 @@ const apiDir     = path.join(__dirname, 'app', 'api');
 const apiTmp     = path.join(__dirname, '.api-backup');
 const profileDir = path.join(__dirname, 'app', 'profile', '[username]');
 const profileTmp = path.join(__dirname, '.profile-backup');
+const postDir    = path.join(__dirname, 'app', 'post', '[id]');
+const postTmp    = path.join(__dirname, '.post-backup');
 
 try {
   if (fs.existsSync(apiDir))     { fs.renameSync(apiDir, apiTmp);         console.log('✓ app/api moved out'); }
   if (fs.existsSync(profileDir)) { fs.renameSync(profileDir, profileTmp); console.log('✓ profile/[username] moved out'); }
+  if (fs.existsSync(postDir))    { fs.renameSync(postDir, postTmp);       console.log('✓ post/[id] moved out'); }
 
   const nextDir = path.join(__dirname, '.next');
   if (fs.existsSync(nextDir)) { fs.rmSync(nextDir, { recursive: true, force: true }); console.log('✓ .next cache cleared'); }
@@ -20,4 +23,5 @@ try {
 } finally {
   if (fs.existsSync(apiTmp))     { fs.renameSync(apiTmp, apiDir);         console.log('✓ app/api restored'); }
   if (fs.existsSync(profileTmp)) { fs.renameSync(profileTmp, profileDir); console.log('✓ profile/[username] restored'); }
+  if (fs.existsSync(postTmp))    { fs.renameSync(postTmp, postDir);       console.log('✓ post/[id] restored'); }
 }

@@ -58,12 +58,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export async function generateStaticParams() {
-  return [];
-}
-
-export const dynamicParams = false;
-
 export default async function PostPage({ params }: Props) {
   const { id } = await params;
   return (

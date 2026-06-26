@@ -21,7 +21,10 @@ export default function SearchPage() {
     <SearchModal
       visible
       onClose={() => router.back()}
-      onUserPress={(uid) => router.push(`/profile/${uid}`)}
+      onUserPress={async (uid) => {
+        const { data } = await supabase.from('users').select('username').eq('id', uid).single();
+        if (data?.username) router.push(`/profile/${data.username}`);
+      }}
       onPostPress={(postId) => router.push(`/post/${postId}`)}
     />
   );
