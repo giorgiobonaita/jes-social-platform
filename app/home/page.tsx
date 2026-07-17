@@ -880,6 +880,13 @@ const { t, lang } = useLang();
   const [categoryScores, setCategoryScores] = useState<Record<string, number> | null>(null);
   const [interests, setInterests] = useState<string[] | null>(null);
   const [algoActive, setAlgoActive] = useState(false);
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    import('@capacitor/core').then(({ Capacitor }) => {
+      setIsNative(Capacitor.isNativePlatform());
+    }).catch(() => {});
+  }, []);
 
   const handleLiked = useCallback((groupName: string) => {
     if (!myDbId || !groupName) return;
@@ -1246,7 +1253,7 @@ const { t, lang } = useLang();
               currentUserAvatar={currentUserAvatar}
               currentUsername={myUsername}
               onComment={() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); }}
-              onUserPress={(uid, username) => { if (username) router.push(`/profile/${username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
+              onUserPress={(uid, username) => { if (username && !isNative) router.push(`/profile/${username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
               onDelete={() => setDbPosts(prev => prev.filter(p => p.id !== item.id))}
               isAdmin={isAdmin}
               onImagePress={(url) => { setImageViewerUrl(url); setImageViewerVisible(true); }}
@@ -1314,11 +1321,11 @@ const { t, lang } = useLang();
             stories: g.stories.filter(s => s.id !== deletedId),
           })).filter(g => g.stories.length > 0));
         }}
-        onUserPress={async (uid) => { setStoryVisible(false); const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) router.push(`/profile/${data.username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
+        onUserPress={async (uid) => { setStoryVisible(false); if (!isNative) { const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) { router.push(`/profile/${data.username}`); return; } } setProfileTargetUserId(uid); setProfileVisible(true); }}
       />
       <CommentsModal visible={commentsVisible} postId={commentsPostId} postAuthorId={commentsAuthorId} onClose={() => { setCommentsVisible(false); setCommentsPostId(null); setCommentsAuthorId(null); }} />
       <SearchModal visible={searchVisible} onClose={() => setSearchVisible(false)}
-        onUserPress={async uid => { const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) router.push(`/profile/${data.username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
+        onUserPress={async uid => { if (!isNative) { const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) { router.push(`/profile/${data.username}`); return; } } setProfileTargetUserId(uid); setProfileVisible(true); }}
         onGroupPress={gid => { setGroupsInitialId(gid); setGroupsVisible(true); }}
         onPostPress={(_, url) => { setImageViewerUrl(url); setImageViewerVisible(true); }} />
       <NotificationsModal visible={notifVisible} onClose={() => setNotifVisible(false)} />
