@@ -1323,7 +1323,8 @@ const { t, lang } = useLang();
         }}
         onUserPress={async (uid) => { setStoryVisible(false); if (!isNative) { const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) { router.push(`/profile/${data.username}`); return; } } setProfileTargetUserId(uid); setProfileVisible(true); }}
       />
-      <CommentsModal visible={commentsVisible} postId={commentsPostId} postAuthorId={commentsAuthorId} onClose={() => { setCommentsVisible(false); setCommentsPostId(null); setCommentsAuthorId(null); }} />
+      <CommentsModal visible={commentsVisible} postId={commentsPostId} postAuthorId={commentsAuthorId} onClose={() => { setCommentsVisible(false); setCommentsPostId(null); setCommentsAuthorId(null); }}
+        onUserPress={(uid) => { setCommentsVisible(false); setProfileTargetUserId(uid); setProfileVisible(true); }} />
       <SearchModal visible={searchVisible} onClose={() => setSearchVisible(false)}
         onUserPress={async uid => { if (!isNative) { const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) { router.push(`/profile/${data.username}`); return; } } setProfileTargetUserId(uid); setProfileVisible(true); }}
         onGroupPress={gid => { setGroupsInitialId(gid); setGroupsVisible(true); }}

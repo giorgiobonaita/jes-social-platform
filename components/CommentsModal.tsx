@@ -16,9 +16,10 @@ interface Props {
   visible: boolean; onClose: () => void;
   postId: string | null; postAuthorId?: string | null;
   isAdmin?: boolean;
+  onUserPress?: (userId: string) => void;
 }
 
-export default function CommentsModal({ visible, onClose, postId, postAuthorId, isAdmin }: Props) {
+export default function CommentsModal({ visible, onClose, postId, postAuthorId, isAdmin, onUserPress }: Props) {
   const { t, lang } = useLang();
   const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
 
@@ -202,13 +203,15 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
                 <div key={item.id} style={{ display: 'flex', flexDirection: 'row', marginBottom: isReply ? 2 : 4, alignItems: 'flex-end', justifyContent: mine ? 'flex-end' : 'flex-start', marginLeft: isReply ? 38 : 0 }}
                   onClick={e => { e.stopPropagation(); if (canAct) handleBubbleClick(item); }}>
                   {!mine && (
-                    <div style={{ marginRight: 6, marginBottom: 2, alignSelf: 'flex-end' }}>
+                    <div style={{ marginRight: 6, marginBottom: 2, alignSelf: 'flex-end', cursor: onUserPress ? 'pointer' : 'default' }}
+                      onClick={e => { if (onUserPress) { e.stopPropagation(); onUserPress(item.userId); } }}>
                       <AvatarImg uri={item.avatarUrl} size={isReply ? 26 : 32} seed={item.username} />
                     </div>
                   )}
                   <div style={{ maxWidth: '72%', display: 'flex', flexDirection: 'column', alignItems: mine ? 'flex-end' : 'flex-start' }}>
                     {!mine && (
-                      <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: isReply ? 10 : 11, color: '#888', marginBottom: 2, marginLeft: 4 }}>{item.username}</span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: isReply ? 10 : 11, color: '#888', marginBottom: 2, marginLeft: 4, cursor: onUserPress ? 'pointer' : 'default' }}
+                        onClick={e => { if (onUserPress) { e.stopPropagation(); onUserPress(item.userId); } }}>{item.username}</span>
                     )}
                     {/* Action bar — modifica/elimina al click */}
                     {isSelected && !isEditing && (
