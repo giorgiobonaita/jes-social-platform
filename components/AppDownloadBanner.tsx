@@ -28,11 +28,10 @@ export default function AppDownloadBanner() {
 
   if (!visible) return null;
 
-  // Link store in base al device
+  // Solo Android per ora
   const isAndroid = /Android/i.test(navigator.userAgent);
-  const storeUrl = isAndroid
-    ? 'https://play.google.com/store/apps/details?id=com.jes.social'
-    : 'https://apps.apple.com/app/jes-social/id0000000000';
+  if (!isAndroid) return null;
+  const storeUrl = 'https://play.google.com/store/apps/details?id=com.jes.social&hl=it';
 
   return (
     <div style={{
