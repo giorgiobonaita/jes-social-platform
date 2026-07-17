@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import OfflineScreen from "@/components/OfflineScreen";
+import AppDownloadBanner from "@/components/AppDownloadBanner";
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jessocial.com'),
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body>
         {children}
         <OfflineScreen />
+        <AppDownloadBanner />
       </body>
     </html>
   );
