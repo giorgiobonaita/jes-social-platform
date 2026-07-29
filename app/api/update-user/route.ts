@@ -30,11 +30,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid fields' }, { status: 400 });
     }
 
+    // Validazione lunghezza campi testo
+    if (typeof safeFields.username === 'string' && (safeFields.username.length < 3 || safeFields.username.length > 30))
+      return NextResponse.json({ error: 'Username must be 3-30 chars' }, { status: 400 });
+    if (typeof safeFields.name === 'string' && safeFields.name.length > 80)
+      return NextResponse.json({ error: 'Name too long' }, { status: 400 });
+    if (typeof safeFields.bio === 'string' && safeFields.bio.length > 500)
+      return NextResponse.json({ error: 'Bio too long' }, { status: 400 });
+    if (typeof safeFields.website === 'string' && safeFields.website.length > 200)
+      return NextResponse.json({ error: 'Website too long' }, { status: 400 });
+
     const { error } = await admin.from('users').update(safeFields).eq('auth_id', auth_id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Update failed' }, { status: 500 });
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

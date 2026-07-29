@@ -973,12 +973,9 @@ const { t, lang } = useLang();
 
   useEffect(() => {
     (async () => {
-      console.log('[home] effect running');
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('[home] auth user:', user?.id ?? 'null');
       if (!user) { router.replace('/'); return; }
       const { data, error } = await supabase.from('users').select('id, avatar_url, role, username, user_type, category_scores').eq('auth_id', user.id).single();
-      console.log('[home] db data:', data, 'error:', error?.message);
       if (data) {
         setCurrentUserId(data.id);
         setMyDbId(data.id);

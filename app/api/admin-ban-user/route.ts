@@ -22,10 +22,10 @@ export async function POST(request: NextRequest) {
     if (caller?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const { error } = await admin.from('users').update({ is_banned: true }).eq('id', targetUserId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
