@@ -203,6 +203,15 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
     setSelectedMsgId(null);
   };
 
+  const deleteConversation = async () => {
+    if (!myId || !activeId) return;
+    if (!confirm('Eliminare tutta la conversazione? Questa azione è irreversibile.')) return;
+    await supabase.from('messages').delete()
+      .or(`and(sender_id.eq.${myId},receiver_id.eq.${activeId}),and(sender_id.eq.${activeId},receiver_id.eq.${myId})`);
+    setMessages([]);
+    handleBack();
+  };
+
   const sendMessage = async () => {
     if (!inputText.trim() || !myId || !activeId || isSending) return;
     setIsSending(true);
@@ -270,6 +279,10 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
         {!activeId && !newMsgMode ? (
           <button onClick={() => { setNewMsgQuery(''); setNewMsgResults(suggested); setNewMsgMode(true); }} title={t('chat_new')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#111' }}>
             <svg width="22" height="22" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        ) : activeId ? (
+          <button onClick={deleteConversation} title="Elimina chat" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', color: '#E53935' }}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
           </button>
         ) : (
           <div style={{ width: 24 }} />
@@ -339,10 +352,10 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
                 const isEditing = editingMsgId === item.id;
                 return (
                   <div key={item.id} style={{ display: 'flex', flexDirection: 'column', alignItems: item.mine ? 'flex-end' : 'flex-start', marginBottom: isLastInGroup ? 12 : 3 }}>
-                    {/* Action bar for own messages */}
-                    {isSelected && item.mine && (
-                      <div style={{ display: 'flex', gap: 8, marginBottom: 4, paddingRight: 4 }}>
-                        <button onClick={() => startEditMsg(item)} style={{ background: '#F0F0F0', border: 'none', borderRadius: 12, padding: '4px 12px', fontFamily: 'var(--font-body)', fontSize: 12, color: '#333', cursor: 'pointer' }}>{tl('edit_msg')}</button>
+                    {/* Action bar — modifica solo i tuoi, elimina tutti */}
+                    {isSelected && (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 4, paddingRight: item.mine ? 4 : 0, paddingLeft: item.mine ? 0 : 4 }}>
+                        {item.mine && <button onClick={() => startEditMsg(item)} style={{ background: '#F0F0F0', border: 'none', borderRadius: 12, padding: '4px 12px', fontFamily: 'var(--font-body)', fontSize: 12, color: '#333', cursor: 'pointer' }}>{tl('edit_msg')}</button>}
                         <button onClick={() => deleteMsg(item.id)} style={{ background: '#FFE8E8', border: 'none', borderRadius: 12, padding: '4px 12px', fontFamily: 'var(--font-body)', fontSize: 12, color: '#E53935', cursor: 'pointer' }}>{tl('delete_msg')}</button>
                       </div>
                     )}
@@ -370,7 +383,7 @@ export default function ChatModal({ visible, onClose, openWithUserId, openWithNa
                           </div>
                         ) : (
                           <div
-                            onClick={() => { if (item.mine) setSelectedMsgId(prev => prev === item.id ? null : item.id); }}
+                            onClick={() => { setSelectedMsgId(prev => prev === item.id ? null : item.id); }}
                             style={{ maxWidth: '72vw', borderRadius: 18, borderBottomRightRadius: item.mine ? 4 : 18, borderBottomLeftRadius: item.mine ? 18 : 4, padding: '10px 14px', backgroundColor: item.mine ? ORANGE : '#F2F2F2', cursor: item.mine ? 'pointer' : 'default' }}>
                             <span style={{ fontFamily: 'var(--font-body)', fontSize: 14, color: item.mine ? '#fff' : '#111', lineHeight: '20px' }}>{item.text}</span>
                           </div>
