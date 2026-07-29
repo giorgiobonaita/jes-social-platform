@@ -73,7 +73,7 @@ serve(async (req) => {
 
     const accessToken = await getFCMToken();
 
-    await fetch(`https://fcm.googleapis.com/v1/projects/${FCM_PROJECT}/messages:send`, {
+    const fcmRes = await fetch(`https://fcm.googleapis.com/v1/projects/${FCM_PROJECT}/messages:send`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -84,10 +84,22 @@ serve(async (req) => {
           token: targetUser.push_token,
           notification: { title: msg.title, body: msg.body },
           data: { url: msg.url, type },
-          android: { priority: 'high' },
+          android: {
+            priority: 'high',
+            notification: { channel_id: 'jes_default', sound: 'default' },
+          },
         },
       }),
     });
+
+    if (!fcmRes.ok) {
+      const fcmError = await fcmRes.json();
+      // Token scaduto o non valido — rimuovi dal DB
+      if (fcmRes.status === 400 || fcmRes.status === 404) {
+        await supabase.from('users').update({ push_token: null }).eq('id', target_user_id);
+      }
+      return new Response(JSON.stringify({ error: 'FCM error', detail: fcmError }), { status: 500 });
+    }
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch (e: any) {
