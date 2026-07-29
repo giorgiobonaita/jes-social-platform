@@ -36,6 +36,15 @@
             </intent-filter>
         </activity>
 
+        <!-- Icona monocromatica bianca per le notifiche push (Android 5+) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_jes"/>
+        <!-- Colore di sfondo arancione JES per le notifiche -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/colorPrimary"/>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

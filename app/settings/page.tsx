@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const [screen, setScreen] = useState<null | 'lingua' | 'notifiche'>(null);
   const [myRole, setMyRole] = useState<string | null>(null);
   const [myUsername, setMyUsername] = useState<string | null>(null);
+  const [myAuthId, setMyAuthId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
   // Notification toggles
@@ -28,6 +29,7 @@ export default function SettingsPage() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.replace('/'); return; }
+      setMyAuthId(user.id);
       const { data } = await supabase.from('users').select('role, username').eq('auth_id', user.id).single();
       setMyRole(data?.role ?? null);
       setMyUsername(data?.username ?? null);
@@ -83,7 +85,14 @@ export default function SettingsPage() {
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 40 }}>
         {screen === 'lingua' ? (
           LANGUAGES.map(l => (
-            <div key={l.code} onClick={() => setLang(l.code)}
+            <div key={l.code} onClick={() => {
+                setLang(l.code);
+                if (myAuthId) {
+                  supabase.auth.getSession().then(({ data: { session } }) => {
+                    if (session) fetch('/api/update-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ auth_id: myAuthId, lang: l.code }) }).catch(() => {});
+                  });
+                }
+              }}
               style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer', background: lang === l.code ? '#FFF8F2' : '#fff' }}>
               <span style={{ fontSize: 28, marginRight: 14 }}>{l.flag}</span>
               <span style={{ flex: 1, fontWeight: 500, fontSize: 15, color: lang === l.code ? ORANGE : '#111' }}>{l.name}</span>

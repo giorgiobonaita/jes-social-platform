@@ -74,6 +74,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
   const [isFollower, setIsFollower]         = useState(false);
   const [totalLikes, setTotalLikes]         = useState(0);
   const [myDbId, setMyDbId]                 = useState<string | null>(null);
+  const [myAuthId, setMyAuthId]             = useState<string | null>(null);
   const [currentDbId, setCurrentDbId]       = useState<string | null>(null);
   const [myRole, setMyRole]                 = useState<string | null>(null);
   const [loading, setLoading]               = useState(false);
@@ -108,6 +109,7 @@ const [uploadingAvatar, setUploadingAvatar] = useState(false);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setMyAuthId(user.id);
       let dbMyId: string | null = myDbId;
       const { data: me, error: meError } = await supabase.from('users').select('id, role').eq('auth_id', user.id).single();
 if (me) {
@@ -449,7 +451,14 @@ if (me) {
           {settingsScreen === 'lingua' ? (
             <>
               {LANGUAGES.map(l => (
-                <div key={l.code} onClick={() => setLang(l.code)} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer', background: lang === l.code ? '#FFF8F2' : '#fff' }}>
+                <div key={l.code} onClick={() => {
+                    setLang(l.code);
+                    if (myAuthId) {
+                      supabase.auth.getSession().then(({ data: { session } }) => {
+                        if (session) fetch('/api/update-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ auth_id: myAuthId, lang: l.code }) }).catch(() => {});
+                      });
+                    }
+                  }} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer', background: lang === l.code ? '#FFF8F2' : '#fff' }}>
                   <span style={{ fontSize: 28, marginRight: 14 }}>{l.flag}</span>
                   <span style={{ flex: 1, fontFamily: 'var(--font-body)', fontWeight: 500, fontSize: 15, color: lang === l.code ? ORANGE : '#111' }}>{l.name}</span>
                   {lang === l.code && (

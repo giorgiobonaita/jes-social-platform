@@ -7,7 +7,6 @@ const FCM_PROJECT   = 'jes-social';
 const SA_EMAIL      = Deno.env.get('FCM_SA_EMAIL')!;
 const SA_PRIVATE_KEY = Deno.env.get('FCM_SA_PRIVATE_KEY')!.replace(/\\n/g, '\n');
 
-// Get OAuth2 access token from service account
 async function getFCMToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
@@ -49,26 +48,116 @@ async function getFCMToken(): Promise<string> {
   return data.access_token;
 }
 
+type MsgDef = { title: string; body: string; url: string };
+
+function buildMsg(
+  lang: string,
+  type: string,
+  actorName: string,
+  actorUsername: string,
+  postId: string | null,
+): MsgDef | null {
+  const a = actorName;
+  const postUrl = `/post/${postId}`;
+  const profileUrl = `/profile/${actorUsername}`;
+
+  const T: Record<string, Record<string, MsgDef>> = {
+    it: {
+      like:    { title: 'Nuovo like ❤️',            body: `@${a} ha messo like al tuo post`,           url: postUrl },
+      comment: { title: 'Nuovo commento 💬',         body: `@${a} ha commentato il tuo post`,           url: postUrl },
+      follow:  { title: 'Nuovo follower ✨',         body: `@${a} ha iniziato a seguirti`,              url: profileUrl },
+      mention: { title: 'Sei stato menzionato 📣',  body: `@${a} ti ha menzionato`,                    url: postUrl },
+    },
+    en: {
+      like:    { title: 'New like ❤️',              body: `@${a} liked your post`,                     url: postUrl },
+      comment: { title: 'New comment 💬',            body: `@${a} commented on your post`,              url: postUrl },
+      follow:  { title: 'New follower ✨',           body: `@${a} started following you`,               url: profileUrl },
+      mention: { title: 'You were mentioned 📣',    body: `@${a} mentioned you`,                       url: postUrl },
+    },
+    es: {
+      like:    { title: 'Nuevo like ❤️',            body: `@${a} le gustó tu publicación`,             url: postUrl },
+      comment: { title: 'Nuevo comentario 💬',       body: `@${a} comentó tu publicación`,              url: postUrl },
+      follow:  { title: 'Nuevo seguidor ✨',         body: `@${a} comenzó a seguirte`,                  url: profileUrl },
+      mention: { title: 'Te mencionaron 📣',        body: `@${a} te mencionó`,                         url: postUrl },
+    },
+    fr: {
+      like:    { title: 'Nouveau like ❤️',          body: `@${a} a aimé votre publication`,            url: postUrl },
+      comment: { title: 'Nouveau commentaire 💬',    body: `@${a} a commenté votre publication`,        url: postUrl },
+      follow:  { title: 'Nouvel abonné ✨',         body: `@${a} a commencé à vous suivre`,            url: profileUrl },
+      mention: { title: 'Vous êtes mentionné 📣',   body: `@${a} vous a mentionné`,                    url: postUrl },
+    },
+    de: {
+      like:    { title: 'Neues Like ❤️',            body: `@${a} hat deinen Beitrag geliked`,          url: postUrl },
+      comment: { title: 'Neuer Kommentar 💬',        body: `@${a} hat deinen Beitrag kommentiert`,      url: postUrl },
+      follow:  { title: 'Neuer Follower ✨',         body: `@${a} folgt dir jetzt`,                     url: profileUrl },
+      mention: { title: 'Du wurdest erwähnt 📣',    body: `@${a} hat dich erwähnt`,                    url: postUrl },
+    },
+    pt: {
+      like:    { title: 'Novo like ❤️',             body: `@${a} curtiu sua publicação`,               url: postUrl },
+      comment: { title: 'Novo comentário 💬',        body: `@${a} comentou sua publicação`,             url: postUrl },
+      follow:  { title: 'Novo seguidor ✨',          body: `@${a} começou a te seguir`,                 url: profileUrl },
+      mention: { title: 'Você foi mencionado 📣',   body: `@${a} te mencionou`,                        url: postUrl },
+    },
+    ja: {
+      like:    { title: '新しいいいね ❤️',           body: `@${a}さんがあなたの投稿にいいねしました`,        url: postUrl },
+      comment: { title: '新しいコメント 💬',          body: `@${a}さんがあなたの投稿にコメントしました`,      url: postUrl },
+      follow:  { title: '新しいフォロワー ✨',        body: `@${a}さんがあなたをフォローしました`,           url: profileUrl },
+      mention: { title: 'メンションされました 📣',    body: `@${a}さんがあなたをメンションしました`,         url: postUrl },
+    },
+    zh: {
+      like:    { title: '新点赞 ❤️',                body: `@${a} 赞了你的帖子`,                         url: postUrl },
+      comment: { title: '新评论 💬',                 body: `@${a} 评论了你的帖子`,                       url: postUrl },
+      follow:  { title: '新关注者 ✨',               body: `@${a} 开始关注你`,                           url: profileUrl },
+      mention: { title: '有人提到你 📣',            body: `@${a} 提到了你`,                             url: postUrl },
+    },
+    ar: {
+      like:    { title: 'إعجاب جديد ❤️',           body: `@${a} أعجب بمنشورك`,                       url: postUrl },
+      comment: { title: 'تعليق جديد 💬',            body: `@${a} علّق على منشورك`,                    url: postUrl },
+      follow:  { title: 'متابع جديد ✨',            body: `@${a} بدأ في متابعتك`,                     url: profileUrl },
+      mention: { title: 'تم ذكرك 📣',              body: `@${a} ذكرك في منشور`,                       url: postUrl },
+    },
+    ru: {
+      like:    { title: 'Новый лайк ❤️',            body: `@${a} лайкнул ваш пост`,                    url: postUrl },
+      comment: { title: 'Новый комментарий 💬',      body: `@${a} прокомментировал ваш пост`,           url: postUrl },
+      follow:  { title: 'Новый подписчик ✨',        body: `@${a} подписался на вас`,                   url: profileUrl },
+      mention: { title: 'Вас упомянули 📣',         body: `@${a} упомянул вас`,                        url: postUrl },
+    },
+    ko: {
+      like:    { title: '새 좋아요 ❤️',             body: `@${a}님이 게시물을 좋아합니다`,               url: postUrl },
+      comment: { title: '새 댓글 💬',               body: `@${a}님이 게시물에 댓글을 달았습니다`,         url: postUrl },
+      follow:  { title: '새 팔로워 ✨',             body: `@${a}님이 팔로우하기 시작했습니다`,            url: profileUrl },
+      mention: { title: '언급되었습니다 📣',         body: `@${a}님이 언급했습니다`,                     url: postUrl },
+    },
+  };
+
+  const langMap = T[lang] ?? T['it'];
+  return langMap[type] ?? null;
+}
+
 serve(async (req) => {
   try {
     const { type, actor_user_id, target_user_id, post_id } = await req.json();
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const { data: targetUser } = await supabase.from('users').select('push_token').eq('id', target_user_id).single();
+    const { data: targetUser } = await supabase
+      .from('users')
+      .select('push_token, lang')
+      .eq('id', target_user_id)
+      .single();
     if (!targetUser?.push_token) return new Response(JSON.stringify({ ok: true, reason: 'no token' }), { status: 200 });
 
-    const { data: actor } = await supabase.from('users').select('username, name').eq('id', actor_user_id).single();
-    const actorName = actor?.name || actor?.username || 'Qualcuno';
+    const { data: actor } = await supabase
+      .from('users')
+      .select('username, name')
+      .eq('id', actor_user_id)
+      .single();
 
-    const messages: Record<string, { title: string; body: string; url: string }> = {
-      like:    { title: 'Nuovo like ❤️',      body: `@${actorName} ha messo like al tuo post`,  url: `/post/${post_id}` },
-      comment: { title: 'Nuovo commento 💬',  body: `@${actorName} ha commentato il tuo post`,  url: `/post/${post_id}` },
-      follow:  { title: 'Nuovo follower ✨',  body: `@${actorName} ha iniziato a seguirti`,     url: `/profile/${actor?.username}` },
-      mention: { title: 'Sei menzionato 📣',  body: `@${actorName} ti ha menzionato`,           url: `/post/${post_id}` },
-    };
+    const actorName = actor?.name || actor?.username || 'Someone';
+    const actorUsername = actor?.username || '';
+    const lang = targetUser.lang || 'it';
 
-    const msg = messages[type];
+    const msg = buildMsg(lang, type, actorName, actorUsername, post_id);
     if (!msg) return new Response(JSON.stringify({ ok: true }), { status: 200 });
 
     const accessToken = await getFCMToken();
@@ -94,7 +183,6 @@ serve(async (req) => {
 
     if (!fcmRes.ok) {
       const fcmError = await fcmRes.json();
-      // Token scaduto o non valido — rimuovi dal DB
       if (fcmRes.status === 400 || fcmRes.status === 404) {
         await supabase.from('users').update({ push_token: null }).eq('id', target_user_id);
       }

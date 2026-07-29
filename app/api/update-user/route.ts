@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-const ALLOWED_FIELDS = ['name', 'bio', 'avatar_url', 'username', 'website', 'nationality', 'email', 'birth_date', 'categories', 'discipline', 'user_type'];
+const ALLOWED_FIELDS = ['name', 'bio', 'avatar_url', 'username', 'website', 'nationality', 'email', 'birth_date', 'categories', 'discipline', 'user_type', 'lang'];
 
 export async function POST(request: NextRequest) {
   try {
