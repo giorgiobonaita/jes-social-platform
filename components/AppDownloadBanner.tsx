@@ -35,10 +35,12 @@ export default function AppDownloadBanner() {
 
   return (
     <div style={{
-      position: 'fixed', bottom: 64, left: 0, right: 0, zIndex: 9999,
-      background: '#fff', borderTop: '1px solid #F0F0F0', borderBottom: '1px solid #F0F0F0',
-      boxShadow: '0 -4px 20px rgba(0,0,0,0.10)',
-      padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+      background: '#fff', borderBottom: '1px solid #F0F0F0',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+      padding: '12px 16px',
+      paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+      display: 'flex', alignItems: 'center', gap: 12,
     }}>
       {/* App icon */}
       <img src="/icon.png" alt="JES" style={{ width: 48, height: 48, borderRadius: 12, flexShrink: 0 }} />

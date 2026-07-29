@@ -13,18 +13,18 @@ export async function initPushNotifications(userId: string) {
         id: 'jes_default',
         name: 'Notifiche JES',
         description: 'Like, commenti, follower e messaggi',
-        importance: 5,        // IMPORTANCE_HIGH
+        importance: 5,
         sound: 'default',
         vibration: true,
-        visibility: 1,        // VISIBILITY_PUBLIC
+        visibility: 1,
       });
     }
 
-    const permResult = await PushNotifications.requestPermissions();
-    if (permResult.receive !== 'granted') return;
+    // Rimuovi listener precedenti per evitare duplicati ad ogni apertura
+    await PushNotifications.removeAllListeners();
 
-    await PushNotifications.register();
-
+    // IMPORTANTE: listener aggiunti PRIMA di register()
+    // così il token FCM non viene perso per race condition
     PushNotifications.addListener('registration', async ({ value: token }) => {
       await supabase.from('users').update({ push_token: token }).eq('id', userId);
     });
@@ -41,6 +41,13 @@ export async function initPushNotifications(userId: string) {
         window.location.href = path;
       }
     });
+
+    const permResult = await PushNotifications.requestPermissions();
+    if (permResult.receive !== 'granted') return;
+
+    // register() chiamato DOPO i listener — il token non viene mai perso
+    await PushNotifications.register();
+
   } catch (e) {
     console.error('Push init error:', e);
   }
