@@ -1,26 +1,113 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 export default function GoogleSignInButton({ label = 'Accedi con Google' }: { label?: string }) {
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleGoogle = async () => {
+    if (loading) return;
     setLoading(true);
+
     try {
+      const { Capacitor } = await import('@capacitor/core');
+      const isNative = Capacitor.isNativePlatform();
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          // Always redirect to jessocial.com — deep links bring user back into the app automatically
-          redirectTo: 'https://jessocial.com/auth/callback',
+          // On native: custom scheme so Chrome Custom Tabs redirect back to the app directly
+          // On web: standard HTTPS redirect handled by the callback page
+          redirectTo: isNative
+            ? 'com.jes.social://auth/callback'
+            : 'https://jessocial.com/auth/callback',
+          // skipBrowserRedirect=true: Supabase returns the URL instead of navigating to it
+          skipBrowserRedirect: isNative,
         },
       });
       if (error) throw error;
-      if (data?.url) window.location.href = data.url;
+
+      if (isNative && data?.url) {
+        const [{ Browser }, { App }] = await Promise.all([
+          import('@capacitor/browser'),
+          import('@capacitor/app'),
+        ]);
+
+        // Listen for browser close (user cancelled OAuth)
+        const browserListener = await Browser.addListener('browserFinished', async () => {
+          await browserListener.remove();
+          setLoading(false);
+        });
+
+        // Listen for the deep link returning from Google OAuth
+        const urlListener = await App.addListener('appUrlOpen', async ({ url }) => {
+          if (!url.includes('auth/callback')) return;
+
+          // Cleanup listeners
+          await urlListener.remove();
+          await browserListener.remove();
+          try { await Browser.close(); } catch {}
+
+          const urlObj = new URL(url);
+          const code = urlObj.searchParams.get('code');
+
+          if (!code) {
+            setLoading(false);
+            alert('Accesso Google non riuscito. Riprova.');
+            return;
+          }
+
+          const { data: sd, error: se } = await supabase.auth.exchangeCodeForSession(code);
+          if (se || !sd?.session) {
+            setLoading(false);
+            alert('Errore durante il login Google. Riprova.');
+            return;
+          }
+
+          const session = sd.session;
+
+          // Save OAuth email fire-and-forget
+          if (session.user.email) {
+            supabase.from('users')
+              .update({ email: session.user.email })
+              .eq('auth_id', session.user.id)
+              .then(() => {});
+          }
+
+          // Give the DB trigger time to create the user row on first login
+          await new Promise(r => setTimeout(r, 800));
+
+          const { data: user } = await supabase
+            .from('users')
+            .select('username, nationality')
+            .eq('auth_id', session.user.id)
+            .maybeSingle();
+
+          setLoading(false);
+
+          if (user?.username && user?.nationality) {
+            router.replace('/home');
+          } else if (user?.username) {
+            router.replace('/onboarding/age');
+          } else {
+            router.replace('/onboarding/name');
+          }
+        });
+
+        // Open Google OAuth in Chrome Custom Tabs (NOT the embedded WebView)
+        await Browser.open({ url: data.url });
+        // Loading stays true — reset happens in urlListener or browserListener
+
+      } else if (data?.url) {
+        // Web: navigate the page directly, callback page handles the rest
+        window.location.href = data.url;
+        // Don't reset loading — the page will navigate away
+      }
     } catch (e: any) {
-      alert('Errore Google: ' + (e?.message || e));
-    } finally {
       setLoading(false);
+      alert('Errore Google: ' + (e?.message || e));
     }
   };
 
