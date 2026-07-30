@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'rea
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { initPushNotifications } from '@/lib/pushNotifications';
+import { createNotification } from '@/lib/notifications';
 import { useLang, T } from '@/lib/i18n';
 import FeedPoll from '@/components/FeedPoll';
 import CommentsModal from '@/components/CommentsModal';
@@ -328,7 +329,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
       if (error) { console.error('[like] insert error:', error); setLiked(false); setLikesCount((p: number) => p - 1); return; }
       if (post.groupName) onLiked?.(post.groupName);
       if (post.userId && post.userId !== post.currentUserId) {
-        supabase.from('notifications').insert({ user_id: post.userId, actor_id: post.currentUserId, type: 'like', post_id: post.id }).then(() => {});
+        createNotification({ user_id: post.userId, actor_id: post.currentUserId, type: 'like', post_id: post.id });
       }
     }
   };
@@ -356,7 +357,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
           setLikesCount((p: number) => p + 1);
           supabase.from('likes').insert({ post_id: post.id, user_id: post.currentUserId });
           if (post.userId && post.userId !== post.currentUserId) {
-            supabase.from('notifications').insert({ user_id: post.userId, actor_id: post.currentUserId, type: 'like', post_id: post.id }).then(() => {});
+            createNotification({ user_id: post.userId, actor_id: post.currentUserId, type: 'like', post_id: post.id });
           }
         }
       }

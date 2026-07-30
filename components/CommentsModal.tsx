@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { containsBlacklistedWord } from '@/lib/blacklist';
+import { createNotification } from '@/lib/notifications';
 import AvatarImg from './AvatarImg';
 import { useLang, T } from '@/lib/i18n';
 
@@ -121,7 +122,7 @@ export default function CommentsModal({ visible, onClose, postId, postAuthorId, 
     const { error } = await supabase.from('comments').insert({ post_id: postId, user_id: currentDbUserId, text, parent_id: parentId });
     if (error) { console.error('[comment] insert error:', error); setComments(prev => prev.filter(c => c.id !== tempId)); return; }
     if (postAuthorId && postAuthorId !== currentDbUserId) {
-      supabase.from('notifications').insert({ user_id: postAuthorId, actor_id: currentDbUserId, type: 'comment', post_id: postId }).then(() => {});
+      createNotification({ user_id: postAuthorId, actor_id: currentDbUserId, type: 'comment', post_id: postId });
     }
   };
 

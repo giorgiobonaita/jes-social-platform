@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase, JES_OFFICIAL_USERNAME } from '@/lib/supabase';
+import { createNotification } from '@/lib/notifications';
 import AvatarImg from './AvatarImg';
 import { useLang, T } from '@/lib/i18n';
 
@@ -130,7 +131,7 @@ export default function SearchModal({ visible, onClose, onUserPress, onGroupPres
       await supabase.from('follows').delete().eq('follower_id', myId).eq('followed_id', userId);
     } else {
       await supabase.from('follows').insert({ follower_id: myId, followed_id: userId });
-      await supabase.from('notifications').insert({ user_id: userId, sender_id: myId, type: 'follow' });
+      createNotification({ user_id: userId, actor_id: myId, type: 'follow' });
     }
   };
 

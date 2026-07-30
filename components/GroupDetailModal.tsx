@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { createNotification } from '@/lib/notifications';
 import AvatarImg from './AvatarImg';
 import { useLang, T } from '@/lib/i18n';
 
@@ -300,7 +301,7 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
     } else {
       await supabase.from('likes').insert({ post_id: id, user_id: myId });
       if (userId && userId !== myId) {
-        await supabase.from('notifications').insert({ user_id: userId, sender_id: myId, type: 'like', post_id: id });
+        createNotification({ user_id: userId, actor_id: myId, type: 'like', post_id: id });
       }
     }
   };

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { createNotification } from '@/lib/notifications';
 import AvatarImg from './AvatarImg';
 import AdminPanelModal from './AdminPanelModal';
 import { useLang, LANGUAGES } from '@/lib/i18n';
@@ -279,7 +280,7 @@ if (me) {
         .insert({ follower_id: uid, followed_id: profile.id });
       if (error) { console.error('[follow] insert error:', error); setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
       setListsLoaded(false); setListFollowingIds(new Set());
-      supabase.from('notifications').insert({ user_id: profile.id, actor_id: uid, type: 'follow' });
+      createNotification({ user_id: profile.id, actor_id: uid, type: 'follow' });
     }
   };
 
