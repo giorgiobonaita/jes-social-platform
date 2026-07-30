@@ -986,7 +986,7 @@ const { t, lang } = useLang();
         setUserType(data.user_type || null);
         setCategoryScores(data.category_scores || null);
         setInterests(null);
-        initPushNotifications(data.id);
+        initPushNotifications();
 
         // Controlla se algoritmo attivo (>500 utenti)
         const { count: userCount } = await supabase.from('users').select('id', { count: 'exact', head: true });

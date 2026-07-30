@@ -134,7 +134,16 @@ function buildMsg(
   return langMap[type] ?? null;
 }
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
     const { type, actor_user_id, target_user_id, post_id } = await req.json();
 
@@ -145,7 +154,7 @@ serve(async (req) => {
       .select('push_token, lang')
       .eq('id', target_user_id)
       .single();
-    if (!targetUser?.push_token) return new Response(JSON.stringify({ ok: true, reason: 'no token' }), { status: 200 });
+    if (!targetUser?.push_token) return new Response(JSON.stringify({ ok: true, reason: 'no token' }), { status: 200, headers: corsHeaders });
 
     const { data: actor } = await supabase
       .from('users')
@@ -158,7 +167,7 @@ serve(async (req) => {
     const lang = targetUser.lang || 'it';
 
     const msg = buildMsg(lang, type, actorName, actorUsername, post_id);
-    if (!msg) return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    if (!msg) return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders });
 
     const accessToken = await getFCMToken();
 
@@ -186,11 +195,11 @@ serve(async (req) => {
       if (fcmRes.status === 400 || fcmRes.status === 404) {
         await supabase.from('users').update({ push_token: null }).eq('id', target_user_id);
       }
-      return new Response(JSON.stringify({ error: 'FCM error', detail: fcmError }), { status: 500 });
+      return new Response(JSON.stringify({ error: 'FCM error', detail: fcmError }), { status: 500, headers: corsHeaders });
     }
 
-    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
   }
 });

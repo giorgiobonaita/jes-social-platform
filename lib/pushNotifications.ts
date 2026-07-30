@@ -1,13 +1,12 @@
 import { Capacitor } from '@capacitor/core';
 import { supabase } from './supabase';
 
-export async function initPushNotifications(userId: string) {
+export async function initPushNotifications() {
   if (!Capacitor.isNativePlatform()) return;
 
   try {
     const { PushNotifications } = await import('@capacitor/push-notifications');
 
-    // Android 8+ richiede un canale notifiche esplicito
     if (Capacitor.getPlatform() === 'android') {
       await PushNotifications.createChannel({
         id: 'jes_default',
@@ -20,13 +19,17 @@ export async function initPushNotifications(userId: string) {
       });
     }
 
-    // Rimuovi listener precedenti per evitare duplicati ad ogni apertura
     await PushNotifications.removeAllListeners();
 
-    // IMPORTANTE: listener aggiunti PRIMA di register()
-    // così il token FCM non viene perso per race condition
     PushNotifications.addListener('registration', async ({ value: token }) => {
-      await supabase.from('users').update({ push_token: token }).eq('id', userId);
+      if (!token) return;
+      // Usa auth_id dalla sessione — più robusto di passare userId come parametro
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
+      await supabase
+        .from('users')
+        .update({ push_token: token })
+        .eq('auth_id', session.user.id);
     });
 
     PushNotifications.addListener('registrationError', (err) => {
@@ -45,7 +48,6 @@ export async function initPushNotifications(userId: string) {
     const permResult = await PushNotifications.requestPermissions();
     if (permResult.receive !== 'granted') return;
 
-    // register() chiamato DOPO i listener — il token non viene mai perso
     await PushNotifications.register();
 
   } catch (e) {
