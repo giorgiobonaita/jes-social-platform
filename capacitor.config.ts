@@ -1,14 +1,9 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.jessocial.app',
+  appId: 'com.jes.social',
   appName: 'JES Social',
   webDir: 'out',
-  android: {
-    buildOptions: {
-      releaseType: 'AAB',
-    },
-  },
   server: {
     errorPath: '/index.html',
     androidScheme: 'https',
@@ -16,11 +11,6 @@ const config: CapacitorConfig = {
   plugins: {
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
-    },
-    StatusBar: {
-      style: 'DARK',
-      backgroundColor: '#ffffff',
-      overlaysWebView: true,
     },
   },
 };
