@@ -15,15 +15,11 @@ workflows:
       - name: Install npm dependencies
         script: npm install --legacy-peer-deps
       - name: Build Next.js static export
-        script: npm run build
+        script: MOBILE_BUILD=true npm run build
       - name: Capacitor sync iOS
         script: npx cap sync ios
       - name: Copy GoogleService-Info.plist
         script: cp GoogleService-Info.plist ios/App/App/GoogleService-Info.plist
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod install
       - name: Set up code signing
         script: |
           keychain initialize
@@ -35,7 +31,8 @@ workflows:
       - name: Build IPA
         script: |
           xcode-project build-ipa \
-            --workspace ios/App/App.xcworkspace \
+            --project ios/App/App.xcodeproj \
+            --scheme App \
             --config Release
     artifacts:
       - build/ios/ipa/*.ipa
