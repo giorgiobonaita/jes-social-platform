@@ -13,7 +13,7 @@ workflows:
         BUNDLE_ID: com.jes.social
     scripts:
       - name: Install npm dependencies
-        script: npm ci
+        script: npm install --legacy-peer-deps
       - name: Build Next.js static export
         script: npm run build
       - name: Capacitor sync iOS
