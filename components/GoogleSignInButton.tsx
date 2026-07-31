@@ -15,95 +15,52 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
       const { Capacitor } = await import('@capacitor/core');
       const isNative = Capacitor.isNativePlatform();
 
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          // On native: custom scheme so Chrome Custom Tabs redirect back to the app directly
-          // On web: standard HTTPS redirect handled by the callback page
-          redirectTo: isNative
-            ? 'com.jes.social://auth/callback'
-            : 'https://jessocial.com/auth/callback',
-          // skipBrowserRedirect=true: Supabase returns the URL instead of navigating to it
-          skipBrowserRedirect: isNative,
-        },
-      });
-      if (error) throw error;
-
-      if (isNative && data?.url) {
-        const [{ Browser }, { App }] = await Promise.all([
-          import('@capacitor/browser'),
-          import('@capacitor/app'),
-        ]);
-
-        // Listen for browser close (user cancelled OAuth)
-        const browserListener = await Browser.addListener('browserFinished', async () => {
-          await browserListener.remove();
-          setLoading(false);
+      if (isNative) {
+        // Native: use the Google Sign-In SDK directly (no browser redirect)
+        const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
+        await GoogleAuth.initialize({
+          clientId: '150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com',
+          scopes: ['profile', 'email'],
+          grantOfflineAccess: true,
         });
 
-        // Listen for the deep link returning from Google OAuth
-        const urlListener = await App.addListener('appUrlOpen', async ({ url }) => {
-          if (!url.includes('auth/callback')) return;
+        const googleUser = await GoogleAuth.signIn();
+        const idToken = googleUser?.authentication?.idToken;
+        if (!idToken) throw new Error('Nessun token Google ricevuto');
 
-          // Cleanup listeners
-          await urlListener.remove();
-          await browserListener.remove();
-          try { await Browser.close(); } catch {}
-
-          const urlObj = new URL(url);
-          const code = urlObj.searchParams.get('code');
-
-          if (!code) {
-            setLoading(false);
-            alert('Accesso Google non riuscito. Riprova.');
-            return;
-          }
-
-          const { data: sd, error: se } = await supabase.auth.exchangeCodeForSession(code);
-          if (se || !sd?.session) {
-            setLoading(false);
-            alert('Errore durante il login Google. Riprova.');
-            return;
-          }
-
-          const session = sd.session;
-
-          // Save OAuth email fire-and-forget
-          if (session.user.email) {
-            supabase.from('users')
-              .update({ email: session.user.email })
-              .eq('auth_id', session.user.id)
-              .then(() => {});
-          }
-
-          // Give the DB trigger time to create the user row on first login
-          await new Promise(r => setTimeout(r, 800));
-
-          const { data: user } = await supabase
-            .from('users')
-            .select('username, nationality')
-            .eq('auth_id', session.user.id)
-            .maybeSingle();
-
-          setLoading(false);
-
-          if (user?.username && user?.nationality) {
-            router.replace('/home');
-          } else if (user?.username) {
-            router.replace('/onboarding/age');
-          } else {
-            router.replace('/onboarding/name');
-          }
+        const { data: sd, error: se } = await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
         });
+        if (se || !sd?.session) throw se || new Error('Login fallito');
 
-        // Open Google OAuth in Chrome Custom Tabs (NOT the embedded WebView)
-        await Browser.open({ url: data.url });
-        // Loading stays true — reset happens in urlListener or browserListener
+        const session = sd.session;
+        if (session.user.email) {
+          supabase.from('users').update({ email: session.user.email }).eq('auth_id', session.user.id).then(() => {});
+        }
 
-      } else if (data?.url) {
-        // Web: navigate the page directly, callback page handles the rest
-        window.location.href = data.url;
-        // Don't reset loading — the page will navigate away
+        await new Promise(r => setTimeout(r, 800));
+
+        const { data: user } = await supabase
+          .from('users').select('username, nationality').eq('auth_id', session.user.id).maybeSingle();
+
+        setLoading(false);
+        if (user?.username && user?.nationality) {
+          router.replace('/home');
+        } else if (user?.username) {
+          router.replace('/onboarding/age');
+        } else {
+          router.replace('/onboarding/name');
+        }
+
+      } else {
+        // Web: standard Supabase OAuth redirect
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: 'https://jessocial.com/auth/callback' },
+        });
+        if (error) throw error;
+        if (data?.url) window.location.href = data.url;
       }
     } catch (e: any) {
       setLoading(false);

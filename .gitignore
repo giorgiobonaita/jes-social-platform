@@ -44,3 +44,5 @@ next-env.d.ts
 /android/.gradle/
 /android/app/build/
 /android/build/
+
+generate-apple-secret.mjs

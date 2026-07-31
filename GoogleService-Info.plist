@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>150769005493-1qd5qi8kclhgvmn1tnalqbu0hoct5t2h.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.150769005493-1qd5qi8kclhgvmn1tnalqbu0hoct5t2h</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>150769005493-egoi9s55a8ut9edc874hhkev64mq0jj4.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAH912jlMQ1q6HRDH1roVEANfNL2UhW7qA</string>
+	<key>GCM_SENDER_ID</key>
+	<string>150769005493</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.jes.social</string>
+	<key>PROJECT_ID</key>
+	<string>jes-social</string>
+	<key>STORAGE_BUCKET</key>
+	<string>jes-social.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:150769005493:ios:f9ba04aa2f7cd4f40e9ffc</string>
+</dict>
+</plist>

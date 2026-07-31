@@ -384,13 +384,23 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
 
   const handleDelete = async () => {
     setConfirmAction(null); setMenuOpen(false);
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      await fetch('/api/admin-delete-post', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-        body: JSON.stringify({ post_id: post.id, reason: deleteReason || undefined }),
-      });
+    const { Capacitor } = await import('@capacitor/core');
+    if (Capacitor.isNativePlatform()) {
+      // On native, API routes don't exist — delete directly via Supabase
+      await supabase.from('likes').delete().eq('post_id', post.id);
+      await supabase.from('comments').delete().eq('post_id', post.id);
+      await supabase.from('post_tags').delete().eq('post_id', post.id);
+      await supabase.from('saves').delete().eq('post_id', post.id);
+      await supabase.from('posts').delete().eq('id', post.id);
+    } else {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await fetch('/api/admin-delete-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({ post_id: post.id, reason: deleteReason || undefined }),
+        });
+      }
     }
     setDeleteReason('');
     onDelete();
@@ -955,6 +965,33 @@ const { t, lang } = useLang();
   const [showSplash, setShowSplash] = useState(true);
   useEffect(() => { const t = setTimeout(() => setShowSplash(false), 1200); return () => clearTimeout(t); }, []);
 
+  // Android back button: close open modals instead of navigating back
+  useEffect(() => {
+    if (!isNative) return;
+    let listener: any;
+    import('@capacitor/app').then(({ App }) => {
+      App.addListener('backButton', ({ canGoBack }) => {
+        const anyModalOpen = profileVisible || commentsVisible || notifVisible || storyVisible
+          || imageViewerVisible || createPostVisible || createTextPostVisible || showInterests
+          || createMenuVisible;
+        if (anyModalOpen) {
+          setProfileVisible(false);
+          setCommentsVisible(false);
+          setNotifVisible(false);
+          setStoryVisible(false);
+          setImageViewerVisible(false);
+          setCreatePostVisible(false);
+          setCreateTextPostVisible(false);
+          setShowInterests(false);
+          setCreateMenuVisible(false);
+        } else if (!canGoBack) {
+          App.exitApp();
+        }
+      }).then(l => { listener = l; });
+    }).catch(() => {});
+    return () => { listener?.remove(); };
+  }, [isNative, profileVisible, commentsVisible, notifVisible, storyVisible, imageViewerVisible, createPostVisible, createTextPostVisible, showInterests, createMenuVisible]);
+
   const allPosts = useMemo(() => [...groupPosts, ...dbPosts], [groupPosts, dbPosts]);
   const feedData = useMemo(() => buildFeed(allPosts, myUsername, userType, categoryScores, interests, algoActive), [allPosts, myUsername, userType, categoryScores, interests, algoActive]);
 
@@ -987,6 +1024,24 @@ const { t, lang } = useLang();
         setCategoryScores(data.category_scores || null);
         setInterests(null);
         initPushNotifications();
+
+        // Handle push notification tap navigation
+        const pushNav = localStorage.getItem('jes_push_nav');
+        if (pushNav) {
+          localStorage.removeItem('jes_push_nav');
+          const postMatch = pushNav.match(/^\/post\/([^/]+)$/);
+          const profileMatch = pushNav.match(/^\/profile\/([^/]+)$/);
+          if (postMatch) {
+            const postId = postMatch[1];
+            const { data: postData } = await supabase.from('posts').select('user_id').eq('id', postId).single();
+            setCommentsPostId(postId);
+            setCommentsAuthorId(postData?.user_id ?? null);
+            setCommentsVisible(true);
+          } else if (profileMatch) {
+            const { data: userData } = await supabase.from('users').select('id').eq('username', profileMatch[1]).single();
+            if (userData) { setProfileTargetUserId(userData.id); setProfileVisible(true); }
+          }
+        }
 
         // Controlla se algoritmo attivo (>500 utenti)
         const { count: userCount } = await supabase.from('users').select('id', { count: 'exact', head: true });
@@ -1286,7 +1341,7 @@ const { t, lang } = useLang();
             <svg width="28" height="28" fill="none" stroke="white" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </div>
         </button>
-        <button className="nav-tab" onClick={() => myUsername ? router.push(`/profile/${myUsername}`) : router.push('/settings')}>
+        <button className="nav-tab" onClick={() => { if (isNative) { setProfileTargetUserId(undefined); setProfileVisible(true); } else if (myUsername) { router.push(`/profile/${myUsername}`); } else { router.push('/settings'); } }}>
           <svg width="26" height="26" fill="none" stroke="#AAAAAA" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
       </nav>
@@ -1327,7 +1382,18 @@ const { t, lang } = useLang();
         onUserPress={async uid => { if (!isNative) { const { data } = await supabase.from('users').select('username').eq('id', uid).single(); if (data?.username) { router.push(`/profile/${data.username}`); return; } } setProfileTargetUserId(uid); setProfileVisible(true); }}
         onGroupPress={gid => { setGroupsInitialId(gid); setGroupsVisible(true); }}
         onPostPress={(_, url) => { setImageViewerUrl(url); setImageViewerVisible(true); }} />
-      <NotificationsModal visible={notifVisible} onClose={() => setNotifVisible(false)} />
+      <NotificationsModal
+        visible={notifVisible}
+        onClose={() => setNotifVisible(false)}
+        onOpenProfile={uid => { setNotifVisible(false); setProfileTargetUserId(uid); setProfileVisible(true); }}
+        onOpenPost={async postId => {
+          setNotifVisible(false);
+          const { data: pd } = await supabase.from('posts').select('user_id').eq('id', postId).single();
+          setCommentsPostId(postId);
+          setCommentsAuthorId(pd?.user_id ?? null);
+          setCommentsVisible(true);
+        }}
+      />
       {/* Note: chat/search/notifications/settings now have dedicated URL routes */}
       <ProfileModal visible={profileVisible} targetUserId={profileTargetUserId}
         onClose={() => { setProfileVisible(false); setProfileTargetUserId(undefined); }}

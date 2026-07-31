@@ -38,11 +38,12 @@ export async function initPushNotifications() {
 
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       const data = action.notification.data;
-      if (data?.url) {
-        const url = data.url as string;
-        const path = url.startsWith('http') ? new URL(url).pathname : url;
-        window.location.href = path;
-      }
+      if (!data?.url) return;
+      const url = data.url as string;
+      const path = url.startsWith('http') ? new URL(url).pathname : url;
+      // Store path for home page to pick up, then navigate there
+      try { localStorage.setItem('jes_push_nav', path); } catch {}
+      window.location.href = '/home';
     });
 
     const permResult = await PushNotifications.requestPermissions();

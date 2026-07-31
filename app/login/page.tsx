@@ -1,12 +1,20 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useLang } from '@/lib/i18n';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
+import AppleSignInButton from '@/components/AppleSignInButton';
 
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useLang();
+  const [isIOS, setIsIOS] = useState(false);
+  useEffect(() => {
+    import('@capacitor/core').then(({ Capacitor }) => {
+      setIsIOS(Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios');
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="shell auth-page">
@@ -27,6 +35,7 @@ export default function LoginPage() {
 
         <div className="auth-buttons">
           <GoogleSignInButton />
+          {isIOS && <AppleSignInButton />}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
             <div style={{ flex: 1, height: 1, background: '#E8E8E8' }} />
             <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#AAA' }}>oppure</span>

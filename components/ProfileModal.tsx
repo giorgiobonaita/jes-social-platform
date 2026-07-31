@@ -280,7 +280,7 @@ if (me) {
         .insert({ follower_id: uid, followed_id: profile.id });
       if (error) { console.error('[follow] insert error:', error); setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
       setListsLoaded(false); setListFollowingIds(new Set());
-      createNotification({ user_id: profile.id, actor_id: uid, type: 'follow' });
+      if (uid) createNotification({ user_id: profile.id, actor_id: uid, type: 'follow' });
     }
   };
 
@@ -327,15 +327,9 @@ if (me) {
   const confirmDeleteAccount = async () => {
     if (!profile?.id) return;
     setDeletingAccount(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (user) {
-      await fetch('/api/delete-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ userId: user.id }),
-      });
-    }
+    try {
+      await supabase.rpc('delete_my_account');
+    } catch {}
     await supabase.auth.signOut();
     setDeletingAccount(false);
     setDeleteAccountModal(false);

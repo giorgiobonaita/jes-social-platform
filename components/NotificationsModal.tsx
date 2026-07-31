@@ -13,6 +13,7 @@ interface Notification {
   type: NotifType;
   username: string;
   actorUsername: string;
+  actorId: string | null;
   avatarUrl: string | null;
   text: string;
   timeAgo: string;
@@ -72,9 +73,14 @@ NOTIF_ICONS['post_removed'] = {
   color: '#FF3B30', bg: '#FFF0EE',
 };
 
-interface Props { visible: boolean; onClose: () => void; }
+interface Props {
+  visible: boolean;
+  onClose: () => void;
+  onOpenProfile?: (userId: string) => void;
+  onOpenPost?: (postId: string) => void;
+}
 
-export default function NotificationsModal({ visible, onClose }: Props) {
+export default function NotificationsModal({ visible, onClose, onOpenProfile, onOpenPost }: Props) {
   const { t, lang } = useLang();
   const tl = (k: string) => T[lang][k] ?? T['en'][k] ?? k;
   const router = useRouter();
@@ -116,6 +122,7 @@ export default function NotificationsModal({ visible, onClose }: Props) {
         id: n.id, type: n.type as NotifType,
         username: sender.username || tl('user_fallback'),
         actorUsername: sender.username || '',
+        actorId: n.actor_id || null,
         avatarUrl: sender.avatar_url || null,
         text: notifText(n.type as NotifType, t),
         timeAgo: n.created_at ? formatTimeAgo(n.created_at, t) : '',
@@ -161,16 +168,24 @@ export default function NotificationsModal({ visible, onClose }: Props) {
   }, [visible, myDbId, loadNotifications]);
 
   const handleGoToUser = () => {
-    if (!actionSheet?.actorUsername) return;
+    if (!actionSheet) return;
     setActionSheet(null);
-    router.push(`/profile/${actionSheet.actorUsername}`);
+    if (onOpenProfile && actionSheet.actorId) {
+      onOpenProfile(actionSheet.actorId);
+    } else if (actionSheet.actorUsername) {
+      router.push(`/profile/${actionSheet.actorUsername}`);
+    }
   };
 
   const handleGoToPost = () => {
     if (!actionSheet?.postId) return;
-    const suffix = actionSheet.type === 'comment' ? '?comments=1' : '';
     setActionSheet(null);
-    router.push(`/post/${actionSheet.postId}${suffix}`);
+    if (onOpenPost) {
+      onOpenPost(actionSheet.postId);
+    } else {
+      const suffix = actionSheet.type === 'comment' ? '?comments=1' : '';
+      router.push(`/post/${actionSheet.postId}${suffix}`);
+    }
   };
 
   if (!mounted || !visible) return null;
