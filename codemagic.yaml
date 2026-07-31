@@ -11,9 +11,6 @@ workflows:
       cocoapods: default
       vars:
         BUNDLE_ID: com.jes.social
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.jes.social
     scripts:
       - name: Install npm dependencies
         script: npm ci
