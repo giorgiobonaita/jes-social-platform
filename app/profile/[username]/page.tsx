@@ -3,19 +3,21 @@ import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import ProfilePageClient from './ProfilePageClient';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const generateStaticParams = async () => [];
+export const dynamicParams = false;
 
 interface Props {
   params: Promise<{ username: string }>;
 }
 
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (process.env.MOBILE_BUILD === 'true') return {};
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const { username } = await params;
-  const { data } = await supabaseAdmin
+  const { data } = await supabase
     .from('users')
     .select('name, bio, avatar_url')
     .eq('username', username)

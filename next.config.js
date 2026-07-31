@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
 const isMobileBuild = process.env.MOBILE_BUILD === 'true';
 
 const nextConfig = {
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
   // Static export only for Capacitor mobile build, not for web deployment
   ...(isMobileBuild ? { output: 'export' } : {}),
   images: {

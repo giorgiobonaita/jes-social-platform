@@ -4,17 +4,19 @@ import type { Metadata } from 'next';
 import PostClient from './PostClient';
 
 export const revalidate = 0;
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const generateStaticParams = async () => [];
+export const dynamicParams = false;
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (process.env.MOBILE_BUILD === 'true') return {};
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const { id } = await params;
   const { data, error } = await supabaseAdmin
     .from('posts')
