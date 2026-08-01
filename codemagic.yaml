@@ -19,7 +19,7 @@ workflows:
           cp "app/profile/[username]/page.mobile.tsx" "app/profile/[username]/page.tsx"
           cp "app/post/[id]/page.mobile.tsx" "app/post/[id]/page.tsx"
       - name: Build Next.js static export
-        script: MOBILE_BUILD=true npx next build --no-turbopack
+        script: MOBILE_BUILD=true npx next build --webpack
       - name: Capacitor sync iOS
         script: npx cap sync ios
       - name: Copy GoogleService-Info.plist
