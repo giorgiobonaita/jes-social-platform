@@ -3,8 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import PostClient from './PostClient';
 
-export const revalidate = 0;
-export const generateStaticParams = async () => [];
+export async function generateStaticParams() { return []; }
 export const dynamicParams = false;
 
 interface Props {

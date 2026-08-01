@@ -16,8 +16,12 @@ workflows:
         script: npm install --legacy-peer-deps
       - name: Swap pages for mobile build
         script: |
-          cp "app/profile/[username]/page.mobile.tsx" "app/profile/[username]/page.tsx"
-          cp "app/post/[id]/page.mobile.tsx" "app/post/[id]/page.tsx"
+          node -e "
+          const fs = require('fs');
+          fs.copyFileSync('app/profile/[username]/page.mobile.tsx', 'app/profile/[username]/page.tsx');
+          fs.copyFileSync('app/post/[id]/page.mobile.tsx', 'app/post/[id]/page.tsx');
+          console.log('Pages swapped successfully');
+          "
       - name: Build Next.js static export
         script: MOBILE_BUILD=true npx next build --webpack
       - name: Capacitor sync iOS
