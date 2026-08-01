@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import ProfilePageClient from './ProfilePageClient';
 
@@ -10,6 +9,7 @@ export const dynamicParams = false;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (process.env.MOBILE_BUILD === 'true') return {};
+  const { createClient } = await import('@supabase/supabase-js');
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const { username } = await params;
   const { data } = await supabase.from('users').select('name, bio, avatar_url').eq('username', username).single();

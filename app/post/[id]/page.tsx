@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import type { Metadata } from 'next';
 import PostClient from './PostClient';
 
@@ -12,6 +11,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (process.env.MOBILE_BUILD === 'true') return {};
+  const { createClient } = await import('@supabase/supabase-js');
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
