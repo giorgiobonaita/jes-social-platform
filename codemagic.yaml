@@ -6,7 +6,7 @@ workflows:
     environment:
       groups:
         - app_store_connect
-      node: 20
+      node: 22
       xcode: latest
       cocoapods: default
       vars:
