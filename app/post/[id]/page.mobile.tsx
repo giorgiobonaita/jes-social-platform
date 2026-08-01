@@ -1,9 +1,9 @@
-import PostClient from './PostClient';
+import PostRedirect from './PostRedirect';
 
 export async function generateStaticParams() { return []; }
 export const dynamicParams = false;
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <PostClient id={id} />;
+  return <PostRedirect id={id} />;
 }
