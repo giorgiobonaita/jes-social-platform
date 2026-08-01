@@ -39,6 +39,10 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
+          echo "=== Provisioning profiles installed ==="
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "No profiles found"
+          echo "=== xcodeproj CODE_SIGN after use-profiles ==="
+          grep -E "CODE_SIGN_STYLE|PROVISIONING_PROFILE|DEVELOPMENT_TEAM" ios/App/App.xcodeproj/project.pbxproj || echo "Nothing found"
       - name: Resolve SPM packages
         script: |
           xcodebuild -resolvePackageDependencies \
