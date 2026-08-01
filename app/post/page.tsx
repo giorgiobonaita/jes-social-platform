@@ -2,7 +2,9 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import PostClient from './[id]/PostClient';
+import dynamic from 'next/dynamic';
+
+const PostClient = dynamic(() => import('./[id]/PostClient'), { ssr: false });
 
 function PostPageInner() {
   const params = useSearchParams();
