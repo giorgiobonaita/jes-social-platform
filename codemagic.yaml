@@ -86,11 +86,13 @@ workflows:
             --create \
             --certificate-key "$CERTIFICATE_PRIVATE_KEY"
           keychain add-certificates
-          xcode-project use-profiles
-          echo "=== Provisioning profiles installed ==="
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "No profiles found"
-          echo "=== xcodeproj CODE_SIGN after use-profiles ==="
-          grep -E "CODE_SIGN_STYLE|PROVISIONING_PROFILE|DEVELOPMENT_TEAM" ios/App/App.xcodeproj/project.pbxproj || echo "Nothing found"
+          # Copy profiles to MobileDevice location for Xcode
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
+          find ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/ -name "*.mobileprovision" \
+            -exec cp {} ~/Library/MobileDevice/Provisioning\ Profiles/ \; 2>/dev/null || true
+          xcode-project use-profiles || true
+          echo "=== Profiles ==="
+          ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "none"
       - name: Resolve SPM packages
         script: |
           xcodebuild -resolvePackageDependencies \
@@ -98,17 +100,50 @@ workflows:
             -scheme App
       - name: Build IPA
         script: |
-          echo "=== Provisioning profiles ==="
-          ls ~/Library/MobileDevice/Provisioning\ Profiles/ 2>/dev/null || echo "NO PROFILES FOUND"
-          echo "=== Certificate identities ==="
-          security find-identity -v -p codesigning 2>/dev/null || echo "NO CERTS"
-          echo "=== xcodeproj signing settings ==="
-          grep -E "CODE_SIGN_STYLE|PROVISIONING_PROFILE|DEVELOPMENT_TEAM" ios/App/App.xcodeproj/project.pbxproj || echo "NOTHING"
-          echo "=== Building ==="
-          xcode-project build-ipa \
-            --project ios/App/App.xcodeproj \
-            --scheme App \
-            --config Release
+          TEAM_ID="AA9JL76G8A"
+          PROFILE=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision 2>/dev/null | head -1)
+          PROFILE_UUID=$(security cms -D -i "$PROFILE" | plutil -extract UUID raw -)
+          echo "Profile UUID: $PROFILE_UUID"
+          echo "Profile path: $PROFILE"
+          security find-identity -v -p codesigning
+
+          ARCHIVE_PATH="/tmp/App.xcarchive"
+          xcodebuild archive \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Release \
+            -archivePath "$ARCHIVE_PATH" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE="$PROFILE_UUID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+          cat > /tmp/ExportOptions.plist << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>$TEAM_ID</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>$BUNDLE_ID</key>
+              <string>$PROFILE_UUID</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+
+          mkdir -p build/ios/ipa
+          xcodebuild -exportArchive \
+            -archivePath "$ARCHIVE_PATH" \
+            -exportOptionsPlist /tmp/ExportOptions.plist \
+            -exportPath build/ios/ipa/
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
