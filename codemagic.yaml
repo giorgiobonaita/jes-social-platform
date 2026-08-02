@@ -29,6 +29,11 @@ workflows:
         script: MOBILE_BUILD=true npx next build --webpack
       - name: Capacitor sync iOS
         script: npx cap sync ios
+      - name: Fix bundle ID in Xcode project
+        script: |
+          sed -i '' 's/com\.jessocial\.app/com.jes.social/g' ios/App/App.xcodeproj/project.pbxproj
+          echo "Bundle IDs after fix:"
+          grep "PRODUCT_BUNDLE_IDENTIFIER" ios/App/App.xcodeproj/project.pbxproj
       - name: Generate iOS app icons
         script: |
           sips -z 1024 1024 icon.png --out icon_1024.png
