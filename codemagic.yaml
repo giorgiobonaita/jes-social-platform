@@ -34,6 +34,11 @@ workflows:
           sed -i '' 's/com\.jessocial\.app/com.jes.social/g' ios/App/App.xcodeproj/project.pbxproj
           echo "Bundle IDs after fix:"
           grep "PRODUCT_BUNDLE_IDENTIFIER" ios/App/App.xcodeproj/project.pbxproj
+      - name: Set build number
+        script: |
+          BUILD_NUMBER=$(($(app-store-connect get-latest-build-number "$BUNDLE_ID" --platform IOS 2>/dev/null || echo 0) + 1))
+          echo "Build number: $BUILD_NUMBER"
+          agvtool new-version -all "$BUILD_NUMBER"
       - name: Generate iOS app icons
         script: |
           sips -z 1024 1024 icon.png --out icon_1024.png
