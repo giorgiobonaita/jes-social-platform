@@ -26,14 +26,12 @@ workflows:
           echo "=== app/post/[id]/page.tsx after swap ===" && cat "app/post/[id]/page.tsx"
           echo "=== app/profile/[username]/page.tsx after swap ===" && cat "app/profile/[username]/page.tsx"
       - name: Build Next.js static export
-        script: MOBILE_BUILD=true npx next build --webpack
+        script: |
+          export NEXT_PUBLIC_SUPABASE_URL="https://cunftokrdqvprepcnlum.supabase.co"
+          export NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1bmZ0b2tyZHF2cHJlcGNubHVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MDY0ODIsImV4cCI6MjA5MDk4MjQ4Mn0.MbzysRQTEvNXWQKgE84ThglSZSnOlDu_vyD1JF8WdC4"
+          MOBILE_BUILD=true npx next build --webpack
       - name: Capacitor sync iOS
         script: npx cap sync ios
-      - name: Fix bundle ID in Xcode project
-        script: |
-          sed -i '' 's/com\.jessocial\.app/com.jes.social/g' ios/App/App.xcodeproj/project.pbxproj
-          echo "Bundle IDs after fix:"
-          grep "PRODUCT_BUNDLE_IDENTIFIER" ios/App/App.xcodeproj/project.pbxproj
       - name: Set build number
         script: |
           BUILD_NUMBER=$(($(app-store-connect get-latest-build-number "$BUNDLE_ID" --platform IOS 2>/dev/null || echo 0) + 1))
@@ -59,33 +57,33 @@ workflows:
           sips -z 167 167   icon_1024.png --out "$APPICONSET/AppIcon-83.5x83.5@2x.png"
           sips -z 1024 1024 icon_1024.png --out "$APPICONSET/AppIcon-1024x1024@1x.png"
           cat > "$APPICONSET/Contents.json" << 'EOF'
-{
-  "images": [
-    {"idiom":"iphone","scale":"1x","size":"20x20","filename":"AppIcon-20x20@1x.png"},
-    {"idiom":"iphone","scale":"2x","size":"20x20","filename":"AppIcon-20x20@2x.png"},
-    {"idiom":"iphone","scale":"3x","size":"20x20","filename":"AppIcon-20x20@3x.png"},
-    {"idiom":"iphone","scale":"1x","size":"29x29","filename":"AppIcon-29x29@1x.png"},
-    {"idiom":"iphone","scale":"2x","size":"29x29","filename":"AppIcon-29x29@2x.png"},
-    {"idiom":"iphone","scale":"3x","size":"29x29","filename":"AppIcon-29x29@3x.png"},
-    {"idiom":"iphone","scale":"1x","size":"40x40","filename":"AppIcon-40x40@1x.png"},
-    {"idiom":"iphone","scale":"2x","size":"40x40","filename":"AppIcon-40x40@2x.png"},
-    {"idiom":"iphone","scale":"3x","size":"40x40","filename":"AppIcon-40x40@3x.png"},
-    {"idiom":"iphone","scale":"2x","size":"60x60","filename":"AppIcon-60x60@2x.png"},
-    {"idiom":"iphone","scale":"3x","size":"60x60","filename":"AppIcon-60x60@3x.png"},
-    {"idiom":"ipad","scale":"1x","size":"20x20","filename":"AppIcon-20x20@1x.png"},
-    {"idiom":"ipad","scale":"2x","size":"20x20","filename":"AppIcon-20x20@2x.png"},
-    {"idiom":"ipad","scale":"1x","size":"29x29","filename":"AppIcon-29x29@1x.png"},
-    {"idiom":"ipad","scale":"2x","size":"29x29","filename":"AppIcon-29x29@2x.png"},
-    {"idiom":"ipad","scale":"1x","size":"40x40","filename":"AppIcon-40x40@1x.png"},
-    {"idiom":"ipad","scale":"2x","size":"40x40","filename":"AppIcon-40x40@2x.png"},
-    {"idiom":"ipad","scale":"1x","size":"76x76","filename":"AppIcon-76x76@1x.png"},
-    {"idiom":"ipad","scale":"2x","size":"76x76","filename":"AppIcon-76x76@2x.png"},
-    {"idiom":"ipad","scale":"2x","size":"83.5x83.5","filename":"AppIcon-83.5x83.5@2x.png"},
-    {"idiom":"ios-marketing","scale":"1x","size":"1024x1024","filename":"AppIcon-1024x1024@1x.png"}
-  ],
-  "info": {"author":"xcode","version":1}
-}
-EOF
+          {
+            "images": [
+              {"idiom":"iphone","scale":"1x","size":"20x20","filename":"AppIcon-20x20@1x.png"},
+              {"idiom":"iphone","scale":"2x","size":"20x20","filename":"AppIcon-20x20@2x.png"},
+              {"idiom":"iphone","scale":"3x","size":"20x20","filename":"AppIcon-20x20@3x.png"},
+              {"idiom":"iphone","scale":"1x","size":"29x29","filename":"AppIcon-29x29@1x.png"},
+              {"idiom":"iphone","scale":"2x","size":"29x29","filename":"AppIcon-29x29@2x.png"},
+              {"idiom":"iphone","scale":"3x","size":"29x29","filename":"AppIcon-29x29@3x.png"},
+              {"idiom":"iphone","scale":"1x","size":"40x40","filename":"AppIcon-40x40@1x.png"},
+              {"idiom":"iphone","scale":"2x","size":"40x40","filename":"AppIcon-40x40@2x.png"},
+              {"idiom":"iphone","scale":"3x","size":"40x40","filename":"AppIcon-40x40@3x.png"},
+              {"idiom":"iphone","scale":"2x","size":"60x60","filename":"AppIcon-60x60@2x.png"},
+              {"idiom":"iphone","scale":"3x","size":"60x60","filename":"AppIcon-60x60@3x.png"},
+              {"idiom":"ipad","scale":"1x","size":"20x20","filename":"AppIcon-20x20@1x.png"},
+              {"idiom":"ipad","scale":"2x","size":"20x20","filename":"AppIcon-20x20@2x.png"},
+              {"idiom":"ipad","scale":"1x","size":"29x29","filename":"AppIcon-29x29@1x.png"},
+              {"idiom":"ipad","scale":"2x","size":"29x29","filename":"AppIcon-29x29@2x.png"},
+              {"idiom":"ipad","scale":"1x","size":"40x40","filename":"AppIcon-40x40@1x.png"},
+              {"idiom":"ipad","scale":"2x","size":"40x40","filename":"AppIcon-40x40@2x.png"},
+              {"idiom":"ipad","scale":"1x","size":"76x76","filename":"AppIcon-76x76@1x.png"},
+              {"idiom":"ipad","scale":"2x","size":"76x76","filename":"AppIcon-76x76@2x.png"},
+              {"idiom":"ipad","scale":"2x","size":"83.5x83.5","filename":"AppIcon-83.5x83.5@2x.png"},
+              {"idiom":"ios-marketing","scale":"1x","size":"1024x1024","filename":"AppIcon-1024x1024@1x.png"}
+            ],
+            "info": {"author":"xcode","version":1}
+          }
+          EOF
       - name: Copy GoogleService-Info.plist
         script: cp GoogleService-Info.plist ios/App/App/GoogleService-Info.plist
       - name: Set up code signing
@@ -130,24 +128,24 @@ EOF
             COMPILER_INDEX_STORE_ENABLE=NO
 
           cat > /tmp/ExportOptions.plist << EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>method</key>
-  <string>app-store-connect</string>
-  <key>teamID</key>
-  <string>$TEAM_ID</string>
-  <key>signingStyle</key>
-  <string>manual</string>
-  <key>provisioningProfiles</key>
-  <dict>
-    <key>$BUNDLE_ID</key>
-    <string>$PROFILE_UUID</string>
-  </dict>
-</dict>
-</plist>
-EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>teamID</key>
+            <string>$TEAM_ID</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>$BUNDLE_ID</key>
+              <string>$PROFILE_UUID</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
 
           mkdir -p build/ios/ipa
           xcodebuild -exportArchive \
