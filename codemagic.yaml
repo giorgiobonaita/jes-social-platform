@@ -29,6 +29,53 @@ workflows:
         script: MOBILE_BUILD=true npx next build --webpack
       - name: Capacitor sync iOS
         script: npx cap sync ios
+      - name: Generate iOS app icons
+        script: |
+          sips -z 1024 1024 icon.png --out icon_1024.png
+          APPICONSET="ios/App/App/Assets.xcassets/AppIcon.appiconset"
+          sips -z 20 20     icon_1024.png --out "$APPICONSET/AppIcon-20x20@1x.png"
+          sips -z 40 40     icon_1024.png --out "$APPICONSET/AppIcon-20x20@2x.png"
+          sips -z 60 60     icon_1024.png --out "$APPICONSET/AppIcon-20x20@3x.png"
+          sips -z 29 29     icon_1024.png --out "$APPICONSET/AppIcon-29x29@1x.png"
+          sips -z 58 58     icon_1024.png --out "$APPICONSET/AppIcon-29x29@2x.png"
+          sips -z 87 87     icon_1024.png --out "$APPICONSET/AppIcon-29x29@3x.png"
+          sips -z 40 40     icon_1024.png --out "$APPICONSET/AppIcon-40x40@1x.png"
+          sips -z 80 80     icon_1024.png --out "$APPICONSET/AppIcon-40x40@2x.png"
+          sips -z 120 120   icon_1024.png --out "$APPICONSET/AppIcon-40x40@3x.png"
+          sips -z 120 120   icon_1024.png --out "$APPICONSET/AppIcon-60x60@2x.png"
+          sips -z 180 180   icon_1024.png --out "$APPICONSET/AppIcon-60x60@3x.png"
+          sips -z 76 76     icon_1024.png --out "$APPICONSET/AppIcon-76x76@1x.png"
+          sips -z 152 152   icon_1024.png --out "$APPICONSET/AppIcon-76x76@2x.png"
+          sips -z 167 167   icon_1024.png --out "$APPICONSET/AppIcon-83.5x83.5@2x.png"
+          sips -z 1024 1024 icon_1024.png --out "$APPICONSET/AppIcon-1024x1024@1x.png"
+          cat > "$APPICONSET/Contents.json" << 'EOF'
+          {
+            "images": [
+              {"idiom":"iphone","scale":"1x","size":"20x20","filename":"AppIcon-20x20@1x.png"},
+              {"idiom":"iphone","scale":"2x","size":"20x20","filename":"AppIcon-20x20@2x.png"},
+              {"idiom":"iphone","scale":"3x","size":"20x20","filename":"AppIcon-20x20@3x.png"},
+              {"idiom":"iphone","scale":"1x","size":"29x29","filename":"AppIcon-29x29@1x.png"},
+              {"idiom":"iphone","scale":"2x","size":"29x29","filename":"AppIcon-29x29@2x.png"},
+              {"idiom":"iphone","scale":"3x","size":"29x29","filename":"AppIcon-29x29@3x.png"},
+              {"idiom":"iphone","scale":"1x","size":"40x40","filename":"AppIcon-40x40@1x.png"},
+              {"idiom":"iphone","scale":"2x","size":"40x40","filename":"AppIcon-40x40@2x.png"},
+              {"idiom":"iphone","scale":"3x","size":"40x40","filename":"AppIcon-40x40@3x.png"},
+              {"idiom":"iphone","scale":"2x","size":"60x60","filename":"AppIcon-60x60@2x.png"},
+              {"idiom":"iphone","scale":"3x","size":"60x60","filename":"AppIcon-60x60@3x.png"},
+              {"idiom":"ipad","scale":"1x","size":"20x20","filename":"AppIcon-20x20@1x.png"},
+              {"idiom":"ipad","scale":"2x","size":"20x20","filename":"AppIcon-20x20@2x.png"},
+              {"idiom":"ipad","scale":"1x","size":"29x29","filename":"AppIcon-29x29@1x.png"},
+              {"idiom":"ipad","scale":"2x","size":"29x29","filename":"AppIcon-29x29@2x.png"},
+              {"idiom":"ipad","scale":"1x","size":"40x40","filename":"AppIcon-40x40@1x.png"},
+              {"idiom":"ipad","scale":"2x","size":"40x40","filename":"AppIcon-40x40@2x.png"},
+              {"idiom":"ipad","scale":"1x","size":"76x76","filename":"AppIcon-76x76@1x.png"},
+              {"idiom":"ipad","scale":"2x","size":"76x76","filename":"AppIcon-76x76@2x.png"},
+              {"idiom":"ipad","scale":"2x","size":"83.5x83.5","filename":"AppIcon-83.5x83.5@2x.png"},
+              {"idiom":"ios-marketing","scale":"1x","size":"1024x1024","filename":"AppIcon-1024x1024@1x.png"}
+            ],
+            "info": {"author":"xcode","version":1}
+          }
+          EOF
       - name: Copy GoogleService-Info.plist
         script: cp GoogleService-Info.plist ios/App/App/GoogleService-Info.plist
       - name: Set up code signing
