@@ -32,6 +32,9 @@ workflows:
           MOBILE_BUILD=true npx next build --webpack
       - name: Capacitor sync iOS
         script: npx cap sync ios
+      - name: Fix bundle ID in Xcode project
+        script: |
+          sed -i '' 's/com\.jessocial\.app/com.jes.social/g' ios/App/App.xcodeproj/project.pbxproj
       - name: Set build number
         script: |
           BUILD_NUMBER=$(($(app-store-connect get-latest-build-number "$BUNDLE_ID" --platform IOS 2>/dev/null || echo 0) + 1))
