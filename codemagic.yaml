@@ -83,7 +83,8 @@ workflows:
           keychain initialize
           app-store-connect fetch-signing-files $BUNDLE_ID \
             --type IOS_APP_STORE \
-            --create
+            --create \
+            --certificate-key "$CERTIFICATE_PRIVATE_KEY"
           keychain add-certificates
           xcode-project use-profiles
           echo "=== Provisioning profiles installed ==="
