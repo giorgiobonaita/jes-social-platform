@@ -39,7 +39,9 @@ workflows:
         script: |
           BUILD_NUMBER=$(($(app-store-connect get-latest-build-number "$BUNDLE_ID" --platform IOS 2>/dev/null || echo 0) + 1))
           echo "Build number: $BUILD_NUMBER"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" ios/App/App/Info.plist
+          PLIST=$(find ios/App -name Info.plist | grep -v test | head -1)
+          echo "Plist: $PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$PLIST"
       - name: Generate iOS app icons
         script: |
           sips -z 1024 1024 icon.png --out icon_1024.png
