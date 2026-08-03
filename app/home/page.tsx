@@ -924,6 +924,8 @@ const { t, lang } = useLang();
     });
   }, []);
   const feedScrollRef = useRef<HTMLDivElement>(null);
+  const pullStartY = useRef<number>(0);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
 
   const [dbPosts, setDbPosts] = useState<any[]>([]);
   const [groupPosts, setGroupPosts] = useState<any[]>([]);
@@ -1267,7 +1269,24 @@ const { t, lang } = useLang();
         const el = e.target as HTMLDivElement;
         setShowScrollTop(el.scrollTop > 300);
         if (el.scrollHeight - el.scrollTop - el.clientHeight < 400) loadMorePosts();
+      }}
+      onTouchStart={e => { pullStartY.current = e.touches[0].clientY; }}
+      onTouchEnd={e => {
+        const el = feedScrollRef.current;
+        if (!el || el.scrollTop > 0 || pullRefreshing) return;
+        const dy = e.changedTouches[0].clientY - pullStartY.current;
+        if (dy > 70) {
+          setPullRefreshing(true);
+          Promise.all([loadDbPosts(), loadStories()]).finally(() => setPullRefreshing(false));
+        }
       }}>
+      {pullRefreshing && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 12 }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="2.5" strokeLinecap="round" style={{ animation: 'spin 0.8s linear infinite' }}>
+            <path d="M21 12a9 9 0 11-6.219-8.56"/>
+          </svg>
+        </div>
+      )}
         {/* Stories */}
         <div className="stories-section">
           <p className="stories-label">{t('following')}</p>
