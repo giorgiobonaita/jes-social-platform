@@ -40,8 +40,6 @@ export default function AppleSignInButton({ label = 'Accedi con Apple' }: { labe
         }
       }
 
-      await new Promise(r => setTimeout(r, 800));
-
       const { data: user } = await supabase
         .from('users').select('username, nationality').eq('auth_id', session.user.id).maybeSingle();
 

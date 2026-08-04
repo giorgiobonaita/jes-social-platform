@@ -35,20 +35,25 @@ export default function CallbackPage() {
 
       if (!session) { router.replace('/login'); return; }
 
-      // Aspetta che il trigger DB crei la riga utente
-      await new Promise(r => setTimeout(r, 1000));
-
-      const { data: user } = await supabase
-        .from('users')
-        .select('username, nationality, name')
-        .eq('auth_id', session.user.id)
-        .maybeSingle();
+      // Aspetta che il trigger DB crei la riga utente (retry fino a 2s)
+      let user = null;
+      for (let i = 0; i < 8; i++) {
+        await new Promise(r => setTimeout(r, 250));
+        const { data } = await supabase
+          .from('users')
+          .select('username, nationality, name')
+          .eq('auth_id', session.user.id)
+          .maybeSingle();
+        if (data) { user = data; break; }
+      }
 
       // Save email from OAuth provider (Google) — fire-and-forget
       const oauthEmail = session.user.email;
       if (oauthEmail) {
         supabase.from('users').update({ email: oauthEmail }).eq('auth_id', session.user.id).then(() => {});
       }
+
+      if (!user) { router.replace('/onboarding/name'); return; }
 
       if (user?.username && user?.nationality) {
         // Onboarding completo

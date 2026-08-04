@@ -39,8 +39,6 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
           supabase.from('users').update({ email: session.user.email }).eq('auth_id', session.user.id).then(() => {});
         }
 
-        await new Promise(r => setTimeout(r, 800));
-
         const { data: user } = await supabase
           .from('users').select('username, nationality').eq('auth_id', session.user.id).maybeSingle();
 
