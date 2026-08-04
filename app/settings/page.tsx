@@ -22,9 +22,7 @@ export default function SettingsPage() {
   const [notifStorie,    setNotifStorie]    = useState(true);
   const [notifMenzioni,  setNotifMenzioni]  = useState(true);
 
-  // Delete account modal
-  const [deleteModal,   setDeleteModal]   = useState(false);
-  const [deleting,      setDeleting]      = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -43,22 +41,16 @@ export default function SettingsPage() {
     router.replace('/');
   };
 
-  const handleDeleteAccount = () => setDeleteModal(true);
-
-  const confirmDelete = async () => {
+  const handleDeleteAccount = async () => {
+    const ok = window.confirm('Eliminare il tuo account? Tutti i tuoi dati, post e follower verranno cancellati permanentemente. Questa azione è irreversibile.');
+    if (!ok) return;
     setDeleting(true);
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: { session } } = await supabase.auth.getSession();
     if (user) {
-      await fetch('/api/delete-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ userId: user.id }),
-      });
+      await supabase.from('users').delete().eq('auth_id', user.id);
+      await supabase.auth.signOut();
     }
-    await supabase.auth.signOut();
     setDeleting(false);
-    setDeleteModal(false);
     router.replace('/');
   };
 
@@ -76,7 +68,7 @@ export default function SettingsPage() {
   return (
     <div style={{ minHeight: '100dvh', background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
         {backBtn}
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>{title}</span>
         <div style={{ width: 26 }} />
@@ -87,11 +79,7 @@ export default function SettingsPage() {
           LANGUAGES.map(l => (
             <div key={l.code} onClick={() => {
                 setLang(l.code);
-                if (myAuthId) {
-                  supabase.auth.getSession().then(({ data: { session } }) => {
-                    if (session) fetch('/api/update-user', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` }, body: JSON.stringify({ auth_id: myAuthId, lang: l.code }) }).catch(() => {});
-                  });
-                }
+                supabase.from('users').update({ lang: l.code }).eq('auth_id', myAuthId ?? '').then(() => {});
               }}
               style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #F8F8F8', cursor: 'pointer', background: lang === l.code ? '#FFF8F2' : '#fff' }}>
               <span style={{ fontSize: 28, marginRight: 14 }}>{l.flag}</span>
@@ -170,26 +158,6 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {/* Delete account modal */}
-      {deleteModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onClick={() => setDeleteModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400 }}>
-            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>
-            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>Questa azione è irreversibile. Tutti i tuoi dati, post e follower verranno cancellati permanentemente.</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setDeleteModal(false)}
-                style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                Annulla
-              </button>
-              <button onClick={confirmDelete} disabled={deleting}
-                style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: deleting ? 'not-allowed' : 'pointer' }}>
-                {deleting ? 'Eliminazione…' : 'Elimina account'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
