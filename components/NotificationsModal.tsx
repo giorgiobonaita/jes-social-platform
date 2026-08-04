@@ -199,7 +199,7 @@ export default function NotificationsModal({ visible, onClose, onOpenProfile, on
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '16px 20px', borderBottom: '1px solid #F0F0F0',
+        padding: '16px 20px', paddingTop: 'calc(16px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0',
       }}>
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 20, color: '#111' }}>
           {t('notifications')}

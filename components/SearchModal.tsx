@@ -151,7 +151,7 @@ export default function SearchModal({ visible, onClose, onUserPress, onGroupPres
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, backgroundColor: '#fff', display: 'flex', flexDirection: 'column' }}>
       {/* Search bar */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid #F0F0F0', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', paddingTop: 'calc(12px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0', gap: 12 }}>
         <button onClick={onClose} style={{ padding: 4, background: 'none', border: 'none', cursor: 'pointer', display: 'flex' }}>
           <svg width="24" height="24" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         </button>

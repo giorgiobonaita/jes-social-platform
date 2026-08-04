@@ -252,6 +252,10 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 .follow-btn.added { background: #F0F0F0; color: #888; }
 .avatar { border-radius: 50%; object-fit: cover; background: #EEEEEE; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
 
+/* ── Safe Area Utility ── */
+.safe-top { padding-top: env(safe-area-inset-top) !important; }
+.screen-header { padding-top: calc(14px + env(safe-area-inset-top)) !important; }
+
 /* ── Home Layout ── */
 .home-page { display: flex; flex-direction: column; height: 100dvh; background: #FFFFFF; overflow: hidden; }
 .home-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; padding-top: calc(12px + env(safe-area-inset-top)); border-bottom: 1px solid #EEEEEE; background: #FFFFFF; position: sticky; top: 0; z-index: 10; }

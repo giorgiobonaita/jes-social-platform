@@ -153,7 +153,7 @@ export default function CreateTextPostModal({ visible, onClose, onPublished, aut
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#fff', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', background: '#fff', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + env(safe-area-inset-top))', background: '#fff', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
         <button onClick={() => setMode(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: headerColor, display: 'flex', alignItems: 'center', padding: 0 }}>
           <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
