@@ -30,7 +30,9 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
           options: { scopes: ['profile', 'email'] },
         });
 
-        const idToken = result.result?.idToken;
+        const googleResult = result.result;
+        if (!googleResult || googleResult.responseType !== 'online') throw new Error('Risposta Google non valida');
+        const idToken = googleResult.idToken;
         if (!idToken) throw new Error('Nessun token Google ricevuto');
 
         const { data: sd, error: se } = await supabase.auth.signInWithIdToken({
