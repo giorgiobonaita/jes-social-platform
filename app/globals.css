@@ -119,7 +119,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Auth pages layout ── */
 .auth-page { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; background: #FFFFFF; }
-.auth-header { padding: 8px; padding-top: calc(8px + env(safe-area-inset-top)); }
+.auth-header { padding: 8px; padding-top: calc(4px + env(safe-area-inset-top)); }
 .auth-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; }
 .auth-logo-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 48px; }
 .auth-buttons { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 24px; }
@@ -128,7 +128,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Form pages ── */
 .form-page { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
-.form-top { padding: 8px; padding-top: calc(8px + env(safe-area-inset-top)); }
+.form-top { padding: 8px; padding-top: calc(4px + env(safe-area-inset-top)); }
 .form-scroll { flex: 1; overflow-y: auto; padding: 8px 20px 32px; }
 .form-title { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: #111111; letter-spacing: -0.3px; line-height: 34px; margin-bottom: 4px; }
 .form-subtitle { font-family: var(--font-body); font-size: 15px; color: #666666; line-height: 23px; margin-bottom: 32px; }
@@ -146,7 +146,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Onboarding centering ── */
 .onb-page { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; background: #FFFFFF; }
-.onb-header { padding: 8px; padding-top: calc(8px + env(safe-area-inset-top)); }
+.onb-header { padding: 8px; padding-top: calc(4px + env(safe-area-inset-top)); }
 .onb-body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 0 20px; overflow-y: auto; }
 .onb-top { flex: 1; display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
 .onb-bottom { padding-bottom: 32px; }
