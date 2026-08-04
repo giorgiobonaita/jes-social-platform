@@ -1,69 +1,10 @@
-import { Suspense } from 'react';
-import type { Metadata } from 'next';
-import PostClient from './PostClient';
+import PostRedirect from './PostRedirect';
 
-export async function generateStaticParams() { return []; }
-export const dynamicParams = false;
-
-interface Props {
-  params: Promise<{ id: string }>;
+export async function generateStaticParams() {
+  return [{ id: '_' }];
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  if (process.env.MOBILE_BUILD === 'true') return {};
-  const { createClient } = await import('@supabase/supabase-js');
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data, error } = await supabaseAdmin
-    .from('posts')
-    .select('caption, image_url, image_urls, video_url, users:user_id(name, username, avatar_url)')
-    .eq('id', id)
-    .single();
-
-  if (!data) return { title: 'Post · JES Social' };
-
-  const user = data.users as any;
-  const title = user?.name ? `${user.name} su JES Social` : 'JES Social';
-  const description = data.caption || 'Guarda questo post su JES Social';
-  let image = user?.avatar_url || 'https://jessocial.com/logo.png';
-
-  if (Array.isArray(data.image_urls) && data.image_urls.length > 0) {
-    image = data.image_urls[0];
-  } else if (typeof data.image_urls === 'string' && (data.image_urls as string).startsWith('{')) {
-    const parsed = (data.image_urls as string).slice(1, -1).split(',').map((s: string) => s.trim().replace(/^"|"$/g, '')).filter(Boolean);
-    if (parsed.length > 0) image = parsed[0];
-  } else if (data.image_url) {
-    image = data.image_url;
-  } else if (data.video_url) {
-    image = user?.avatar_url || 'https://jessocial.com/logo.png';
-  }
-
-  const proxyImage = image.startsWith('https://cunftokrdqvprepcnlum.supabase.co/')
-    ? `https://wsrv.nl/?url=${encodeURIComponent(image)}&w=800&q=60&output=jpg`
-    : image;
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title, description,
-      images: [{ url: proxyImage, width: 1200, height: 630, alt: title }],
-      url: `https://jessocial.com/post/${id}`,
-      siteName: 'JES Social',
-      type: 'article',
-    },
-    twitter: { card: 'summary_large_image', title, description, images: [proxyImage] },
-  };
-}
-
-export default async function PostPage({ params }: Props) {
-  const { id } = await params;
-  return (
-    <Suspense fallback={<div style={{ minHeight: '100dvh', background: '#fff' }} />}>
-      <PostClient id={id} />
-    </Suspense>
-  );
+  return <PostRedirect id={id} />;
 }

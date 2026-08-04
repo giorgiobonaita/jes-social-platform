@@ -16,16 +16,21 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
       const isNative = Capacitor.isNativePlatform();
 
       if (isNative) {
-        // Native: use the Google Sign-In SDK directly (no browser redirect)
-        const { GoogleAuth } = await import('@codetrix-studio/capacitor-google-auth');
-        await GoogleAuth.initialize({
-          clientId: '150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com',
-          scopes: ['profile', 'email'],
-          grantOfflineAccess: true,
+        const { SocialLogin } = await import('@capgo/capacitor-social-login');
+
+        await SocialLogin.initialize({
+          google: {
+            iOSClientId: '150769005493-1qd5qi8kclhgvmn1tnalqbu0hoct5t2h.apps.googleusercontent.com',
+            webClientId: '150769005493-7g08be855vvjm4ackl08tobqji6r2ku3.apps.googleusercontent.com',
+          },
         });
 
-        const googleUser = await GoogleAuth.signIn();
-        const idToken = googleUser?.authentication?.idToken;
+        const result = await SocialLogin.login({
+          provider: 'google',
+          options: { scopes: ['profile', 'email'] },
+        });
+
+        const idToken = result.result?.idToken;
         if (!idToken) throw new Error('Nessun token Google ricevuto');
 
         const { data: sd, error: se } = await supabase.auth.signInWithIdToken({
@@ -52,7 +57,6 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
         }
 
       } else {
-        // Web: standard Supabase OAuth redirect
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: { redirectTo: 'https://jessocial.com/auth/callback' },
@@ -62,7 +66,9 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
       }
     } catch (e: any) {
       setLoading(false);
-      alert('Errore Google: ' + (e?.message || e));
+      if (e?.message !== 'The user canceled the sign-in flow.' && e?.code !== 'SIGN_IN_CANCELLED') {
+        alert('Errore Google: ' + (e?.message || e));
+      }
     }
   };
 

@@ -14,7 +14,7 @@ workflows:
     scripts:
       - name: Install npm dependencies
         script: npm install --legacy-peer-deps
-      - name: Patch apple-sign-in SPM version conflict
+      - name: Patch SPM version conflicts
         script: |
           sed -i '' 's/from: "7\.0\.0"/from: "8.0.0"/' node_modules/@capacitor-community/apple-sign-in/Package.swift
           echo "Patched apple-sign-in Package.swift:"
