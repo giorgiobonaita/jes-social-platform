@@ -40,12 +40,18 @@ workflows:
           PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
           PLIST="ios/App/App/Info.plist"
 
-          # ── 1. Sign in with Apple entitlement ──
+          # 1. Sign in with Apple entitlement
           if ! grep -q "CODE_SIGN_ENTITLEMENTS" "$PBXPROJ"; then
-            sed -i '' 's/ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES/CODE_SIGN_ENTITLEMENTS = App\/App.entitlements;\n\t\t\t\tALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES/g' "$PBXPROJ"
+            python3 -c "
+import re, sys
+with open('$PBXPROJ', 'r') as f: content = f.read()
+content = content.replace('ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES', 'CODE_SIGN_ENTITLEMENTS = \"App/App.entitlements\";\n\t\t\t\tALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES')
+with open('$PBXPROJ', 'w') as f: f.write(content)
+print('Entitlements added')
+"
           fi
 
-          # ── 2. Google REVERSED_CLIENT_ID URL scheme in Info.plist ──
+          # 2. Google REVERSED_CLIENT_ID URL scheme
           if ! grep -q "com.googleusercontent.apps" "$PLIST"; then
             /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST" 2>/dev/null || true
             /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$PLIST" 2>/dev/null || true
@@ -54,38 +60,27 @@ workflows:
             /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string com.googleusercontent.apps.150769005493-1qd5qi8kclhgvmn1tnalqbu0hoct5t2h" "$PLIST" 2>/dev/null || true
           fi
 
-          # ── 3. Add GoogleService-Info.plist to Xcode project ──
-          # Generate a deterministic UUID-style ID
-          GFILE_REF="AA00000000000001AAAAAAAA"
-          GBUILD_FILE="AA00000000000002AAAAAAAA"
-
+          # 3. Add GoogleService-Info.plist to Xcode project using Python
           if ! grep -q "GoogleService-Info.plist" "$PBXPROJ"; then
-            # Add PBXFileReference
-            sed -i '' "/Begin PBXFileReference section/a\\
-\\		${GFILE_REF} = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = GoogleService-Info.plist; sourceTree = \"<group>\"; };
-" "$PBXPROJ"
-
-            # Add to App group children (after AppDelegate.swift line)
-            sed -i '' "/504EC3071FED79650016851F \/\* AppDelegate.swift \*\/,/a\\
-\\				${GFILE_REF} \/* GoogleService-Info.plist *\/,
-" "$PBXPROJ"
-
-            # Add PBXBuildFile
-            sed -i '' "/Begin PBXBuildFile section/a\\
-\\		${GBUILD_FILE} = {isa = PBXBuildFile; fileRef = ${GFILE_REF} \/* GoogleService-Info.plist *\/; };
-" "$PBXPROJ"
-
-            # Add to Resources build phase
-            sed -i '' "/504EC3121FED79650016851F \/\* LaunchScreen.storyboard in Resources \*\/,/a\\
-\\				${GBUILD_FILE} \/* GoogleService-Info.plist in Resources *\/,
-" "$PBXPROJ"
-
-            echo "GoogleService-Info.plist added to Xcode project"
+            python3 -c "
+GFILE_REF = 'AA00000000000001AAAAAAAA'
+GBUILD_FILE = 'AA00000000000002AAAAAAAA'
+with open('$PBXPROJ', 'r') as f: c = f.read()
+file_ref_line = '\t\t' + GFILE_REF + ' = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = GoogleService-Info.plist; sourceTree = \"<group>\"; };\n'
+c = c.replace('/* Begin PBXFileReference section */', '/* Begin PBXFileReference section */\n' + file_ref_line, 1)
+build_file_line = '\t\t' + GBUILD_FILE + ' = {isa = PBXBuildFile; fileRef = ' + GFILE_REF + ' /* GoogleService-Info.plist */; };\n'
+c = c.replace('/* Begin PBXBuildFile section */', '/* Begin PBXBuildFile section */\n' + build_file_line, 1)
+group_entry = '\t\t\t\t' + GFILE_REF + ' /* GoogleService-Info.plist */,\n'
+c = c.replace('504EC3071FED79650016851F /* AppDelegate.swift */,', '504EC3071FED79650016851F /* AppDelegate.swift */,\n' + group_entry, 1)
+resources_entry = '\t\t\t\t' + GBUILD_FILE + ' /* GoogleService-Info.plist in Resources */,\n'
+c = c.replace('504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */,', '504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */,\n' + resources_entry, 1)
+with open('$PBXPROJ', 'w') as f: f.write(c)
+print('GoogleService-Info.plist added to Xcode project')
+"
           else
             echo "GoogleService-Info.plist already in project"
           fi
-
-          echo "Done: entitlements + Google URL scheme + GoogleService-Info.plist"
+          echo "Done"
       - name: Set build number
         script: |
           PLIST=$(find ios/App -name Info.plist | grep -v test | head -1)
