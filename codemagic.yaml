@@ -35,6 +35,25 @@ workflows:
       - name: Fix bundle ID in Xcode project
         script: |
           sed -i '' 's/com\.jessocial\.app/com.jes.social/g' ios/App/App.xcodeproj/project.pbxproj
+      - name: Configure Sign in with Apple + Google URL scheme
+        script: |
+          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
+          PLIST="ios/App/App/Info.plist"
+
+          # Add Sign in with Apple entitlement to every build configuration
+          if ! grep -q "CODE_SIGN_ENTITLEMENTS" "$PBXPROJ"; then
+            sed -i '' 's/ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES/CODE_SIGN_ENTITLEMENTS = App\/App.entitlements;\n\t\t\t\tALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES/g' "$PBXPROJ"
+          fi
+
+          # Add Google REVERSED_CLIENT_ID URL scheme if not present
+          if ! grep -q "com.googleusercontent.apps" "$PLIST"; then
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleTypeRole string Editor" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes array" "$PLIST" 2>/dev/null || true
+            /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:0 string com.googleusercontent.apps.150769005493-1qd5qi8kclhgvmn1tnalqbu0hoct5t2h" "$PLIST" 2>/dev/null || true
+          fi
+          echo "Entitlements and URL scheme configured"
       - name: Set build number
         script: |
           PLIST=$(find ios/App -name Info.plist | grep -v test | head -1)
