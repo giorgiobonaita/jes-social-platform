@@ -137,9 +137,10 @@ workflows:
             -scheme App \
             -configuration Release \
             -archivePath "$ARCHIVE_PATH" \
+            -allowProvisioningUpdates \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            PROVISIONING_PROFILE="$PROFILE_UUID" \
+            "PROVISIONING_PROFILE[sdk=iphoneos*]=$PROFILE_UUID" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
             COMPILER_INDEX_STORE_ENABLE=NO
 
