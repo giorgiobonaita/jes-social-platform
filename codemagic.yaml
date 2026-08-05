@@ -114,9 +114,11 @@ workflows:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles/
           find ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/ -name "*.mobileprovision" \
             -exec cp {} ~/Library/MobileDevice/Provisioning\ Profiles/ \; 2>/dev/null || true
-          xcode-project use-profiles || true
+          xcode-project use-profiles
           echo "=== Profiles ==="
           ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "none"
+          echo "=== Signing in pbxproj ==="
+          grep -A2 "CODE_SIGN" ios/App/App.xcodeproj/project.pbxproj | head -20 || true
       - name: Resolve SPM packages
         script: |
           xcodebuild -resolvePackageDependencies \
@@ -138,9 +140,6 @@ workflows:
             -configuration Release \
             -archivePath "$ARCHIVE_PATH" \
             -allowProvisioningUpdates \
-            "CODE_SIGN_STYLE[sdk=iphoneos*]=Manual" \
-            "CODE_SIGN_IDENTITY[sdk=iphoneos*]=Apple Distribution" \
-            "PROVISIONING_PROFILE[sdk=iphoneos*]=$PROFILE_UUID" \
             DEVELOPMENT_TEAM="$TEAM_ID" \
             COMPILER_INDEX_STORE_ENABLE=NO
 
