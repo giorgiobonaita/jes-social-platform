@@ -3,19 +3,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-async function sha256(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-function generateRawNonce(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
 export default function AppleSignInButton({ label = 'Accedi con Apple' }: { label?: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -24,31 +11,29 @@ export default function AppleSignInButton({ label = 'Accedi con Apple' }: { labe
     if (loading) return;
     setLoading(true);
     try {
-      const { SignInWithApple } = await import('@capacitor-community/apple-sign-in');
+      const { SocialLogin } = await import('@capgo/capacitor-social-login');
 
-      const rawNonce = generateRawNonce();
-      const hashedNonce = await sha256(rawNonce);
+      await SocialLogin.initialize({ apple: {} });
 
-      const result = await SignInWithApple.authorize({
-        clientId: 'com.jes.social',
-        redirectURI: 'https://cunftokrdqvprepcnlum.supabase.co/auth/v1/callback',
-        scopes: 'email name',
-        state: generateRawNonce(),
-        nonce: hashedNonce,
+      const result = await SocialLogin.login({
+        provider: 'apple',
+        options: { scopes: ['email', 'name'] },
       });
 
-      const { identityToken, givenName, familyName } = result.response;
-      if (!identityToken) throw new Error('Nessun token Apple ricevuto');
+      const appleResult = result.result;
+      const idToken = appleResult?.idToken;
+      if (!idToken) throw new Error('Nessun token Apple ricevuto');
 
       const { data: sd, error: se } = await supabase.auth.signInWithIdToken({
         provider: 'apple',
-        token: identityToken,
-        nonce: rawNonce,
+        token: idToken,
       });
       if (se || !sd?.session) throw se || new Error('Login fallito');
 
       const session = sd.session;
 
+      const givenName = appleResult?.profile?.givenName;
+      const familyName = appleResult?.profile?.familyName;
       if (givenName || familyName) {
         const fullName = [givenName, familyName].filter(Boolean).join(' ');
         if (fullName) {
@@ -70,8 +55,9 @@ export default function AppleSignInButton({ label = 'Accedi con Apple' }: { labe
 
     } catch (e: any) {
       setLoading(false);
-      if (e?.message !== 'The user canceled the sign-in flow.' && e?.code !== 1001) {
-        alert('Errore Apple: ' + (e?.message || e));
+      const msg = e?.message || '';
+      if (!msg.includes('cancel') && !msg.includes('Cancel') && e?.code !== 1001) {
+        alert('Errore Apple: ' + msg);
       }
     }
   };

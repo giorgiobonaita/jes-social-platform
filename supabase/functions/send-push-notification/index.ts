@@ -3,60 +3,53 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const FCM_PROJECT   = 'jes-social';
-const SA_EMAIL      = Deno.env.get('FCM_SA_EMAIL')!;
-const SA_PRIVATE_KEY = Deno.env.get('FCM_SA_PRIVATE_KEY')!.replace(/\\n/g, '\n');
+const APNS_KEY_ID   = Deno.env.get('APNS_KEY_ID')!;        // N5CSBYLHLH
+const APNS_TEAM_ID  = Deno.env.get('APNS_TEAM_ID')!;       // AA9JL76G8A
+const APNS_PRIVATE_KEY = Deno.env.get('APNS_PRIVATE_KEY')!; // content of .p8 file
+const BUNDLE_ID     = 'com.jes.social';
+const APNS_HOST     = 'https://api.push.apple.com';
 
-async function getFCMToken(): Promise<string> {
+function base64url(buf: ArrayBuffer): string {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+let cachedJwt: { token: string; exp: number } | null = null;
+
+async function getAPNsJWT(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
-  const payload = btoa(JSON.stringify({
-    iss: SA_EMAIL,
-    scope: 'https://www.googleapis.com/auth/firebase.messaging',
-    aud: 'https://oauth2.googleapis.com/token',
-    iat: now,
-    exp: now + 3600,
-  }));
+  if (cachedJwt && now < cachedJwt.exp - 60) return cachedJwt.token;
 
+  const header = base64url(new TextEncoder().encode(JSON.stringify({ alg: 'ES256', kid: APNS_KEY_ID })));
+  const payload = base64url(new TextEncoder().encode(JSON.stringify({ iss: APNS_TEAM_ID, iat: now })));
   const sigInput = `${header}.${payload}`;
 
-  const keyData = SA_PRIVATE_KEY
+  const pem = APNS_PRIVATE_KEY.replace(/\\n/g, '\n')
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
     .replace(/\s/g, '');
-  const binaryKey = Uint8Array.from(atob(keyData), c => c.charCodeAt(0));
+  const keyBytes = Uint8Array.from(atob(pem), c => c.charCodeAt(0));
 
   const cryptoKey = await crypto.subtle.importKey(
-    'pkcs8', binaryKey,
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    'pkcs8', keyBytes,
+    { name: 'ECDSA', namedCurve: 'P-256' },
     false, ['sign']
   );
 
-  const signature = await crypto.subtle.sign(
-    'RSASSA-PKCS1-v1_5', cryptoKey,
+  const sig = await crypto.subtle.sign(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    cryptoKey,
     new TextEncoder().encode(sigInput)
   );
 
-  const jwt = `${sigInput}.${btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')}`;
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
-  });
-  const data = await res.json();
-  return data.access_token;
+  const token = `${sigInput}.${base64url(sig)}`;
+  cachedJwt = { token, exp: now + 3600 };
+  return token;
 }
 
 type MsgDef = { title: string; body: string; url: string };
 
-function buildMsg(
-  lang: string,
-  type: string,
-  actorName: string,
-  actorUsername: string,
-  postId: string | null,
-): MsgDef | null {
+function buildMsg(lang: string, type: string, actorName: string, actorUsername: string, postId: string | null): MsgDef | null {
   const a = actorName;
   const postUrl = `/post/${postId}`;
   const profileUrl = `/profile/${actorUsername}`;
@@ -165,7 +158,9 @@ serve(async (req) => {
       .select('push_token, lang')
       .eq('id', target_user_id)
       .single();
-    if (!targetUser?.push_token) return new Response(JSON.stringify({ ok: true, reason: 'no token' }), { status: 200, headers: corsHeaders });
+    if (!targetUser?.push_token) {
+      return new Response(JSON.stringify({ ok: true, reason: 'no token' }), { status: 200, headers: corsHeaders });
+    }
 
     const { data: actor } = await supabase
       .from('users')
@@ -180,41 +175,38 @@ serve(async (req) => {
     const msg = buildMsg(lang, type, actorName, actorUsername, post_id);
     if (!msg) return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders });
 
-    const accessToken = await getFCMToken();
+    const jwt = await getAPNsJWT();
 
-    const fcmRes = await fetch(`https://fcm.googleapis.com/v1/projects/${FCM_PROJECT}/messages:send`, {
+    const apnsRes = await fetch(`${APNS_HOST}/3/device/${targetUser.push_token}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        'authorization': `bearer ${jwt}`,
+        'apns-push-type': 'alert',
+        'apns-topic': BUNDLE_ID,
+        'apns-priority': '10',
+        'content-type': 'application/json',
       },
       body: JSON.stringify({
-        message: {
-          token: targetUser.push_token,
-          notification: { title: msg.title, body: msg.body },
-          data: { url: msg.url, type },
-          android: {
-            priority: 'high',
-            notification: {
-              channel_id: 'jes_default',
-              sound: 'default',
-              icon: 'ic_stat_jes',
-              color: '#F07B1D',
-            },
-          },
+        aps: {
+          alert: { title: msg.title, body: msg.body },
+          sound: 'default',
+          badge: 1,
         },
+        url: msg.url,
+        type,
       }),
     });
 
-    const fcmBody = await fcmRes.json();
-    if (!fcmRes.ok) {
-      if (fcmRes.status === 400 || fcmRes.status === 404) {
+    if (!apnsRes.ok) {
+      const apnsBody = await apnsRes.json().catch(() => ({}));
+      const reason = (apnsBody as any)?.reason;
+      if (reason === 'BadDeviceToken' || reason === 'Unregistered') {
         await supabase.from('users').update({ push_token: null }).eq('id', target_user_id);
       }
-      return new Response(JSON.stringify({ error: 'FCM error', status: fcmRes.status, detail: fcmBody }), { status: 500, headers: corsHeaders });
+      return new Response(JSON.stringify({ error: 'APNs error', status: apnsRes.status, reason }), { status: 500, headers: corsHeaders });
     }
 
-    return new Response(JSON.stringify({ ok: true, fcm: fcmBody }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ ok: true }), { status: 200, headers: corsHeaders });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
   }
