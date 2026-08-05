@@ -108,6 +108,7 @@ workflows:
           app-store-connect fetch-signing-files $BUNDLE_ID \
             --type IOS_APP_STORE \
             --create \
+            --force \
             --certificate-key "$CERTIFICATE_PRIVATE_KEY"
           keychain add-certificates
           # Copy profiles to MobileDevice location for Xcode

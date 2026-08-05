@@ -42,14 +42,8 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
-    const { Dialog } = await import('@capacitor/dialog');
-    const { value } = await Dialog.confirm({
-      title: 'Elimina account',
-      message: 'Tutti i tuoi dati, post e follower verranno cancellati permanentemente. Questa azione è irreversibile.',
-      okButtonTitle: 'Sì, cancella',
-      cancelButtonTitle: 'No, non cancellare',
-    });
-    if (!value) return;
+    const ok = window.confirm('Eliminare il tuo account?\n\nTutti i tuoi dati, post e follower verranno cancellati permanentemente. Questa azione è irreversibile.');
+    if (!ok) return;
     setDeleting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
