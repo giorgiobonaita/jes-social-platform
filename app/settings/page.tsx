@@ -68,11 +68,12 @@ export default function SettingsPage() {
   return (
     <div style={{ minHeight: '100dvh', background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0', position: 'fixed', top: 0, left: 0, right: 0, background: '#fff', zIndex: 10 }}>
         {backBtn}
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>{title}</span>
         <div style={{ width: 26 }} />
       </div>
+      <div style={{ height: 'calc(50px + env(safe-area-inset-top))', flexShrink: 0 }} />
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 40 }}>
         {screen === 'lingua' ? (
