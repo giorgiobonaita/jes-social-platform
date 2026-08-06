@@ -266,7 +266,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 .notif-badge { position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: #FF3B30; }
 
 /* ── Feed ── */
-.feed-scroll { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+.feed-scroll { flex: 1; overflow-y: auto; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 .stories-section { border-bottom: 1px solid #EEEEEE; padding-bottom: 4px; }
 .stories-label { font-family: var(--font-body); font-weight: 600; font-size: 12px; color: #AAAAAA; letter-spacing: 1px; text-transform: uppercase; padding: 10px 16px 2px; }
 .stories-row { display: flex; gap: 0; padding: 6px 16px; overflow-x: auto; scrollbar-width: none; }

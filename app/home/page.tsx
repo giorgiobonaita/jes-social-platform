@@ -1220,7 +1220,7 @@ const { t, lang } = useLang();
   return (
     <div className="shell home-page">
       {toast && (
-        <div style={{ position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: '#111', color: '#fff', padding: '10px 20px', borderRadius: 20, fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, zIndex: 9998, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
+        <div style={{ position: 'fixed', bottom: 'calc(90px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', background: '#111', color: '#fff', padding: '10px 20px', borderRadius: 20, fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, zIndex: 9998, whiteSpace: 'nowrap', pointerEvents: 'none' }}>
           {toast}
         </div>
       )}
@@ -1345,7 +1345,7 @@ const { t, lang } = useLang();
       {/* Scroll-to-top */}
       {showScrollTop && (
         <button onClick={() => { feedScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' }); setShowScrollTop(false); }}
-          style={{ position: 'fixed', bottom: 76, left: '50%', transform: 'translateX(-50%)', zIndex: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', border: '1px solid #E0E0E0', boxShadow: '0 2px 8px rgba(0,0,0,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          style={{ position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', zIndex: 20, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', border: '1px solid #E0E0E0', boxShadow: '0 2px 8px rgba(0,0,0,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
           <svg width="20" height="20" fill="none" stroke="#555" strokeWidth="2.2" viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg>
         </button>
       )}
