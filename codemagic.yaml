@@ -33,11 +33,9 @@ workflows:
       - name: Fix bundle ID in Xcode project
         script: |
           sed -i '' 's/com\.jessocial\.app/com.jes.social/g' ios/App/App.xcodeproj/project.pbxproj
-      - name: Configure Sign in with Apple + Google Sign In
+      - name: Configure Google Sign In URL scheme
         script: |
-          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
           PLIST="ios/App/App/Info.plist"
-          python3 scripts/fix_xcode.py "$PBXPROJ"
           if ! grep -q "com.googleusercontent.apps" "$PLIST"; then
             /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes array" "$PLIST" 2>/dev/null || true
             /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0 dict" "$PLIST" 2>/dev/null || true
@@ -113,10 +111,13 @@ workflows:
           find ~/Library/Developer/Xcode/UserData/Provisioning\ Profiles/ -name "*.mobileprovision" \
             -exec cp {} ~/Library/MobileDevice/Provisioning\ Profiles/ \; 2>/dev/null || true
           xcode-project use-profiles
+          # Re-apply entitlements AFTER use-profiles (which overwrites signing settings)
+          PBXPROJ="ios/App/App.xcodeproj/project.pbxproj"
+          python3 scripts/fix_xcode.py "$PBXPROJ"
           echo "=== Profiles ==="
           ls ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "none"
-          echo "=== Signing in pbxproj ==="
-          grep -A2 "CODE_SIGN" ios/App/App.xcodeproj/project.pbxproj | head -20 || true
+          echo "=== Signing + Entitlements in pbxproj ==="
+          grep -E "CODE_SIGN|SystemCapabilities|applesignin|Push" ios/App/App.xcodeproj/project.pbxproj | head -30 || true
       - name: Resolve SPM packages
         script: |
           xcodebuild -resolvePackageDependencies \
@@ -139,6 +140,7 @@ workflows:
             -archivePath "$ARCHIVE_PATH" \
             -allowProvisioningUpdates \
             DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_ENTITLEMENTS="App/App.entitlements" \
             COMPILER_INDEX_STORE_ENABLE=NO
 
           cat > /tmp/ExportOptions.plist << EOF

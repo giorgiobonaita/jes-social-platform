@@ -25,11 +25,19 @@ if 'SystemCapabilities' not in c:
         '\t\t\t\t\t\t};\n'
         '\t\t\t\t\t};\n'
     )
-    c = c.replace(
-        '\t\t\t\t\tProvisioningStyle = Automatic;\n\t\t\t\t};',
-        '\t\t\t\t\tProvisioningStyle = Automatic;\n' + capabilities + '\t\t\t\t};'
+    # Match both Automatic (before use-profiles) and Manual (after use-profiles)
+    import re
+    new_c = re.sub(
+        r'(\t+ProvisioningStyle = (?:Automatic|Manual);\n\t+\};)',
+        lambda m: m.group(0).replace('};', capabilities + '\t\t\t\t};', 1),
+        c,
+        count=1
     )
-    print('SystemCapabilities added')
+    if new_c != c:
+        c = new_c
+        print('SystemCapabilities added')
+    else:
+        print('WARNING: SystemCapabilities pattern not found - skipping')
 
 # 3. GoogleService-Info.plist in Xcode project
 GFILE_REF = 'AA00000000000001AAAAAAAA'

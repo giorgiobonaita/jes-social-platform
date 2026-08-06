@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useLang, LANGUAGES } from '@/lib/i18n';
@@ -23,6 +23,8 @@ export default function SettingsPage() {
   const [notifMenzioni,  setNotifMenzioni]  = useState(true);
 
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
@@ -35,15 +37,18 @@ export default function SettingsPage() {
     });
   }, [router]);
 
-  const handleSignOut = async () => {
-    if (!confirm(t('profile_logout_confirm'))) return;
+  const handleSignOut = () => setShowLogoutModal(true);
+
+  const confirmSignOut = async () => {
+    setShowLogoutModal(false);
     await supabase.auth.signOut();
     router.replace('/');
   };
 
-  const handleDeleteAccount = async () => {
-    const ok = window.confirm('Eliminare il tuo account?\n\nTutti i tuoi dati, post e follower verranno cancellati permanentemente. Questa azione è irreversibile.');
-    if (!ok) return;
+  const handleDeleteAccount = () => setShowDeleteModal(true);
+
+  const confirmDeleteAccount = async () => {
+    setShowDeleteModal(false);
     setDeleting(true);
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
@@ -157,6 +162,47 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {showLogoutModal && (
+        <div onClick={() => setShowLogoutModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>{t('logout')}</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>{t('profile_logout_confirm')}</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowLogoutModal(false)}
+                style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                Annulla
+              </button>
+              <button onClick={confirmSignOut}
+                style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                {t('logout')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div onClick={() => setShowDeleteModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>Questa azione è irreversibile. Tutti i tuoi dati, post e follower verranno cancellati permanentemente.</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowDeleteModal(false)}
+                style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                Annulla
+              </button>
+              <button onClick={confirmDeleteAccount} disabled={deleting}
+                style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: deleting ? 'not-allowed' : 'pointer' }}>
+                {deleting ? 'Eliminazione…' : 'Elimina account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
