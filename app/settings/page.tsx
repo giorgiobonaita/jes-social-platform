@@ -72,6 +72,7 @@ export default function SettingsPage() {
   const title = screen === 'notifiche' ? t('notifications') : screen === 'lingua' ? t('language') : t('settings');
 
   return (
+    <>
     <div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0', background: '#fff', flexShrink: 0 }}>
@@ -208,5 +209,6 @@ export default function SettingsPage() {
       </div>,
       document.body
     )}
+    </>
   );
 }
