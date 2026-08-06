@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useLang, LANGUAGES } from '@/lib/i18n';
@@ -162,47 +163,50 @@ export default function SettingsPage() {
         )}
       </div>
 
-      {showLogoutModal && (
-        <div onClick={() => setShowLogoutModal(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
-            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>{t('logout')}</h3>
-            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>{t('profile_logout_confirm')}</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowLogoutModal(false)}
-                style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                Annulla
-              </button>
-              <button onClick={confirmSignOut}
-                style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                {t('logout')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showDeleteModal && (
-        <div onClick={() => setShowDeleteModal(false)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
-            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>
-            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>Questa azione è irreversibile. Tutti i tuoi dati, post e follower verranno cancellati permanentemente.</p>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowDeleteModal(false)}
-                style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                Annulla
-              </button>
-              <button onClick={confirmDeleteAccount} disabled={deleting}
-                style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: deleting ? 'not-allowed' : 'pointer' }}>
-                {deleting ? 'Eliminazione…' : 'Elimina account'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+
+    {showLogoutModal && typeof document !== 'undefined' && createPortal(
+      <div onClick={() => setShowLogoutModal(false)}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div onClick={e => e.stopPropagation()}
+          style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
+          <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>{t('logout')}</h3>
+          <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>{t('profile_logout_confirm')}</p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setShowLogoutModal(false)}
+              style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Annulla
+            </button>
+            <button onClick={confirmSignOut}
+              style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              {t('logout')}
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
+
+    {showDeleteModal && typeof document !== 'undefined' && createPortal(
+      <div onClick={() => setShowDeleteModal(false)}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div onClick={e => e.stopPropagation()}
+          style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
+          <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>
+          <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>Questa azione è irreversibile. Tutti i tuoi dati, post e follower verranno cancellati permanentemente.</p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setShowDeleteModal(false)}
+              style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Annulla
+            </button>
+            <button onClick={confirmDeleteAccount} disabled={deleting}
+              style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: deleting ? 'not-allowed' : 'pointer' }}>
+              {deleting ? 'Eliminazione…' : 'Elimina account'}
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
   );
 }

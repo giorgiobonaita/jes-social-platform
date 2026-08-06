@@ -184,7 +184,7 @@ export default function PostClient({ id }: { id: string }) {
       )}
 
       {/* Header */}
-      <header style={{ width: '100%', maxWidth: 430, background: '#fff', borderBottom: '1px solid #EEEEEE', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
+      <header style={{ width: '100%', maxWidth: 430, background: '#fff', borderBottom: '1px solid #EEEEEE', padding: '16px 20px', paddingTop: 'calc(16px + env(safe-area-inset-top))', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10 }}>
         <Link href="/" style={{ fontFamily: "'Poppins', sans-serif", fontSize: 26, color: '#F07B1D', letterSpacing: -1, textDecoration: 'none', fontWeight: 800 }}>JES</Link>
         {authUserId ? (
           <Link href="/" style={{ background: '#F07B1D', color: '#fff', padding: '8px 18px', borderRadius: 12, fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>Apri JES</Link>
