@@ -74,8 +74,7 @@ export default function SettingsPage() {
         <div style={{ width: 26 }} />
       </div>
       <div style={{ height: 'calc(50px + env(safe-area-inset-top))', flexShrink: 0 }} />
-
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 40 }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(40px + env(safe-area-inset-bottom))' }}>
         {screen === 'lingua' ? (
           LANGUAGES.map(l => (
             <div key={l.code} onClick={() => {

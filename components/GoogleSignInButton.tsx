@@ -25,6 +25,8 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
           },
         });
 
+        await SocialLogin.logout({ provider: 'google' }).catch(() => {});
+
         const result = await SocialLogin.login({
           provider: 'google',
           options: { scopes: ['profile', 'email'] },
