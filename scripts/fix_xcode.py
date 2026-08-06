@@ -13,7 +13,25 @@ if 'CODE_SIGN_ENTITLEMENTS' not in c:
     )
     print('Entitlements added')
 
-# 2. GoogleService-Info.plist in Xcode project
+# 2. SystemCapabilities for Sign in with Apple and Push Notifications
+if 'SystemCapabilities' not in c:
+    capabilities = (
+        '\t\t\t\t\tSystemCapabilities = {\n'
+        '\t\t\t\t\t\t"com.apple.Push-Notifications" = {\n'
+        '\t\t\t\t\t\t\tenabled = 1;\n'
+        '\t\t\t\t\t\t};\n'
+        '\t\t\t\t\t\t"com.apple.Sign-in-with-Apple" = {\n'
+        '\t\t\t\t\t\t\tenabled = 1;\n'
+        '\t\t\t\t\t\t};\n'
+        '\t\t\t\t\t};\n'
+    )
+    c = c.replace(
+        '\t\t\t\t\tProvisioningStyle = Automatic;\n\t\t\t\t};',
+        '\t\t\t\t\tProvisioningStyle = Automatic;\n' + capabilities + '\t\t\t\t};'
+    )
+    print('SystemCapabilities added')
+
+# 3. GoogleService-Info.plist in Xcode project
 GFILE_REF = 'AA00000000000001AAAAAAAA'
 GBUILD_FILE = 'AA00000000000002AAAAAAAA'
 
