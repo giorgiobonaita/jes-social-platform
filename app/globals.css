@@ -2,7 +2,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --sat: 0px;
+  --sat: env(safe-area-inset-top, 0px);
   --orange: #F07B1D;
   --orange-dark: #C45E0A;
   --orange-light: #FDE8D4;
@@ -446,7 +446,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Post Card (nuovo stile Expo) ── */
 .pc-post { margin-bottom: 16px; background: #fff; border-bottom: 1px solid #F0F0F0; }
-.pc-header { display: flex; align-items: center; padding: 10px 12px; padding-top: calc(10px + var(--sat)); gap: 10px; }
+.pc-header { display: flex; align-items: center; padding: 10px 12px; gap: 10px; }
 .pc-avatar-ring { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #F07B1D; padding: 2px; margin-right: 2px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #EFEFEF; }
 .pc-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .pc-meta { flex: 1; min-width: 0; }
