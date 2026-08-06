@@ -1,7 +1,8 @@
-/* ── Reset & Base ── */
+﻿/* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
+  --sat: 0px;
   --orange: #F07B1D;
   --orange-dark: #C45E0A;
   --orange-light: #FDE8D4;
@@ -119,7 +120,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Auth pages layout ── */
 .auth-page { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; background: #FFFFFF; }
-.auth-header { padding: 8px; padding-top: calc(12px + env(safe-area-inset-top)); }
+.auth-header { padding: 8px; padding-top: calc(12px + var(--sat)); }
 .auth-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; }
 .auth-logo-container { display: flex; flex-direction: column; align-items: center; margin-bottom: 48px; }
 .auth-buttons { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 24px; }
@@ -128,7 +129,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Form pages ── */
 .form-page { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; }
-.form-top { padding: 8px; padding-top: calc(12px + env(safe-area-inset-top)); }
+.form-top { padding: 8px; padding-top: calc(12px + var(--sat)); }
 .form-scroll { flex: 1; overflow-y: auto; padding: 8px 20px 32px; }
 .form-title { font-family: var(--font-display); font-size: 28px; font-weight: 800; color: #111111; letter-spacing: -0.3px; line-height: 34px; margin-bottom: 4px; }
 .form-subtitle { font-family: var(--font-body); font-size: 15px; color: #666666; line-height: 23px; margin-bottom: 32px; }
@@ -146,7 +147,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Onboarding centering ── */
 .onb-page { flex: 1; display: flex; flex-direction: column; min-height: 100dvh; background: #FFFFFF; }
-.onb-header { padding: 8px; padding-top: calc(12px + env(safe-area-inset-top)); }
+.onb-header { padding: 8px; padding-top: calc(12px + var(--sat)); }
 .onb-body { flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 0 20px; overflow-y: auto; }
 .onb-top { flex: 1; display: flex; flex-direction: column; align-items: center; padding-top: 40px; }
 .onb-bottom { padding-bottom: 32px; }
@@ -253,12 +254,12 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 .avatar { border-radius: 50%; object-fit: cover; background: #EEEEEE; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
 
 /* ── Safe Area Utility ── */
-.safe-top { padding-top: env(safe-area-inset-top) !important; }
-.screen-header { padding-top: calc(14px + env(safe-area-inset-top)) !important; }
+.safe-top { padding-top: var(--sat) !important; }
+.screen-header { padding-top: calc(14px + var(--sat)) !important; }
 
 /* ── Home Layout ── */
 .home-page { display: flex; flex-direction: column; height: 100dvh; background: #FFFFFF; overflow: hidden; }
-.home-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; padding-top: calc(12px + env(safe-area-inset-top)); border-bottom: 1px solid #EEEEEE; background: #FFFFFF; position: sticky; top: 0; z-index: 10; }
+.home-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; padding-top: calc(12px + var(--sat)); border-bottom: 1px solid #EEEEEE; background: #FFFFFF; position: sticky; top: 0; z-index: 10; }
 .header-side { display: flex; align-items: center; gap: 4px; }
 .icon-btn { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; border-radius: 50%; position: relative; transition: background .15s; color: #111111; }
 .icon-btn:hover { background: #F5F5F5; }
@@ -445,7 +446,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 
 /* ── Post Card (nuovo stile Expo) ── */
 .pc-post { margin-bottom: 16px; background: #fff; border-bottom: 1px solid #F0F0F0; }
-.pc-header { display: flex; align-items: center; padding: 10px 12px; padding-top: calc(10px + env(safe-area-inset-top)); gap: 10px; }
+.pc-header { display: flex; align-items: center; padding: 10px 12px; padding-top: calc(10px + var(--sat)); gap: 10px; }
 .pc-avatar-ring { width: 36px; height: 36px; border-radius: 50%; border: 2px solid #F07B1D; padding: 2px; margin-right: 2px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #EFEFEF; }
 .pc-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .pc-meta { flex: 1; min-width: 0; }

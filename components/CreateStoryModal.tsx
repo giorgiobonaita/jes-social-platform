@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useLang } from '@/lib/i18n';
@@ -149,7 +149,7 @@ export default function CreateStoryModal({ visible, onClose, onPublished, author
           )}
 
           {/* Top bar */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, paddingTop: 'calc(14px + env(safe-area-inset-top))' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 14, paddingTop: 'calc(14px + var(--sat))' }}>
             <button onClick={() => setStep('picker')}
               style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(0,0,0,0.4)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2.2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>

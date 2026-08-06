@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
@@ -75,7 +75,7 @@ export default function SettingsPage() {
     <>
     <div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0', background: '#fff', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + var(--sat))', borderBottom: '1px solid #F0F0F0', background: '#fff', flexShrink: 0 }}>
         {backBtn}
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>{title}</span>
         <div style={{ width: 26 }} />
@@ -168,7 +168,7 @@ export default function SettingsPage() {
 
     {showLogoutModal && typeof document !== 'undefined' && createPortal(
       <div onClick={() => setShowLogoutModal(false)}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, paddingTop: 'calc(var(--sat) + 20px)' }}>
         <div onClick={e => e.stopPropagation()}
           style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
           <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>{t('logout')}</h3>
@@ -190,7 +190,7 @@ export default function SettingsPage() {
 
     {showDeleteModal && typeof document !== 'undefined' && createPortal(
       <div onClick={() => setShowDeleteModal(false)}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, paddingTop: 'calc(var(--sat) + 20px)' }}>
         <div onClick={e => e.stopPropagation()}
           style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
           <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { createNotification } from '@/lib/notifications';
@@ -309,16 +309,16 @@ export default function GroupDetail({ group, joined, onBack, onToggleJoin, onPos
   return (
     <div style={{ flex: 1, overflowY: 'auto', backgroundColor: '#F5F5F5' }}>
       {/* Cover */}
-      <div style={{ position: 'relative', width: '100%', height: 'calc(210px + env(safe-area-inset-top))' }}>
+      <div style={{ position: 'relative', width: '100%', height: 'calc(210px + var(--sat))' }}>
         {coverUrl
-          ? <img src={coverUrl} style={{ width: '100%', height: 'calc(210px + env(safe-area-inset-top))', objectFit: 'cover', display: 'block' }} alt={group.name} />
-          : <div style={{ width: '100%', height: 'calc(210px + env(safe-area-inset-top))', backgroundColor: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          ? <img src={coverUrl} style={{ width: '100%', height: 'calc(210px + var(--sat))', objectFit: 'cover', display: 'block' }} alt={group.name} />
+          : <div style={{ width: '100%', height: 'calc(210px + var(--sat))', backgroundColor: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width="60" height="60" fill="none" stroke="#DDD" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
             </div>
         }
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.22)' }} />
         <button onClick={onBack}
-          style={{ position: 'absolute', top: 'calc(14px + env(safe-area-inset-top))', left: 14, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.45)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ position: 'absolute', top: 'calc(14px + var(--sat))', left: 14, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.45)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2.2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', alignItems: 'center', gap: 5, backgroundColor: 'rgba(52,199,89,0.92)', padding: '5px 12px', borderRadius: 14 }}>

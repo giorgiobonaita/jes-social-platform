@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { containsBlacklistedWord } from '@/lib/blacklist';
@@ -125,7 +125,7 @@ export default function CreateVideoModal({ visible, onClose, onPublished, author
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#fff', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + var(--sat))', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
         <button onClick={step === 'details' ? () => { setStep('picker'); setFile(null); setPreview(null); } : close}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', padding: 0, display: 'flex', alignItems: 'center' }}>
           <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

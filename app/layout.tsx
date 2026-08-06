@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import OfflineScreen from "@/components/OfflineScreen";
 import AppDownloadBanner from "@/components/AppDownloadBanner";
+import SafeAreaInit from "@/components/SafeAreaInit";
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -41,6 +42,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body>
+        <SafeAreaInit />
         {children}
         <OfflineScreen />
         <AppDownloadBanner />

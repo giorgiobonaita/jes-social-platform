@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -346,7 +346,7 @@ if (me) {
   if (showEditProfile) {
     return (
       <div className="pm-panel" style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + var(--sat))', borderBottom: '1px solid #F0F0F0' }}>
           <button onClick={() => setShowEditProfile(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: 15, color: '#888' }}>{t('cancel')}</button>
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: '#111' }}>{t('edit_profile')}</span>
           <button onClick={saveProfile} style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: 15, color: ORANGE }}>
@@ -562,7 +562,7 @@ if (me) {
     <>
     <div className="pm-panel" style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + env(safe-area-inset-top))', borderBottom: '1px solid #F0F0F0', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + var(--sat))', borderBottom: '1px solid #F0F0F0', position: 'sticky', top: 0, background: '#fff', zIndex: 10 }}>
         <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
           <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
@@ -828,7 +828,7 @@ if (me) {
       {selectedPostId && selectedPost && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#F5F5F5', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           {/* Header */}
-          <div style={{ position: 'sticky', top: 0, background: '#fff', borderBottom: '1px solid #EEE', display: 'flex', alignItems: 'center', padding: '14px 16px', paddingTop: 'calc(14px + env(safe-area-inset-top))', gap: 12, zIndex: 10 }}>
+          <div style={{ position: 'sticky', top: 0, background: '#fff', borderBottom: '1px solid #EEE', display: 'flex', alignItems: 'center', padding: '14px 16px', paddingTop: 'calc(14px + var(--sat))', gap: 12, zIndex: 10 }}>
             <button onClick={() => setSelectedPostId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
               <svg width="24" height="24" fill="none" stroke="#111" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             </button>
