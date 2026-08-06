@@ -32,6 +32,7 @@ export default function RootLayout({
   return (
     <html lang="it">
       <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <link rel="icon" type="image/png" href="/logo.png" />
         <link rel="shortcut icon" type="image/png" href="/logo.png" />
         <link rel="apple-touch-icon" href="/logo.png" />
