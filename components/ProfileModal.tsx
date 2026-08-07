@@ -83,6 +83,7 @@ export default function ProfileModal({ visible, onClose, targetUserId, onMessage
 const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [deleteAccountModal, setDeleteAccountModal] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [logoutModal, setLogoutModal] = useState(false);
 
   const [followersList, setFollowersList]   = useState<any[]>([]);
   const [followingList, setFollowingList]   = useState<any[]>([]);
@@ -314,8 +315,10 @@ if (me) {
     setShowEditProfile(false);
   };
 
-  const handleSignOut = async () => {
-    if (!confirm(t('profile_logout_confirm'))) return;
+  const handleSignOut = () => setLogoutModal(true);
+
+  const confirmSignOut = async () => {
+    setLogoutModal(false);
     await supabase.auth.signOut();
     onClose();
     setTimeout(() => router.replace('/'), 300);
@@ -967,6 +970,26 @@ if (me) {
       )}
     </div>
 
+    {logoutModal && createPortal(
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+        onClick={() => setLogoutModal(false)}>
+        <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: '#111' }}>{t('logout')}</h3>
+          <p style={{ margin: '0 0 22px', fontSize: 14, color: '#888', lineHeight: '20px' }}>{t('profile_logout_confirm')}</p>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => setLogoutModal(false)}
+              style={{ flex: 1, background: '#F5F5F5', color: '#555', border: 'none', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+              Annulla
+            </button>
+            <button onClick={confirmSignOut}
+              style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+              {t('logout')}
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body
+    )}
     {deleteAccountModal && createPortal(
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
         onClick={() => setDeleteAccountModal(false)}>
