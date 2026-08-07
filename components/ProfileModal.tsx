@@ -436,6 +436,7 @@ if (me) {
   // ── Settings Screen ───────────────────────────────────────────────────────────
   if (showSettings) {
     return (
+      <>
       <div className="pm-panel" style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #F0F0F0' }}>
           <button onClick={() => { if (settingsScreen) { setSettingsScreen(null); } else { setShowSettings(false); } }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
@@ -558,6 +559,47 @@ if (me) {
         </div>
         <AdminPanelModal visible={showAdminPanel} onClose={() => setShowAdminPanel(false)} onUserPress={(userId) => { setShowAdminPanel(false); onRequestViewUser(userId); }} />
       </div>
+      {logoutModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setLogoutModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: '#111' }}>{t('logout')}</h3>
+            <p style={{ margin: '0 0 22px', fontSize: 14, color: '#888', lineHeight: '20px' }}>{t('profile_logout_confirm')}</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setLogoutModal(false)}
+                style={{ flex: 1, background: '#F5F5F5', color: '#555', border: 'none', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+                Annulla
+              </button>
+              <button onClick={confirmSignOut}
+                style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+                {t('logout')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {deleteAccountModal && createPortal(
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setDeleteAccountModal(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>
+            <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>Questa azione è irreversibile. Tutti i tuoi dati, post e follower verranno cancellati permanentemente.</p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setDeleteAccountModal(false)}
+                style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                Annulla
+              </button>
+              <button onClick={confirmDeleteAccount} disabled={deletingAccount}
+                style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: deletingAccount ? 'not-allowed' : 'pointer' }}>
+                {deletingAccount ? 'Eliminazione…' : 'Elimina account'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      </>
     );
   }
 
