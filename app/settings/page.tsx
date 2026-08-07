@@ -74,7 +74,7 @@ export default function SettingsPage() {
     <>
     <div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + var(--sat))', borderBottom: '1px solid #F0F0F0', background: '#fff', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid #F0F0F0', background: '#fff', flexShrink: 0 }}>
         {backBtn}
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>{title}</span>
         <div style={{ width: 26 }} />

@@ -1,5 +1,6 @@
 ﻿'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { createNotification } from '@/lib/notifications';
@@ -966,8 +967,7 @@ if (me) {
       )}
     </div>
 
-    {/* Delete account modal */}
-    {deleteAccountModal && (
+    {deleteAccountModal && createPortal(
       <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
         onClick={() => setDeleteAccountModal(false)}>
         <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
@@ -984,7 +984,8 @@ if (me) {
             </button>
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     )}
     </>
   );
