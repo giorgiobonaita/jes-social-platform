@@ -304,7 +304,7 @@ export default function NotificationsModal({ visible, onClose, onOpenProfile, on
             style={{
               background: '#fff', borderRadius: '20px 20px 0 0',
               width: '100%', maxWidth: 500,
-              paddingBottom: 'env(safe-area-inset-bottom, 12px)',
+              paddingBottom: 'calc(12px + var(--sab))',
             }}
           >
             {/* Handle */}

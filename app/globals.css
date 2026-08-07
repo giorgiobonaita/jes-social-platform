@@ -3,6 +3,7 @@
 
 :root {
   --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
   --orange: #F07B1D;
   --orange-dark: #C45E0A;
   --orange-light: #FDE8D4;
@@ -267,7 +268,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 .notif-badge { position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: #FF3B30; }
 
 /* ── Feed ── */
-.feed-scroll { flex: 1; overflow-y: auto; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+.feed-scroll { flex: 1; overflow-y: auto; padding-bottom: calc(80px + var(--sab)); }
 .stories-section { border-bottom: 1px solid #EEEEEE; padding-bottom: 4px; }
 .stories-label { font-family: var(--font-body); font-weight: 600; font-size: 12px; color: #AAAAAA; letter-spacing: 1px; text-transform: uppercase; padding: 10px 16px 2px; }
 .stories-row { display: flex; gap: 0; padding: 6px 16px; overflow-x: auto; scrollbar-width: none; }
@@ -309,7 +310,7 @@ html, body { height: 100%; font-family: var(--font-body); background: #FFFFFF; c
 .adv-link-text { font-family: var(--font-body); font-weight: 700; font-size: 13px; color: #FFF; }
 
 /* ── Bottom Nav ── */
-.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: #FFFFFF; border-top: 1px solid #EEEEEE; display: flex; align-items: flex-start; justify-content: space-around; padding: 8px 0 calc(20px + env(safe-area-inset-bottom)); z-index: 20; }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; background: #FFFFFF; border-top: 1px solid #EEEEEE; display: flex; align-items: flex-start; justify-content: space-around; padding: 8px 0 calc(20px + var(--sab)); z-index: 20; }
 .nav-tab { flex: 1; display: flex; align-items: center; justify-content: center; height: 48px; background: none; border: none; cursor: pointer; }
 .create-circle { width: 46px; height: 46px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; transition: transform .1s; }
 .create-circle:hover { transform: scale(1.05); }

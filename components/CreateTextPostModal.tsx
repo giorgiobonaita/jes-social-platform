@@ -66,7 +66,7 @@ export default function CreateTextPostModal({ visible, onClose, onPublished, aut
   if (mode === null) return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
       onClick={handleClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 500, paddingBottom: 'env(safe-area-inset-bottom, 20px)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 500, paddingBottom: 'calc(20px + var(--sab))' }}>
         <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 4px' }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0' }} />
         </div>
@@ -185,7 +185,7 @@ export default function CreateTextPostModal({ visible, onClose, onPublished, aut
               paddingBottom: 80,
             }}
           />
-          <div style={{ position: 'fixed', bottom: 'env(safe-area-inset-bottom, 0px)', left: 0, right: 0, background: '#fff', borderTop: '1px solid #F0F0F0', padding: '10px 20px', display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ position: 'fixed', bottom: 'var(--sab)', left: 0, right: 0, background: '#fff', borderTop: '1px solid #F0F0F0', padding: '10px 20px', display: 'flex', justifyContent: 'flex-end' }}>
             <span style={{ fontSize: 12, color: '#CCC', fontWeight: 500 }}>{text.length}/1000</span>
           </div>
         </div>
@@ -219,7 +219,7 @@ export default function CreateTextPostModal({ visible, onClose, onPublished, aut
           </div>
 
           {/* Controls */}
-          <div style={{ background: '#fff', borderTop: '1px solid #F0F0F0', paddingBottom: 'env(safe-area-inset-bottom, 16px)', flexShrink: 0 }}>
+          <div style={{ background: '#fff', borderTop: '1px solid #F0F0F0', paddingBottom: 'calc(16px + var(--sab))', flexShrink: 0 }}>
             {/* Align + font size */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: '1px solid #F0F0F0' }}>
               <div style={{ display: 'flex', gap: 4 }}>

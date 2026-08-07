@@ -1,6 +1,5 @@
 ﻿'use client';
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useLang, LANGUAGES } from '@/lib/i18n';
@@ -75,12 +74,12 @@ export default function SettingsPage() {
     <>
     <div style={{ position: 'fixed', inset: 0, background: '#fff', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid #F0F0F0', background: '#fff', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', paddingTop: 'calc(12px + var(--sat))', borderBottom: '1px solid #F0F0F0', background: '#fff', flexShrink: 0 }}>
         {backBtn}
         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 18, color: '#111' }}>{title}</span>
         <div style={{ width: 26 }} />
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(40px + env(safe-area-inset-bottom))' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(40px + var(--sab))' }}>
         {screen === 'lingua' ? (
           LANGUAGES.map(l => (
             <div key={l.code} onClick={() => {
@@ -166,48 +165,49 @@ export default function SettingsPage() {
 
     </div>
 
-    {showLogoutModal && typeof document !== 'undefined' && createPortal(
+    {showLogoutModal && (
       <div onClick={() => setShowLogoutModal(false)}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, paddingTop: 'calc(var(--sat) + 20px)' }}>
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div onClick={e => e.stopPropagation()}
-          style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
-          <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>{t('logout')}</h3>
-          <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>{t('profile_logout_confirm')}</p>
+          style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 380, fontFamily: 'var(--font-body)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+          <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: '#111' }}>{t('logout')}</h3>
+          <p style={{ margin: '0 0 22px', fontSize: 14, color: '#888', lineHeight: '20px' }}>{t('profile_logout_confirm')}</p>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setShowLogoutModal(false)}
-              style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              style={{ flex: 1, background: '#F5F5F5', color: '#555', border: 'none', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
               Annulla
             </button>
             <button onClick={confirmSignOut}
-              style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
               {t('logout')}
             </button>
           </div>
         </div>
-      </div>,
-      document.body
+      </div>
     )}
 
-    {showDeleteModal && typeof document !== 'undefined' && createPortal(
+    {showDeleteModal && (
       <div onClick={() => setShowDeleteModal(false)}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, paddingTop: 'calc(var(--sat) + 20px)' }}>
+        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div onClick={e => e.stopPropagation()}
-          style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 400, fontFamily: 'var(--font-body)' }}>
-          <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>
-          <p style={{ margin: '0 0 20px', fontSize: 13, color: '#888' }}>Questa azione è irreversibile. Tutti i tuoi dati, post e follower verranno cancellati permanentemente.</p>
+          style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 380, fontFamily: 'var(--font-body)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FFF0EE', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+            <svg width="24" height="24" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          </div>
+          <h3 style={{ margin: '0 0 8px', fontSize: 17, fontWeight: 800, color: '#111' }}>Elimina account</h3>
+          <p style={{ margin: '0 0 22px', fontSize: 14, color: '#888', lineHeight: '20px' }}>Questa azione è irreversibile. Tutti i tuoi dati, post e follower verranno cancellati permanentemente.</p>
           <div style={{ display: 'flex', gap: 10 }}>
             <button onClick={() => setShowDeleteModal(false)}
-              style={{ flex: 1, background: '#F5F5F5', color: '#888', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              style={{ flex: 1, background: '#F5F5F5', color: '#555', border: 'none', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
               Annulla
             </button>
             <button onClick={confirmDeleteAccount} disabled={deleting}
-              style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: 12, fontWeight: 700, fontSize: 14, cursor: deleting ? 'not-allowed' : 'pointer' }}>
-              {deleting ? 'Eliminazione…' : 'Elimina account'}
+              style={{ flex: 1, background: '#FF3B30', color: '#fff', border: 'none', borderRadius: 12, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: deleting ? 'not-allowed' : 'pointer', opacity: deleting ? 0.7 : 1 }}>
+              {deleting ? 'Eliminazione…' : 'Elimina'}
             </button>
           </div>
         </div>
-      </div>,
-      document.body
+      </div>
     )}
     </>
   );

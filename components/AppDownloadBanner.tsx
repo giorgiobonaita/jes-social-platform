@@ -39,7 +39,7 @@ export default function AppDownloadBanner() {
       background: '#fff', borderBottom: '1px solid #F0F0F0',
       boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
       padding: '12px 16px',
-      paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+      paddingTop: 'calc(12px + var(--sat))',
       display: 'flex', alignItems: 'center', gap: 12,
     }}>
       {/* App icon */}
