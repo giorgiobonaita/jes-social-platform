@@ -438,7 +438,7 @@ if (me) {
     return (
       <>
       <div className="pm-panel" style={{ position: 'fixed', inset: 0, background: '#fff', zIndex: 200, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', paddingTop: 'calc(20px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid #F0F0F0', flexShrink: 0 }}>
           <button onClick={() => { if (settingsScreen) { setSettingsScreen(null); } else { setShowSettings(false); } }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111', display: 'flex', alignItems: 'center' }}>
             <svg width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
@@ -447,7 +447,7 @@ if (me) {
           </span>
           <div style={{ width: 26 }} />
         </div>
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 40 }}>
+        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 'calc(40px + env(safe-area-inset-bottom, 0px))' }}>
           {settingsScreen === 'lingua' ? (
             <>
               {LANGUAGES.map(l => (
