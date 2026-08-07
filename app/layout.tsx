@@ -1,16 +1,8 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import "./globals.css";
 import OfflineScreen from "@/components/OfflineScreen";
 import AppDownloadBanner from "@/components/AppDownloadBanner";
 import SafeAreaInit from "@/components/SafeAreaInit";
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  viewportFit: 'cover',
-};
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jessocial.com'),
