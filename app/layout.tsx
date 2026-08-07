@@ -1,8 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import OfflineScreen from "@/components/OfflineScreen";
 import AppDownloadBanner from "@/components/AppDownloadBanner";
 import SafeAreaInit from "@/components/SafeAreaInit";
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://jessocial.com'),
@@ -25,7 +33,6 @@ export default function RootLayout({
   return (
     <html lang="it">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
         <link rel="icon" type="image/png" href="/logo.png" />
         <link rel="shortcut icon" type="image/png" href="/logo.png" />
         <link rel="apple-touch-icon" href="/logo.png" />
