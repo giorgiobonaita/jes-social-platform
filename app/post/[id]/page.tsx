@@ -12,22 +12,31 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!id || id === '_') return {};
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!supabaseUrl || !serviceKey) return {};
+    const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !apiKey) {
+      console.error('[OG] Missing Supabase URL or API key');
+      return {};
+    }
     const res = await fetch(
       `${supabaseUrl}/rest/v1/posts?id=eq.${id}&select=image_url,image_urls,caption,users(name)&limit=1`,
       {
         headers: {
-          'apikey': serviceKey,
-          'Authorization': `Bearer ${serviceKey}`,
+          'apikey': apiKey,
+          'Authorization': `Bearer ${apiKey}`,
         },
         cache: 'no-store',
       }
     );
-    if (!res.ok) return {};
+    if (!res.ok) {
+      console.error('[OG] Supabase fetch failed:', res.status, await res.text().catch(() => ''));
+      return {};
+    }
     const posts = await res.json();
     const post = posts?.[0];
-    if (!post) return {};
+    if (!post) {
+      console.error('[OG] Post not found:', id);
+      return {};
+    }
     const name = post.users?.name || 'JES';
     const description = post.caption || `${name} su JES Social`;
     const imageUrl = post.image_url || post.image_urls?.[0] || 'https://jessocial.com/logo.png';
