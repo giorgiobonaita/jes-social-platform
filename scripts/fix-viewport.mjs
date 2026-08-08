@@ -25,5 +25,10 @@ function walk(dir) {
   }
 }
 
-walk(OUT_DIR);
-console.log('viewport fix complete');
+import { existsSync } from 'fs';
+if (existsSync(OUT_DIR)) {
+  walk(OUT_DIR);
+  console.log('viewport fix complete');
+} else {
+  console.log('viewport fix skipped (no out/ dir)');
+}
