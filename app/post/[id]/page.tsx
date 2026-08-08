@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { createClient } from '@supabase/supabase-js';
 import PostRedirect from './PostRedirect';
 
 export const dynamic = 'force-dynamic';
@@ -10,21 +9,28 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  if (id === '_') return { title: 'JES — Il Social delle Emozioni' };
+  if (!id || id === '_') return {};
   try {
-    const sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!supabaseUrl || !serviceKey) return {};
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/posts?id=eq.${id}&select=image_url,image_urls,caption,users(name)&limit=1`,
+      {
+        headers: {
+          'apikey': serviceKey,
+          'Authorization': `Bearer ${serviceKey}`,
+        },
+        cache: 'no-store',
+      }
     );
-    const { data: post } = await sb
-      .from('posts')
-      .select('image_url, image_urls, caption, users(name)')
-      .eq('id', id)
-      .maybeSingle();
-    if (!post) return { title: 'JES — Il Social delle Emozioni' };
-    const name = (post.users as any)?.name || 'JES';
+    if (!res.ok) return {};
+    const posts = await res.json();
+    const post = posts?.[0];
+    if (!post) return {};
+    const name = post.users?.name || 'JES';
     const description = post.caption || `${name} su JES Social`;
-    const imageUrl = post.image_url || (post.image_urls as string[])?.[0] || 'https://jessocial.com/logo.png';
+    const imageUrl = post.image_url || post.image_urls?.[0] || 'https://jessocial.com/logo.png';
     return {
       title: `${name} su JES Social`,
       description,
@@ -42,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
       },
     };
   } catch {
-    return { title: 'JES — Il Social delle Emozioni' };
+    return {};
   }
 }
 
