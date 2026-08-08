@@ -49,6 +49,12 @@ export default function AppleSignInButton({ label = 'Accedi con Apple' }: { labe
         router.replace('/home');
       } else if (user?.username) {
         router.replace('/onboarding/age');
+      } else if (givenName || familyName) {
+        // Apple already provided name — skip name step per Apple HIG
+        const params = new URLSearchParams();
+        if (givenName) params.set('firstName', givenName);
+        if (familyName) params.set('lastName', familyName);
+        router.replace(`/onboarding/username?${params.toString()}`);
       } else {
         router.replace('/onboarding/name');
       }

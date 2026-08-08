@@ -48,6 +48,15 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
           supabase.from('users').update({ email: session.user.email }).eq('auth_id', session.user.id).then(() => {});
         }
 
+        const meta = session.user.user_metadata || {};
+        const givenName: string = meta.given_name || meta.name?.split(' ')[0] || '';
+        const familyName: string = meta.family_name || meta.name?.split(' ').slice(1).join(' ') || '';
+
+        if (givenName || familyName) {
+          const fullName = [givenName, familyName].filter(Boolean).join(' ');
+          supabase.from('users').update({ name: fullName }).eq('auth_id', session.user.id).then(() => {});
+        }
+
         const { data: user } = await supabase
           .from('users').select('username, nationality').eq('auth_id', session.user.id).maybeSingle();
 
@@ -56,6 +65,11 @@ export default function GoogleSignInButton({ label = 'Accedi con Google' }: { la
           router.replace('/home');
         } else if (user?.username) {
           router.replace('/onboarding/age');
+        } else if (givenName || familyName) {
+          const params = new URLSearchParams();
+          if (givenName) params.set('firstName', givenName);
+          if (familyName) params.set('lastName', familyName);
+          router.replace(`/onboarding/username?${params.toString()}`);
         } else {
           router.replace('/onboarding/name');
         }
