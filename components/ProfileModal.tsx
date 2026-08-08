@@ -282,7 +282,7 @@ if (me) {
         .insert({ follower_id: uid, followed_id: profile.id });
       if (error) { console.error('[follow] insert error:', error); setIsFollowing(false); setFollowersCount(c => Math.max(0, c - 1)); return; }
       setListsLoaded(false); setListFollowingIds(new Set());
-      if (uid) createNotification({ user_id: profile.id, actor_id: uid, type: 'follow' });
+      if (uid) createNotification({ user_id: profile.id, actor_id: uid!, type: 'follow' });
     }
   };
 
