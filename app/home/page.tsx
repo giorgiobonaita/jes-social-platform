@@ -132,6 +132,7 @@ function buildFeed(
     ? shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...ADV_MER, ...spidiPool])
     : shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...spidiPool]);
   let advIdx = 0;
+  let adSlotIdx = 0;
   let arcInserted = false;
   const spidiRandom = ADV_SPIDI[Math.floor(Math.random() * ADV_SPIDI.length)];
   const nextAdv = () => {
@@ -141,21 +142,28 @@ function buildFeed(
   };
   for (let i = 0; i < orderedPosts.length; i++) {
     feed.push(orderedPosts[i]);
-    if ((i + 1) % 4 === 0) {
-      if (spidiBoost && advIdx === 0) {
-        advIdx++;
-        feed.push({ type: 'adv', id: `adv_spidi_first_${Date.now()}`, imageUrl: spidiRandom.imageUrl, url: spidiRandom.url });
-      } else {
-        feed.push(nextAdv());
-      }
-      if (!arcInserted && advIdx === 2) {
-        if (userType && ARTIST_TYPES.includes(userType)) {
-          feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'artisti' });
-          arcInserted = true;
-        } else if (userType && AZIENDE_TYPES.includes(userType)) {
-          feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'aziende' });
-          arcInserted = true;
+    if ((i + 1) % 3 === 0) {
+      adSlotIdx++;
+      if (adSlotIdx % 2 === 1) {
+        // Slot dispari → pubblicità manuale
+        if (spidiBoost && advIdx === 0) {
+          advIdx++;
+          feed.push({ type: 'adv', id: `adv_spidi_first_${Date.now()}`, imageUrl: spidiRandom.imageUrl, url: spidiRandom.url });
+        } else {
+          feed.push(nextAdv());
         }
+        if (!arcInserted && advIdx === 2) {
+          if (userType && ARTIST_TYPES.includes(userType)) {
+            feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'artisti' });
+            arcInserted = true;
+          } else if (userType && AZIENDE_TYPES.includes(userType)) {
+            feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'aziende' });
+            arcInserted = true;
+          }
+        }
+      } else {
+        // Slot pari → AdMob
+        feed.push({ type: 'adv_admob', id: `adv_admob_${adSlotIdx}_${Date.now()}` });
       }
     }
   }
@@ -805,6 +813,23 @@ function AdvCard({ imageUrl, url }: { imageUrl: string; url: string }) {
   );
 }
 
+// ── AdMob Native Card ────────────────────────────────────────────────────────
+function AdvAdMobCard() {
+  return (
+    <div className="adv-card" style={{ minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#FAFAFA' }}>
+      <div style={{ display: 'flex', width: '100%' }}>
+        <div className="adv-badge">
+          <svg width="11" height="11" fill="none" stroke="#888" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <span className="adv-badge-text">Sponsorizzato</span>
+        </div>
+      </div>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: '#CCC', fontSize: 13 }}>
+        Annuncio in arrivo
+      </div>
+    </div>
+  );
+}
+
 // ── JES ARC ADV Card ─────────────────────────────────────────────────────────
 function AdvArcCard({ arcType, onScopri }: { arcType: 'artisti' | 'aziende'; onScopri: () => void }) {
   const { t } = useLang();
@@ -1305,6 +1330,7 @@ const { t, lang } = useLang();
         )}
         {feedData.map(item => {
           if (item.type === 'adv') return <AdvCard key={item.id} imageUrl={item.imageUrl} url={item.url} />;
+          if (item.type === 'adv_admob') return <AdvAdMobCard key={item.id} />;
           if (item.type === 'adv_arc') return <AdvArcCard key={item.id} arcType={item.arcType} onScopri={() => setArcModalType(item.arcType)} />;
           if (item.type === 'poll') return (
             <FeedPoll

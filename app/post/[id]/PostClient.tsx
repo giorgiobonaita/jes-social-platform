@@ -145,7 +145,7 @@ export default function PostClient({ id }: { id: string }) {
   };
 
   const handleShare = async () => {
-    const url = `https://jessocial.com/post?id=${id}`;
+    const url = `https://jessocial.com/post/${id}`;
     try {
       if (navigator.share) {
         await navigator.share({ title: 'JES', url });
