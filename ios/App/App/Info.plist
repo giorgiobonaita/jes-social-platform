@@ -47,6 +47,14 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>JES usa la fotocamera per scattare foto da condividere nel tuo profilo e nei post.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>JES accede alla tua libreria foto per permetterti di scegliere immagini da condividere.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>JES può salvare foto nella tua libreria.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>JES usa il microfono per registrare video da condividere nei post.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
