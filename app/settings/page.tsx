@@ -50,9 +50,18 @@ export default function SettingsPage() {
   const confirmDeleteAccount = async () => {
     setShowDeleteModal(false);
     setDeleting(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from('users').delete().eq('auth_id', user.id);
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (user && !error) {
+      const { data: { session } } = await supabase.auth.getSession();
+      // Delete auth user via API (requires service role key — runs server-side)
+      await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ userId: user.id }),
+      });
       await supabase.auth.signOut();
     }
     setDeleting(false);

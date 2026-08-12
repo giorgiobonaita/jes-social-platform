@@ -10,6 +10,7 @@ export default function AuthPage() {
   const router = useRouter();
   const { t } = useLang();
   const [isIOS, setIsIOS] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   useEffect(() => {
     import('@capacitor/core').then(({ Capacitor }) => {
       setIsIOS(Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios');
@@ -36,6 +37,18 @@ export default function AuthPage() {
         </div>
 
         <div className="auth-buttons">
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16, cursor: 'pointer' }} onClick={() => setTermsAccepted(p => !p)}>
+            <div style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, border: `2px solid ${termsAccepted ? '#F07B1D' : '#CCC'}`, background: termsAccepted ? '#F07B1D' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 1, transition: 'all .15s' }}>
+              {termsAccepted && <svg width="13" height="13" fill="none" stroke="white" strokeWidth="2.5"><path d="M2 6.5l3.5 3.5 6-6"/></svg>}
+            </div>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#555', lineHeight: 1.5 }}>
+              {t('accept_terms')}{' '}
+              <a href="https://jessocial.com/legal/termini" target="_blank" rel="noopener noreferrer" onClick={e => { e.stopPropagation(); window.open('https://jessocial.com/legal/termini', '_system'); e.preventDefault(); }} style={{ color: '#F07B1D' }}>{t('terms_service')}</a>
+              {' '}{t('and_the')}{' '}
+              <a href="https://jessocial.com/legal/privacy" target="_blank" rel="noopener noreferrer" onClick={e => { e.stopPropagation(); window.open('https://jessocial.com/legal/privacy', '_system'); e.preventDefault(); }} style={{ color: '#F07B1D' }}>{t('terms_privacy')}</a>
+            </span>
+          </label>
+          <div style={{ pointerEvents: termsAccepted ? 'auto' : 'none', opacity: termsAccepted ? 1 : 0.4, transition: 'opacity .2s' }}>
           <GoogleSignInButton label="Registrati con Google" />
           {isIOS && <AppleSignInButton label="Registrati con Apple" />}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
@@ -60,6 +73,7 @@ export default function AuthPage() {
             </svg>
             Registrati con email
           </button>
+          </div>
         </div>
 
         <div className="auth-hint" style={{ marginTop: 16 }}>
@@ -70,9 +84,6 @@ export default function AuthPage() {
         </div>
       </div>
 
-      <p className="terms-text">
-        {t('terms_text')}
-      </p>
     </div>
   );
 }

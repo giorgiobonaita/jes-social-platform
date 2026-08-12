@@ -266,7 +266,7 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<'delete' | 'report' | 'ban' | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'delete' | 'report' | 'ban' | 'block' | null>(null);
   const [deleteReason, setDeleteReason] = useState('');
   const [editingCaption, setEditingCaption] = useState(false);
   const [editCaptionText, setEditCaptionText] = useState('');
@@ -423,6 +423,16 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
       headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ targetUserId: post.userId }),
     });
+  };
+
+  const handleBlock = async () => {
+    setConfirmAction(null); setMenuOpen(false);
+    if (!post.currentUserId || !post.userId) return;
+    await supabase.from('blocked_users').upsert(
+      { blocker_id: post.currentUserId, blocked_id: post.userId },
+      { onConflict: 'blocker_id,blocked_id', ignoreDuplicates: true }
+    );
+    onDelete();
   };
 
   const LINK_RE = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.(?:com|it|net|org|io|co|uk|de|fr|es|eu|app|dev|me|info|biz|edu)(?:\/[^\s]*)?)/g;
@@ -724,6 +734,12 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
               <svg width="20" height="20" fill="none" stroke="#555" strokeWidth="1.8" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
               <span>{t('report')}</span>
             </div>
+            {!isOwn && post.userId && (
+              <div className="pc-sheet-option danger" onClick={() => { setMenuOpen(false); setTimeout(() => setConfirmAction('block'), 200); }}>
+                <svg width="20" height="20" fill="none" stroke="#FF3B30" strokeWidth="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                <span>{t('block_user')}</span>
+              </div>
+            )}
             <div className="pc-sheet-cancel" onClick={() => setMenuOpen(false)}>{t('cancel')}</div>
           </div>
         </div>
@@ -781,6 +797,12 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
               <button className="confirm-btn-cancel" onClick={() => setConfirmAction(null)}>{t('cancel')}</button>
             </>}
             {confirmAction === 'report' && <ReportSheet postId={post.id} currentUserId={post.currentUserId} reportedUserId={post.userId} onDone={() => setConfirmAction(null)} />}
+            {confirmAction === 'block' && <>
+              <p className="confirm-title">{t('confirm_block_title')} {post.author?.username}</p>
+              <p className="confirm-msg">{t('confirm_block_msg')}</p>
+              <button className="confirm-btn-danger" onClick={handleBlock}>{t('confirm_block_btn')}</button>
+              <button className="confirm-btn-cancel" onClick={() => setConfirmAction(null)}>{t('cancel')}</button>
+            </>}
           </div>
         </div>
       )}
@@ -1153,22 +1175,29 @@ const { t, lang } = useLang();
       }
     } catch {}
 
-    const { data: posts, error } = await supabase
-      .from('posts').select('*').order('created_at', { ascending: false }).range(0, PAGE_SIZE - 1);
-    if (error || !posts || posts.length === 0) return;
-    setHasMorePosts(posts.length === PAGE_SIZE);
-    setFeedPage(1);
-
     const authResult = await supabase.auth.getUser();
     let dbUserId: string | null = null;
     if (authResult.data.user) {
       const { data: u } = await supabase.from('users').select('id').eq('auth_id', authResult.data.user.id).single();
       dbUserId = u?.id ?? null;
     }
+
+    let blockedIds: string[] = [];
     if (dbUserId) {
-      const { data: followRows } = await supabase.from('follows').select('followed_id').eq('follower_id', dbUserId);
+      const [{ data: followRows }, { data: blockedRows }] = await Promise.all([
+        supabase.from('follows').select('followed_id').eq('follower_id', dbUserId),
+        supabase.from('blocked_users').select('blocked_id').eq('blocker_id', dbUserId),
+      ]);
       if (followRows) updateFollowingIds(() => new Set(followRows.map((r: any) => r.followed_id)));
+      if (blockedRows) blockedIds = blockedRows.map((r: any) => r.blocked_id);
     }
+
+    let postsQuery = supabase.from('posts').select('*').order('created_at', { ascending: false }).range(0, PAGE_SIZE - 1);
+    if (blockedIds.length > 0) postsQuery = postsQuery.not('user_id', 'in', `(${blockedIds.join(',')})`);
+    const { data: posts, error } = await postsQuery;
+    if (error || !posts || posts.length === 0) return;
+    setHasMorePosts(posts.length === PAGE_SIZE);
+    setFeedPage(1);
     await mapPosts(posts, dbUserId, false);
   }, [mapPosts, updateFollowingIds]);
 
@@ -1181,10 +1210,16 @@ const { t, lang } = useLang();
       const { data: u } = await supabase.from('users').select('id').eq('auth_id', authResult.data.user.id).single();
       dbUserId = u?.id ?? null;
     }
+    let blockedIds: string[] = [];
+    if (dbUserId) {
+      const { data: blockedRows } = await supabase.from('blocked_users').select('blocked_id').eq('blocker_id', dbUserId);
+      if (blockedRows) blockedIds = blockedRows.map((r: any) => r.blocked_id);
+    }
     const from = feedPage * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    const { data: posts, error } = await supabase
-      .from('posts').select('*').order('created_at', { ascending: false }).range(from, to);
+    let moreQuery = supabase.from('posts').select('*').order('created_at', { ascending: false }).range(from, to);
+    if (blockedIds.length > 0) moreQuery = moreQuery.not('user_id', 'in', `(${blockedIds.join(',')})`);
+    const { data: posts, error } = await moreQuery;
     if (!error && posts && posts.length > 0) {
       await mapPosts(posts, dbUserId, true);
       setFeedPage(prev => prev + 1);

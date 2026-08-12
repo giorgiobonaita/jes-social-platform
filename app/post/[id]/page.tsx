@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     if (!result) return {};
     const { post, userName } = result;
     const description = post.caption || `${userName} su JES Social`;
-    const imageUrl: string = post.image_url || post.image_urls?.[0] || 'https://jessocial.com/logo.png';
+    const imageUrl: string = (post.image_url || post.image_urls?.[0] || 'https://jessocial.com/logo.png') as string;
     return {
       title: `${userName} su JES Social`,
       description,
