@@ -246,10 +246,10 @@ function ReportSheet({ postId, currentUserId, reportedUserId, onDone }: { postId
 }
 
 // ── Post Card ─────────────────────────────────────────────────────────────────
-function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserPress, onDelete, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onUnfollowAuthor, onShareToast, onLiked, onGuestAction }: {
+function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserPress, onDelete, onBlock, isAdmin, onImagePress, isFollowingAuthor, onFollowAuthor, onUnfollowAuthor, onShareToast, onLiked, onGuestAction }: {
   post: any; currentUserAvatar?: string | null; currentUsername?: string | null;
   onComment: () => void; onUserPress: (id: string, username?: string) => void;
-  onDelete: () => void; isAdmin: boolean;
+  onDelete: () => void; onBlock: (userId: string) => void; isAdmin: boolean;
   onImagePress: (url: string) => void;
   isFollowingAuthor?: boolean; onFollowAuthor?: (userId: string) => void; onUnfollowAuthor?: (userId: string) => void;
   onShareToast?: () => void;
@@ -428,11 +428,11 @@ function PostCard({ post, currentUserAvatar, currentUsername, onComment, onUserP
   const handleBlock = async () => {
     setConfirmAction(null); setMenuOpen(false);
     if (!post.currentUserId || !post.userId) return;
-    await supabase.from('blocked_users').upsert(
+    const { error } = await supabase.from('blocked_users').upsert(
       { blocker_id: post.currentUserId, blocked_id: post.userId },
       { onConflict: 'blocker_id,blocked_id', ignoreDuplicates: true }
     );
-    onDelete();
+    if (!error) onBlock(post.userId);
   };
 
   const LINK_RE = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.(?:com|it|net|org|io|co|uk|de|fr|es|eu|app|dev|me|info|biz|edu)(?:\/[^\s]*)?)/g;
@@ -1388,6 +1388,7 @@ const { t, lang } = useLang();
               onComment={() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); }}
               onUserPress={(uid, username) => { if (username && !isNative) router.push(`/profile/${username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
               onDelete={() => setDbPosts(prev => prev.filter(p => p.id !== item.id))}
+              onBlock={(uid) => setDbPosts(prev => prev.filter(p => p.userId !== uid))}
               isAdmin={isAdmin}
               onImagePress={(url) => { setImageViewerUrl(url); setImageViewerVisible(true); }}
               isFollowingAuthor={item.userId ? followingIds.has(item.userId) : false}

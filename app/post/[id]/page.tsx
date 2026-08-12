@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import PostRedirect from './PostRedirect';
 
-export const dynamic = 'force-dynamic';
-
 export async function generateStaticParams() {
   return [{ id: '_' }];
 }

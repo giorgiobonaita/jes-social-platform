@@ -53,15 +53,21 @@ export default function SettingsPage() {
     const { data: { user }, error } = await supabase.auth.getUser();
     if (user && !error) {
       const { data: { session } } = await supabase.auth.getSession();
-      // Delete auth user via API (requires service role key — runs server-side)
-      await fetch('/api/delete-account', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token ?? ''}`,
-        },
-        body: JSON.stringify({ userId: user.id }),
-      });
+      try {
+        // Absolute URL required — Capacitor WebView can't resolve relative paths to the Vercel server
+        const res = await fetch('https://jessocial.com/api/delete-account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token ?? ''}`,
+          },
+          body: JSON.stringify({ userId: user.id }),
+        });
+        if (!res.ok) { setDeleting(false); return; }
+      } catch {
+        setDeleting(false);
+        return;
+      }
       await supabase.auth.signOut();
     }
     setDeleting(false);

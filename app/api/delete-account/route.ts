@@ -25,6 +25,9 @@ export async function POST(request: NextRequest) {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 
+    // auth.admin.deleteUser only removes auth.users — also delete the public profile row
+    await supabaseAdmin.from('users').delete().eq('auth_id', userId);
+
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
