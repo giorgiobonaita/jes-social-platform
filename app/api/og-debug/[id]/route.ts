@@ -3,16 +3,19 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-static';
 
+export function generateStaticParams() {
+  return [{ id: '_' }];
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const keyUsed = serviceKey ? 'service_role' : anonKey ? 'anon' : 'none';
   const key = serviceKey || anonKey;
 
   if (!supabaseUrl || !key) {
-    return NextResponse.json({ error: 'Missing env vars', supabaseUrl: !!supabaseUrl, serviceKey: !!serviceKey, anonKey: !!anonKey });
+    return NextResponse.json({ error: 'Missing env vars' });
   }
 
   const supabase = createClient(supabaseUrl, key, { auth: { persistSession: false } });
@@ -24,7 +27,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     .single();
 
   if (postError || !post) {
-    return NextResponse.json({ error: 'Post not found', postError, keyUsed });
+    return NextResponse.json({ error: 'Post not found' });
   }
 
   const { data: user, error: userError } = await supabase
@@ -35,8 +38,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   return NextResponse.json({
     ok: true,
-    keyUsed,
-    post: { caption: post.caption, image_url: post.image_url, image_urls: post.image_urls, user_id: post.user_id },
+    post: { caption: post.caption, image_url: post.image_url, image_urls: post.image_urls },
     user: { name: user?.name, error: userError?.message },
     ogImage: post.image_url || post.image_urls?.[0] || 'https://jessocial.com/logo.png',
   });
