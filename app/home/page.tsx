@@ -1388,7 +1388,7 @@ const { t, lang } = useLang();
               onComment={() => { setCommentsPostId(item.id); setCommentsAuthorId(item.userId); setCommentsVisible(true); }}
               onUserPress={(uid, username) => { if (username && !isNative) router.push(`/profile/${username}`); else { setProfileTargetUserId(uid); setProfileVisible(true); } }}
               onDelete={() => setDbPosts(prev => prev.filter(p => p.id !== item.id))}
-              onBlock={(uid) => setDbPosts(prev => prev.filter(p => p.userId !== uid))}
+              onBlock={(uid) => { setDbPosts(prev => prev.filter(p => p.userId !== uid)); setStories(prev => prev.filter(s => s.userId !== uid)); }}
               isAdmin={isAdmin}
               onImagePress={(url) => { setImageViewerUrl(url); setImageViewerVisible(true); }}
               isFollowingAuthor={item.userId ? followingIds.has(item.userId) : false}
