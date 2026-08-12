@@ -22,12 +22,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
-    if (error) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-
-    // auth.admin.deleteUser only removes auth.users — also delete the public profile row
+    // Delete profile row first — if auth deletion fails after, user can still log in and retry
     const { error: profileError } = await supabaseAdmin.from('users').delete().eq('auth_id', userId);
     if (profileError) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (error) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

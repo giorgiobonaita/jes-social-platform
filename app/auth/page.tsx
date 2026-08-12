@@ -53,7 +53,7 @@ export default function AuthPage() {
           {isIOS && <AppleSignInButton label="Registrati con Apple" />}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0' }}>
             <div style={{ flex: 1, height: 1, background: '#E8E8E8' }} />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#AAA' }}>oppure</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: '#AAA' }}>{t('or')}</span>
             <div style={{ flex: 1, height: 1, background: '#E8E8E8' }} />
           </div>
           <button onClick={() => router.push('/signup')} style={{
