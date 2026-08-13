@@ -131,40 +131,12 @@ function buildFeed(
   const advList = isMercury
     ? shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...ADV_MER, ...spidiPool])
     : shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...spidiPool]);
-  let advIdx = 0;
   let adSlotIdx = 0;
-  let arcInserted = false;
-  const spidiRandom = ADV_SPIDI[Math.floor(Math.random() * ADV_SPIDI.length)];
-  const nextAdv = () => {
-    const sp = advList[advIdx % advList.length];
-    advIdx++;
-    return { type: 'adv', id: `adv_${advIdx}_${Date.now()}`, imageUrl: sp.imageUrl, url: sp.url };
-  };
   for (let i = 0; i < orderedPosts.length; i++) {
     feed.push(orderedPosts[i]);
     if ((i + 1) % 3 === 0) {
       adSlotIdx++;
-      if (adSlotIdx % 2 === 1) {
-        // Slot dispari → pubblicità manuale
-        if (spidiBoost && advIdx === 0) {
-          advIdx++;
-          feed.push({ type: 'adv', id: `adv_spidi_first_${Date.now()}`, imageUrl: spidiRandom.imageUrl, url: spidiRandom.url });
-        } else {
-          feed.push(nextAdv());
-        }
-        if (!arcInserted && advIdx === 2) {
-          if (userType && ARTIST_TYPES.includes(userType)) {
-            feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'artisti' });
-            arcInserted = true;
-          } else if (userType && AZIENDE_TYPES.includes(userType)) {
-            feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'aziende' });
-            arcInserted = true;
-          }
-        }
-      } else {
-        // Slot pari → AdMob
-        feed.push({ type: 'adv_admob', id: `adv_admob_${adSlotIdx}_${Date.now()}` });
-      }
+      feed.push({ type: 'adv_admob', id: `adv_admob_${adSlotIdx}_${Date.now()}` });
     }
   }
   return feed;
