@@ -101,6 +101,7 @@ function buildFeed(
   categoryScores?: Record<string, number> | null,
   interests?: string[] | null,
   algoActive?: boolean,
+  isAndroid?: boolean,
 ): any[] {
   let orderedPosts = [...posts];
 
@@ -131,12 +132,46 @@ function buildFeed(
   const advList = isMercury
     ? shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...ADV_MER, ...spidiPool])
     : shuffleArray([...ADV_GB, ...ADV_GNG, ...ADV_GES, ...ADV_MER, ...spidiPool]);
-  let adSlotIdx = 0;
-  for (let i = 0; i < orderedPosts.length; i++) {
-    feed.push(orderedPosts[i]);
-    if ((i + 1) % 3 === 0) {
-      adSlotIdx++;
-      feed.push({ type: 'adv_admob', id: `adv_admob_${adSlotIdx}_${Date.now()}` });
+
+  if (isAndroid) {
+    // Android: AdMob nativo ogni 3 post
+    let adSlotIdx = 0;
+    for (let i = 0; i < orderedPosts.length; i++) {
+      feed.push(orderedPosts[i]);
+      if ((i + 1) % 3 === 0) {
+        adSlotIdx++;
+        feed.push({ type: 'adv_admob', id: `adv_admob_${adSlotIdx}_${Date.now()}` });
+      }
+    }
+  } else {
+    // Web: pubblicità clienti ogni 4 post
+    let advIdx = 0;
+    let arcInserted = false;
+    const spidiRandom = ADV_SPIDI[Math.floor(Math.random() * ADV_SPIDI.length)];
+    const nextAdv = () => {
+      const sp = advList[advIdx % advList.length];
+      advIdx++;
+      return { type: 'adv', id: `adv_${advIdx}_${Date.now()}`, imageUrl: sp.imageUrl, url: sp.url };
+    };
+    for (let i = 0; i < orderedPosts.length; i++) {
+      feed.push(orderedPosts[i]);
+      if ((i + 1) % 4 === 0) {
+        if (spidiBoost && advIdx === 0) {
+          advIdx++;
+          feed.push({ type: 'adv', id: `adv_spidi_first_${Date.now()}`, imageUrl: spidiRandom.imageUrl, url: spidiRandom.url });
+        } else {
+          feed.push(nextAdv());
+        }
+        if (!arcInserted && advIdx === 2) {
+          if (userType && ARTIST_TYPES.includes(userType)) {
+            feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'artisti' });
+            arcInserted = true;
+          } else if (userType && AZIENDE_TYPES.includes(userType)) {
+            feed.push({ type: 'adv_arc', id: `adv_arc_${Date.now()}`, arcType: 'aziende' });
+            arcInserted = true;
+          }
+        }
+      }
     }
   }
   return feed;
@@ -808,20 +843,72 @@ function AdvCard({ imageUrl, url }: { imageUrl: string; url: string }) {
 }
 
 // ── AdMob Native Card ────────────────────────────────────────────────────────
+// Test ID — sostituire con ca-app-pub-7262939503322959/2114172763 quando AdMob approva
+const AD_UNIT_ID = 'ca-app-pub-3940256099942544/2247696110';
+
 function AdvAdMobCard() {
-  return (
-    <div className="adv-card" style={{ minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#FAFAFA' }}>
-      <div style={{ display: 'flex', width: '100%' }}>
-        <div className="adv-badge">
-          <svg width="11" height="11" fill="none" stroke="#888" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <span className="adv-badge-text">Sponsorizzato</span>
-        </div>
-      </div>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 0', color: '#CCC', fontSize: 13 }}>
-        Annuncio in arrivo
-      </div>
-    </div>
-  );
+  const ref = useRef<HTMLDivElement>(null);
+  const adLoadedRef = useRef(false);
+  const pluginRef = useRef<import('@/lib/admob-native').AdMobNativePlugin | null>(null);
+  const rafRef = useRef<number>(0);
+  const lastYRef = useRef<number>(-9999);
+
+  useEffect(() => {
+    let destroyed = false;
+
+    const init = async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') return;
+
+        const { AdMobNative } = await import('@/lib/admob-native');
+        pluginRef.current = AdMobNative;
+        await AdMobNative.initialize();
+
+        const el = ref.current;
+        if (!el || destroyed) return;
+
+        const rect = el.getBoundingClientRect();
+        await AdMobNative.load({
+          adUnitId: AD_UNIT_ID,
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height,
+        });
+        if (destroyed) { AdMobNative.destroy(); return; }
+        adLoadedRef.current = true;
+
+        // Sync position every frame so the native view stays glued to the placeholder
+        const sync = () => {
+          if (!ref.current || !adLoadedRef.current) { rafRef.current = requestAnimationFrame(sync); return; }
+          const r = ref.current.getBoundingClientRect();
+          const newY = r.top;
+          if (Math.abs(newY - lastYRef.current) > 0.5) {
+            lastYRef.current = newY;
+            pluginRef.current?.updatePosition({ x: r.left, y: newY, width: r.width, height: r.height });
+            if (r.bottom < 0 || r.top > window.innerHeight) {
+              pluginRef.current?.hide();
+            } else {
+              pluginRef.current?.show();
+            }
+          }
+          rafRef.current = requestAnimationFrame(sync);
+        };
+        rafRef.current = requestAnimationFrame(sync);
+      } catch {}
+    };
+
+    init();
+    return () => {
+      destroyed = true;
+      cancelAnimationFrame(rafRef.current);
+      if (adLoadedRef.current) pluginRef.current?.destroy();
+    };
+  }, []);
+
+  // Placeholder che riserva lo spazio nel feed — stessa altezza del NativeAdView
+  return <div ref={ref} style={{ height: 290, width: '100%', background: 'transparent' }} />;
 }
 
 // ── JES ARC ADV Card ─────────────────────────────────────────────────────────
@@ -911,10 +998,12 @@ const { t, lang } = useLang();
   const [interests, setInterests] = useState<string[] | null>(null);
   const [algoActive, setAlgoActive] = useState(false);
   const [isNative, setIsNative] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
     import('@capacitor/core').then(({ Capacitor }) => {
       setIsNative(Capacitor.isNativePlatform());
+      setIsAndroid(Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android');
     }).catch(() => {});
   }, []);
 
@@ -1014,7 +1103,7 @@ const { t, lang } = useLang();
   }, [isNative, profileVisible, commentsVisible, notifVisible, storyVisible, imageViewerVisible, createPostVisible, createTextPostVisible, showInterests, createMenuVisible]);
 
   const allPosts = useMemo(() => [...groupPosts, ...dbPosts], [groupPosts, dbPosts]);
-  const feedData = useMemo(() => buildFeed(allPosts, myUsername, userType, categoryScores, interests, algoActive), [allPosts, myUsername, userType, categoryScores, interests, algoActive]);
+  const feedData = useMemo(() => buildFeed(allPosts, myUsername, userType, categoryScores, interests, algoActive, isAndroid), [allPosts, myUsername, userType, categoryScores, interests, algoActive, isAndroid]);
 
   // Handle jes* query params from admin "Pubblica su JES" flow
   useEffect(() => {
