@@ -1190,13 +1190,14 @@ const { t, lang } = useLang();
     (commentsData || []).forEach((c: any) => { commentsByPost[c.post_id] = (commentsByPost[c.post_id] || 0) + 1; });
     const mapped = posts.map((p: any) => {
       const u = userMap[p.user_id] || {};
+      const isValidUrl = (s: any) => typeof s === 'string' && s.startsWith('http');
       let imageUrls: string[] = [];
-      const isValidUrl = (s: string) => s && s.startsWith('http');
-      if (Array.isArray(p.image_urls) && p.image_urls.length > 0) {
-        imageUrls = p.image_urls.filter(isValidUrl);
+      if (Array.isArray(p.image_urls)) {
+        imageUrls = (p.image_urls as any[]).filter(isValidUrl);
       } else if (typeof p.image_urls === 'string' && (p.image_urls as string).startsWith('{')) {
         imageUrls = (p.image_urls as string).slice(1, -1).split(',').map((s: string) => s.trim().replace(/^"|"$/g, '')).filter(isValidUrl);
-      } else if (p.image_url) {
+      }
+      if (imageUrls.length === 0 && isValidUrl(p.image_url)) {
         imageUrls = [p.image_url];
       }
       return {

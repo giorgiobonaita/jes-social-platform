@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 
 const GRADIENTS: [string, string][] = [
   ['#F07B1D', '#FF9A3D'],
@@ -36,6 +37,7 @@ interface Props {
 }
 
 export default function AvatarImg({ uri, size, seed, borderRadius, style, className }: Props) {
+  const [imgError, setImgError] = useState(false);
   const r = borderRadius ?? size / 2;
   const baseStyle: React.CSSProperties = {
     width: size,
@@ -45,13 +47,14 @@ export default function AvatarImg({ uri, size, seed, borderRadius, style, classN
     ...style,
   };
 
-  if (uri && uri.trim() !== '') {
+  if (uri && uri.trim() !== '' && !imgError) {
     return (
       <img
         src={uri}
         alt={seed || 'avatar'}
         style={{ ...baseStyle, objectFit: 'cover', display: 'block' }}
         className={className}
+        onError={() => setImgError(true)}
       />
     );
   }
